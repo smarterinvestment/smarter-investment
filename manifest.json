@@ -1,0 +1,20 @@
+{
+  "name": "Smarter Investment",
+  "short_name": "Smarter",
+  "description": "Tu Gestor Financiero Personal - Control inteligente de gastos, ingresos y presupuestos",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#000B2E",
+  "theme_color": "#05BFDB",
+  "orientation": "portrait-primary",
+  "scope": "./",
+  "icons": [
+    {
+      "src": "logo-smarter.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["finance", "productivity", "business"]
+}

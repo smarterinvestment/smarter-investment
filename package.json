@@ -1,0 +1,23 @@
+{
+  "name": "smarter-investment",
+  "version": "2.0.0",
+  "description": "Tu Gestor Financiero Personal Inteligente con IA",
+  "author": "Tu Nombre",
+  "license": "MIT",
+  "scripts": {
+    "dev": "netlify dev",
+    "build": "echo 'Build completed'",
+    "deploy": "netlify deploy --prod"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.0.0",
+    "node-fetch": "^2.7.0",
+    "stripe": "^14.10.0"
+  },
+  "devDependencies": {
+    "netlify-cli": "^17.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

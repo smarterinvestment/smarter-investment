@@ -1,0 +1,116 @@
+# 🔐 ARCHIVOS A IGNORAR EN GIT - Smarter Investment
+# ==================================================
+# IMPORTANTE: Nunca subas estos archivos a tu repositorio
+
+# ===== VARIABLES DE ENTORNO =====
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+
+# ===== DEPENDENCIAS =====
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn-integrity
+
+# ===== NETLIFY =====
+.netlify/
+functions-serve/
+.netlify.state
+
+# ===== BUILD =====
+dist/
+build/
+out/
+.cache/
+
+# ===== LOGS =====
+*.log
+logs/
+*.log.*
+
+# ===== ARCHIVOS TEMPORALES =====
+*.tmp
+*.temp
+.tmp/
+.temp/
+
+# ===== SISTEMA OPERATIVO =====
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+
+# ===== EDITORES E IDEs =====
+# VSCode
+.vscode/
+*.code-workspace
+
+# IntelliJ IDEA / WebStorm
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Sublime Text
+*.sublime-workspace
+*.sublime-project
+
+# Vim
+*.swp
+*.swo
+*~
+.vim
+
+# Emacs
+*~
+\#*\#
+.\#*
+
+# ===== PRUEBAS =====
+coverage/
+.nyc_output/
+*.lcov
+
+# ===== BACKUPS =====
+*.backup
+*.bak
+*.old
+
+# ===== FIREBASE =====
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+
+# ===== OTROS =====
+# Archivos de configuración local
+.local/
+local/
+
+# Certificados y keys
+*.pem
+*.key
+*.cert
+
+# Archivos comprimidos
+*.zip
+*.tar.gz
+*.rar
+
+# Package lock files (opcional, según tu preferencia)
+# package-lock.json
+# yarn.lock
