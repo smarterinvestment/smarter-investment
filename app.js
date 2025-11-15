@@ -3026,10 +3026,29 @@ function render() {
 // GRÁFICOS
 // ========================================
 function renderAllDashboardCharts() {
-    renderChart();
-    renderDescriptionChart();
-    renderIncomeChart();
-    renderSavingsRateChart();
+    // Verificar si Chart.js está cargado
+    if (typeof Chart === 'undefined') {
+        // Cargar Chart.js dinámicamente
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
+        script.onload = () => {
+            console.log('✅ Chart.js cargado exitosamente');
+            renderChart();
+            renderDescriptionChart();
+            renderIncomeChart();
+            renderSavingsRateChart();
+        };
+        script.onerror = () => {
+            console.error('❌ Error al cargar Chart.js');
+        };
+        document.head.appendChild(script);
+    } else {
+        // Chart.js ya está cargado
+        renderChart();
+        renderDescriptionChart();
+        renderIncomeChart();
+        renderSavingsRateChart();
+    }
 }
 
 function renderChart() {
