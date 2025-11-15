@@ -3,7 +3,7 @@
  * Versión simplificada y corregida sin errores de clonación
  */
 
-const VERSION = '2.0.1';
+const VERSION = 'v2.0.2';
 const CACHE_NAME = `smarter-v${VERSION}`;
 
 // Recursos estáticos para cachear
