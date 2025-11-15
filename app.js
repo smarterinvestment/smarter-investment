@@ -5739,3 +5739,66 @@ window.toggleWeeklyReport = toggleWeeklyReport;
 window.toggleUnusualExpenses = toggleUnusualExpenses;
 
 console.log('✅ Todas las funciones exportadas correctamente');
+
+// ========================================
+// INICIALIZACIÓN DE MÓDULOS
+// ========================================
+window.addEventListener('DOMContentLoaded', () => {
+    console.log('🚀 Inicializando módulos...');
+    
+    // Esperar a que Chart.js esté disponible
+    const initializeApp = () => {
+        if (typeof Chart === 'undefined') {
+            console.log('⏳ Esperando a que Chart.js se cargue...');
+            setTimeout(initializeApp, 100);
+            return;
+        }
+        
+        console.log('✅ Chart.js está disponible');
+        
+        // Inicializar módulo de notificaciones
+        if (typeof NotificationsModule !== 'undefined') {
+            try {
+                notificationsModule = new NotificationsModule(db);
+                console.log('✅ Módulo de notificaciones inicializado');
+            } catch (error) {
+                console.warn('⚠️ Error al inicializar notificaciones:', error);
+            }
+        }
+        
+        // Inicializar módulo de gastos recurrentes
+        if (typeof RecurringExpensesModule !== 'undefined') {
+            try {
+                recurringModule = new RecurringExpensesModule(db);
+                console.log('✅ Módulo de gastos recurrentes inicializado');
+            } catch (error) {
+                console.warn('⚠️ Error al inicializar gastos recurrentes:', error);
+            }
+        }
+        
+        // Inicializar módulo de reportes
+        if (typeof ReportsModule !== 'undefined') {
+            try {
+                reportsModule = new ReportsModule(db);
+                console.log('✅ Módulo de reportes inicializado');
+            } catch (error) {
+                console.warn('⚠️ Error al inicializar reportes:', error);
+            }
+        }
+        
+        // Inicializar asistente AI
+        if (typeof AssistantModule !== 'undefined') {
+            try {
+                assistantModule = new AssistantModule();
+                console.log('✅ Módulo de asistente AI inicializado');
+            } catch (error) {
+                console.warn('⚠️ Error al inicializar asistente AI:', error);
+            }
+        }
+        
+        console.log('🎉 Todos los módulos inicializados correctamente');
+    };
+    
+    // Iniciar la aplicación
+    initializeApp();
+});
