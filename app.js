@@ -52,17 +52,8 @@ IMPORTANTE: Agregar estos estilos CSS al archivo styles.css:
 }
 */
 
-const firebaseConfig = {
-    apiKey: "AIzaSyCuZAk-ZJiaxCtIKQqzz8Qp3SSIDrBLtQw",
-    authDomain: "smarter-investment.firebaseapp.com",
-    projectId: "smarter-investment",
-    storageBucket: "smarter-investment.firebasestorage.app",
-    messagingSenderId: "655346043393",
-    appId: "1:655346043393:web:9976b1c84d42db4aa96c38"
-};
-
-// Inicializar Firebase
-firebase.initializeApp(firebaseConfig);
+// Firebase ya está inicializado en index.html
+// Solo obtenemos las referencias
 const auth = firebase.auth();
 const db = firebase.firestore();
 
