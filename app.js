@@ -96,6 +96,9 @@ let recurringModule = null;
 // 📊 NUEVO: Módulo de Reportes
 let reportsModule = null;
 
+// 📈 NUEVO: Módulo de Comparación
+let comparisonModule = null;
+
 // ========================================
 // LISTENER DE AUTENTICACIÓN
 // ========================================
@@ -5764,16 +5767,34 @@ window.addEventListener('DOMContentLoaded', () => {
             } catch (error) {
                 console.warn('⚠️ Error al inicializar notificaciones:', error);
             }
+        } else {
+            console.warn('⚠️ NotificationsModule no está disponible');
         }
         
         // Inicializar módulo de gastos recurrentes
         if (typeof RecurringExpensesModule !== 'undefined') {
             try {
-                recurringModule = new RecurringExpensesModule(db);
+                recurringModule = new RecurringExpensesModule(db, null);
+                recurringModule.isInitialized = true;
                 console.log('✅ Módulo de gastos recurrentes inicializado');
             } catch (error) {
                 console.warn('⚠️ Error al inicializar gastos recurrentes:', error);
             }
+        } else {
+            console.warn('⚠️ RecurringExpensesModule no está disponible');
+        }
+        
+        // Inicializar módulo de comparación
+        if (typeof ComparisonModule !== 'undefined') {
+            try {
+                comparisonModule = new ComparisonModule(db, null);
+                comparisonModule.isInitialized = true;
+                console.log('✅ Módulo de comparación inicializado');
+            } catch (error) {
+                console.warn('⚠️ Error al inicializar comparación:', error);
+            }
+        } else {
+            console.warn('⚠️ ComparisonModule no está disponible');
         }
         
         // Inicializar módulo de reportes
@@ -5784,6 +5805,8 @@ window.addEventListener('DOMContentLoaded', () => {
             } catch (error) {
                 console.warn('⚠️ Error al inicializar reportes:', error);
             }
+        } else {
+            console.warn('⚠️ ReportsModule no está disponible');
         }
         
         // Inicializar asistente AI
@@ -5794,11 +5817,30 @@ window.addEventListener('DOMContentLoaded', () => {
             } catch (error) {
                 console.warn('⚠️ Error al inicializar asistente AI:', error);
             }
+        } else {
+            console.warn('⚠️ AssistantModule no está disponible');
         }
         
-        console.log('🎉 Todos los módulos inicializados correctamente');
+        console.log('🎉 Todos los módulos disponibles han sido inicializados');
     };
     
     // Iniciar la aplicación
     initializeApp();
 });
+
+// ========================================
+// FUNCIÓN GLOBAL PARA RENDERIZAR COMPARACIÓN
+// ========================================
+window.renderComparisonView = function(expenses, currentMonth, previousMonth) {
+    if (comparisonModule && comparisonModule.isInitialized) {
+        return comparisonModule.renderComparisonView(expenses, currentMonth, previousMonth);
+    } else {
+        console.warn('⚠️ ComparisonModule no está inicializado');
+        return `
+            <div class="comparison-placeholder">
+                <p>📊 Módulo de comparación no disponible</p>
+                <p style="font-size: 0.9em; opacity: 0.7;">Recarga la página para intentar de nuevo</p>
+            </div>
+        `;
+    }
+};
