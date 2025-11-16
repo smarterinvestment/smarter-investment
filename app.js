@@ -1998,6 +1998,10 @@ function renderBudget() {
                             <div style="font-size: 0.9rem; color: #f97316; margin-top: 0.5rem;">
                                 🔴 Solo te quedan $${(alert.budget - alert.spent).toLocaleString()}
                             </div>
+
+// ============================================
+// 📍 FIN PARTE 1 - CONTINÚA EN PARTE 2
+// ============================================
                         </div>
                     `).join('')}
                 </div>
@@ -2792,23 +2796,11 @@ function renderReportsSection() {
     `;
 }
 
-
-// ============================================
-// 📍 FIN DE LA PARTE 1 - CONTINÚA EN PARTE 2
-// ============================================
-// ============================================
-// 📍 PARTE 2 - CONTINUACIÓN DESDE LÍNEA 2795
-// ============================================
-
-// ========================================
-// BOTTOM NAVIGATION - ✅ CORREGIDO CON 6 BOTONES
-// ========================================
 function renderBottomNav() {
     const tabs = [
         { id: 'dashboard', icon: '📈', name: 'Inicio' },
         { id: 'expenses', icon: '💰', name: 'Gastos' },
-        { id: 'budget', icon: '💸', name: 'Presupuesto' },    // ✅ NUEVO
-        { id: 'recurring', icon: '🔄', name: 'Recurrentes' },
+        { id: 'recurring', icon: '🔄', name: 'Recurrentes' }, // ✨ NUEVO
         { id: 'goals', icon: '🎯', name: 'Metas' },
         { id: 'more', icon: '⚙️', name: 'Más' }
     ];
@@ -2826,13 +2818,6 @@ function renderBottomNav() {
         </div>
     `;
 }
-
-// ============================================
-// 📍 FIN DE LA PARTE 2 - CONTINÚA EN PARTE 3
-// ============================================
-// ============================================
-// 📍 PARTE 3 - CONTINUACIÓN DESDE LÍNEA 2817
-// ============================================
 
 function renderModal() {
     return `
@@ -3043,8 +3028,26 @@ function render() {
                     💸 Gasto
                 </button>
                 <!-- ✨✨✨ NUEVO BOTÓN DE GASTOS RECURRENTES ✨✨✨ -->
-                <button class="fab-option" onclick="openAddRecurringExpenseModal()" style="background: var(--color-secondary);">
-                    🔄 Recurrente
+
+// ============================================
+// 📍 FIN PARTE 2 - CONTINÚA EN PARTE 3
+// ============================================
+        const fabHTML = activeTab === 'expenses' ? `
+            <div id="fab-menu" class="fab-menu" style="display: none;">
+                <button class="fab-option" onclick="openModal('income')" style="background: var(--color-success);">
+                    💰 Ingreso
+                </button>
+                <button class="fab-option" onclick="openModal('expense')" style="background: var(--color-danger);">
+                    💸 Gasto
+                </button>
+                <!-- ✨✨✨ NUEVO BOTÓN DE GASTOS RECURRENTES ✨✨✨ -->
+// ============================================
+// 📍 PARTE 3 - CON FAB MENU CORREGIDO
+// ============================================
+
+                <!-- ✅ CORREGIDO: Botón de comparación en lugar de recurrente -->
+                <button class="fab-option" onclick="showExpensesComparisonModal()" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    📊 Comparar
                 </button>
             </div>
             <button class="fab" onclick="toggleFabMenu()">+</button>
@@ -5904,3 +5907,173 @@ window.renderComparisonView = function(expenses, currentMonth, previousMonth) {
         `;
     }
 };
+
+
+
+
+// ========================================
+// 📊 FUNCIONES NUEVAS: COMPARACIÓN DE GASTOS
+// ========================================
+
+/**
+ * Mostrar modal de comparación de gastos totales vs recurrentes
+ */
+function showExpensesComparisonModal() {
+    const modal = document.getElementById('modal');
+    const modalTitle = document.getElementById('modal-title');
+    const modalBody = document.getElementById('modal-body');
+    
+    // Calcular gastos totales
+    const totalExpenses = expenses.reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
+    
+    // Calcular gastos recurrentes totales
+    let recurringExpensesTotal = 0;
+    let recurringExpensesList = [];
+    
+    if (recurringModule && recurringModule.expenses) {
+        recurringExpensesList = recurringModule.expenses;
+        recurringExpensesTotal = recurringExpensesList.reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
+    }
+    
+    // Calcular gastos únicos (no recurrentes)
+    const uniqueExpenses = totalExpenses - recurringExpensesTotal;
+    
+    // Calcular porcentajes
+    const recurringPercentage = totalExpenses > 0 ? ((recurringExpensesTotal / totalExpenses) * 100).toFixed(1) : 0;
+    const uniquePercentage = totalExpenses > 0 ? ((uniqueExpenses / totalExpenses) * 100).toFixed(1) : 0;
+    
+    modalTitle.textContent = '📊 Comparación de Gastos';
+    modalBody.innerHTML = `
+        <div class="comparison-chart-container">
+            <!-- Resumen Total -->
+            <div class="comparison-summary">
+                <div class="summary-card">
+                    <div class="summary-icon">💸</div>
+                    <div class="summary-content">
+                        <div class="summary-label">Gastos Totales del Mes</div>
+                        <div class="summary-value">$${totalExpenses.toFixed(2)}</div>
+                        <div class="summary-count">${expenses.length} transacciones registradas</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Barras de Comparación -->
+            <div class="comparison-bars">
+                <div class="comparison-bar-item">
+                    <div class="bar-label">
+                        <span>🔄 Gastos Recurrentes</span>
+                        <span class="bar-value">$${recurringExpensesTotal.toFixed(2)}</span>
+                    </div>
+                    <div class="bar-container">
+                        <div class="bar-fill recurring" style="width: ${recurringPercentage}%"></div>
+                    </div>
+                    <div class="bar-percentage">${recurringPercentage}% del total</div>
+                </div>
+                
+                <div class="comparison-bar-item">
+                    <div class="bar-label">
+                        <span>💰 Gastos Únicos</span>
+                        <span class="bar-value">$${uniqueExpenses.toFixed(2)}</span>
+                    </div>
+                    <div class="bar-container">
+                        <div class="bar-fill unique" style="width: ${uniquePercentage}%"></div>
+                    </div>
+                    <div class="bar-percentage">${uniquePercentage}% del total</div>
+                </div>
+            </div>
+            
+            <!-- Análisis Inteligente -->
+            <div class="comparison-analysis">
+                <h4>💡 Análisis y Recomendaciones</h4>
+                <p>${generateExpenseAnalysis(recurringExpensesTotal, uniqueExpenses, totalExpenses)}</p>
+            </div>
+            
+            <!-- Lista de gastos recurrentes (si existen) -->
+            ${recurringExpensesList.length > 0 ? `
+                <div class="recurring-list-preview">
+                    <h4>🔄 Tus Gastos Recurrentes Activos:</h4>
+                    <div class="recurring-items">
+                        ${recurringExpensesList.slice(0, 3).map(item => `
+                            <div class="recurring-item-mini">
+                                <span class="item-name">${item.name || 'Sin nombre'}</span>
+                                <span class="item-amount">$${(item.amount || 0).toFixed(2)}/${item.frequency || 'mes'}</span>
+                            </div>
+                        `).join('')}
+                        ${recurringExpensesList.length > 3 ? `
+                            <div class="recurring-item-more">
+                                + ${recurringExpensesList.length - 3} más
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            ` : `
+                <div class="no-recurring-message">
+                    <p>📝 No tienes gastos recurrentes configurados.</p>
+                    <p style="font-size: 0.9rem; opacity: 0.8;">Ve a la pestaña "Recurrentes" para agregar suscripciones, servicios y pagos fijos.</p>
+                </div>
+            `}
+            
+            <!-- Botones de Acción -->
+            <div class="comparison-actions">
+                <button class="btn btn-primary" onclick="switchTab('recurring'); closeModal();">
+                    🔄 Ver Todos los Recurrentes
+                </button>
+                <button class="btn btn-secondary" onclick="switchTab('expenses'); closeModal();">
+                    💸 Ver Todos los Gastos
+                </button>
+            </div>
+        </div>
+        
+        <button type="button" class="btn btn-secondary" onclick="closeModal()" style="width: 100%; margin-top: 1rem;">
+            Cerrar
+        </button>
+    `;
+    
+    modal.classList.add('active');
+    
+    // Cerrar menú FAB
+    const fabMenu = document.getElementById('fab-menu');
+    if (fabMenu) fabMenu.style.display = 'none';
+}
+
+/**
+ * Generar análisis inteligente de gastos
+ */
+function generateExpenseAnalysis(recurring, unique, total) {
+    if (total === 0) {
+        return '📝 Aún no tienes gastos registrados este mes. ¡Empieza a registrar tus gastos para obtener análisis personalizados!';
+    }
+    
+    const recurringPercentage = ((recurring / total) * 100).toFixed(0);
+    
+    let analysis = '';
+    let recommendation = '';
+    
+    // Análisis según porcentaje de gastos recurrentes
+    if (recurringPercentage > 70) {
+        analysis = `⚠️ **Alerta:** Tus gastos recurrentes representan el ${recurringPercentage}% de tus gastos totales. Esto significa que tienes muchos compromisos fijos mensuales.`;
+        recommendation = `\n\n💡 **Recomendación:** Revisa tus suscripciones y servicios. Cancela los que no uses activamente y busca alternativas más económicas. Con solo reducir 20% de estos gastos, podrías ahorrar $${(recurring * 0.20).toFixed(2)} al mes.`;
+    } else if (recurringPercentage > 50) {
+        analysis = `📊 Tus gastos recurrentes representan el ${recurringPercentage}% del total. Tienes un balance moderado entre gastos fijos y variables.`;
+        recommendation = `\n\n💡 **Recomendación:** Mantén el control de tus gastos variables y considera automatizar el ahorro del ${(100 - recurringPercentage).toFixed(0)}% que tienes disponible.`;
+    } else if (recurringPercentage > 30) {
+        analysis = `✅ Solo el ${recurringPercentage}% de tus gastos son recurrentes. ¡Excelente! Tienes buena flexibilidad en tu presupuesto.`;
+        recommendation = `\n\n💡 **Recomendación:** Con esta flexibilidad financiera, considera establecer metas de ahorro agresivas o invertir una parte de tus gastos variables.`;
+    } else if (recurringPercentage > 0) {
+        analysis = `💪 ¡Impresionante! Solo el ${recurringPercentage}% de tus gastos son recurrentes. Tienes excelente control y gran flexibilidad financiera.`;
+        recommendation = `\n\n💡 **Oportunidad:** Con tan pocos gastos fijos, tienes gran capacidad de ahorro. Considera invertir el excedente en instrumentos como CETES, fondos indexados o crear un fondo de emergencia robusto.`;
+    } else {
+        analysis = `🎯 No tienes gastos recurrentes registrados, pero tienes $${total.toFixed(2)} en gastos totales.`;
+        recommendation = `\n\n💡 **Sugerencia:** Si tienes suscripciones o servicios (Netflix, Spotify, gimnasio, etc.), regístralos como gastos recurrentes para un mejor control y análisis de tus finanzas fijas.`;
+    }
+    
+    return analysis + recommendation;
+}
+
+// ========================================
+// FIN DE FUNCIONES NUEVAS
+// ========================================
+
+// ============================================
+// 📍 FIN PARTE 3 - ARCHIVO COMPLETO
+// ============================================
