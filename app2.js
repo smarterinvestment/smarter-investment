@@ -99,9 +99,6 @@ let reportsModule = null;
 // 📈 NUEVO: Módulo de Comparación
 let comparisonModule = null;
 
-// 📊 NUEVO: Módulo de Gráficos de Recurrentes
-let recurringChartsModule = null;
-
 // ========================================
 // LISTENER DE AUTENTICACIÓN
 // ========================================
@@ -122,12 +119,10 @@ auth.onAuthStateChanged(async (user) => {
         }
         
         // 🔄 NUEVO: Inicializar Gastos Recurrentes
-        if (typeof RecurringExpensesModule !== 'undefined') {
+        if (window.RecurringExpensesModule) {
             recurringModule = new RecurringExpensesModule(db, currentUser.uid);
             await recurringModule.initialize();
             console.log('✅ Gastos Recurrentes inicializados');
-        } else {
-            console.warn('⚠️ RecurringExpensesModule no está disponible');
         }
         
         // 📊 NUEVO: Inicializar Reportes Interactivos
@@ -969,12 +964,12 @@ async function loadTutorialStatus() {
 // 🔔 Inicializar módulo de notificaciones
 async function initializeNotifications() {
     try {
-        if (typeof NotificationsModule !== 'undefined' && currentUser) {
-            notificationsModule = new NotificationsModule(db, currentUser.uid);
+        if (window.IntelligentNotifications && currentUser) {
+            notificationsModule = new IntelligentNotifications(db, currentUser.uid);
             await notificationsModule.initialize();
             console.log('✅ Módulo de notificaciones inicializado');
         } else {
-            console.warn('⚠️ NotificationsModule no está disponible');
+            console.warn('⚠️ Módulo de notificaciones no disponible');
         }
     } catch (error) {
         console.error('❌ Error al inicializar notificaciones:', error);
@@ -2600,14 +2595,6 @@ function renderRecurringExpensesSection() {
                     `).join('')}
                 </div>
             ` : ''}
-            
-            <!-- 📊 NUEVO: Gráficos de Gastos Recurrentes -->
-            ${recurringModule.recurringExpenses.length > 0 ? `
-                <div class="card">
-                    <h3 style="margin-bottom: 1.5rem;">📊 Análisis Visual</h3>
-                    <div id="recurring-charts-container"></div>
-                </div>
-            ` : ''}
         </div>
     `;
 }
@@ -2796,8 +2783,9 @@ function renderBottomNav() {
     const tabs = [
         { id: 'dashboard', icon: '📈', name: 'Inicio' },
         { id: 'expenses', icon: '💰', name: 'Gastos' },
-        { id: 'recurring', icon: '🔄', name: 'Recurrentes' }, // ✨ NUEVO
+        { id: 'budget', icon: '📋', name: 'Presupuesto' },
         { id: 'goals', icon: '🎯', name: 'Metas' },
+        { id: 'assistant', icon: '🤖', name: 'Asistente' }, // ✨ NUEVO
         { id: 'more', icon: '⚙️', name: 'Más' }
     ];
 
@@ -2981,27 +2969,6 @@ function render() {
                 break;
             case 'reports':
                 content = renderReportsSection(); // ✨ MEJORADO
-                break;
-            case 'recurring':
-                content = renderRecurringExpensesSection();
-                // Inicializar gráficos después de renderizar
-                setTimeout(() => {
-                    if (window.recurringChartsModule && recurringModule) {
-                        const container = document.getElementById('recurring-charts-container');
-                        if (container) {
-                            container.innerHTML = recurringChartsModule.renderAllCharts(
-                                recurringModule.recurringExpenses,
-                                expenses
-                            );
-                            setTimeout(() => {
-                                recurringChartsModule.initializeCharts(
-                                    recurringModule.recurringExpenses,
-                                    expenses
-                                );
-                            }, 100);
-                        }
-                    }
-                }, 100);
                 break;
             case 'more':
                 content = renderMoreSection();
@@ -5854,14 +5821,6 @@ window.addEventListener('DOMContentLoaded', () => {
             console.warn('⚠️ AssistantModule no está disponible');
         }
         
-        // Inicializar módulo de gráficos de recurrentes
-        if (typeof RecurringChartsModule !== 'undefined') {
-            recurringChartsModule = new RecurringChartsModule();
-            console.log('✅ Módulo de gráficos de recurrentes inicializado');
-        } else {
-            console.warn('⚠️ RecurringChartsModule no está disponible');
-        }
-        
         console.log('🎉 Todos los módulos disponibles han sido inicializados');
     };
     
@@ -5885,6 +5844,3 @@ window.renderComparisonView = function(expenses, currentMonth, previousMonth) {
         `;
     }
 };
-
-
-
