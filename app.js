@@ -2792,11 +2792,23 @@ function renderReportsSection() {
     `;
 }
 
+
+// ============================================
+// 📍 FIN DE LA PARTE 1 - CONTINÚA EN PARTE 2
+// ============================================
+// ============================================
+// 📍 PARTE 2 - CONTINUACIÓN DESDE LÍNEA 2795
+// ============================================
+
+// ========================================
+// BOTTOM NAVIGATION - ✅ CORREGIDO CON 6 BOTONES
+// ========================================
 function renderBottomNav() {
     const tabs = [
         { id: 'dashboard', icon: '📈', name: 'Inicio' },
         { id: 'expenses', icon: '💰', name: 'Gastos' },
-        { id: 'recurring', icon: '🔄', name: 'Recurrentes' }, // ✨ NUEVO
+        { id: 'budget', icon: '💸', name: 'Presupuesto' },    // ✅ NUEVO
+        { id: 'recurring', icon: '🔄', name: 'Recurrentes' },
         { id: 'goals', icon: '🎯', name: 'Metas' },
         { id: 'more', icon: '⚙️', name: 'Más' }
     ];
@@ -2814,6 +2826,13 @@ function renderBottomNav() {
         </div>
     `;
 }
+
+// ============================================
+// 📍 FIN DE LA PARTE 2 - CONTINÚA EN PARTE 3
+// ============================================
+// ============================================
+// 📍 PARTE 3 - CONTINUACIÓN DESDE LÍNEA 2817
+// ============================================
 
 function renderModal() {
     return `
@@ -5885,6 +5904,3 @@ window.renderComparisonView = function(expenses, currentMonth, previousMonth) {
         `;
     }
 };
-
-
-

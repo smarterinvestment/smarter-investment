@@ -1,17 +1,25 @@
 /**
- * 🤖 VIRTUAL ASSISTANT MODULE - PARTE 1: ASISTENTE AI MEJORADO
- * =============================================================
+ * 🤖 VIRTUAL ASSISTANT MODULE - ASISTENTE AI MEJORADO CON VERCEL
+ * ==============================================================
  * Chat interactivo con análisis financiero inteligente
  * 
- * Características:
- * ✅ Modo Offline - Respuestas inteligentes sin API
- * ✅ Modo Online - Claude API para respuestas avanzadas
- * ✅ Análisis financiero basado en tus datos reales
- * ✅ Consejos personalizados según tu situación
+ * 🔧 CORREGIDO:
+ * ✅ Integrado con Vercel Function (sin CORS)
+ * ✅ Análisis financiero profundo con datos reales
+ * ✅ Consejos de inversión y trading
+ * ✅ Educación financiera personalizada
+ * ✅ Modo Offline con respuestas inteligentes
  * ✅ Historial de conversaciones guardado
  * ✅ UI moderna y responsiva
  * ✅ Acciones rápidas predefinidas
  * ✅ Análisis de patrones de gasto
+ * ✅ Comparación con presupuestos
+ * 
+ * 🎯 FUNCIONALIDADES NUEVAS:
+ * - Análisis de gastos vs presupuesto
+ * - Consejos de inversión básica
+ * - Estrategias de trading para principiantes
+ * - Optimización de finanzas personales
  */
 
 class VirtualAssistantModule {
@@ -20,8 +28,11 @@ class VirtualAssistantModule {
         this.userId = userId;
         this.conversationHistory = [];
         this.isOnline = navigator.onLine;
-        this.claudeAPIKey = localStorage.getItem('claudeAPIKey') || '';
-        this.useOnlineMode = localStorage.getItem('assistantOnlineMode') === 'true';
+        
+        // 🔥 CAMBIO: Ya no necesitamos API key en el frontend
+        // Todo se maneja en el backend de Vercel
+        this.apiEndpoint = '/api/claude'; // Vercel Function endpoint
+        this.useOnlineMode = localStorage.getItem('assistantOnlineMode') !== 'false'; // Por defecto true
         this.currentConversationId = null;
         
         // Datos del usuario cargados
@@ -56,9 +67,6 @@ class VirtualAssistantModule {
         try {
             console.log('🤖 Inicializando Asistente Virtual...');
             
-            // Cargar configuración
-            await this.loadSettings();
-            
             // Cargar datos del usuario
             await this.loadUserData();
             
@@ -66,7 +74,7 @@ class VirtualAssistantModule {
             await this.loadConversationHistory();
             
             console.log('✅ Asistente Virtual inicializado');
-            console.log(`Modo: ${this.useOnlineMode ? '🌐 Online' : '📴 Offline'}`);
+            console.log(`Modo: ${this.useOnlineMode ? '🌐 Online (Vercel + Claude)' : '📴 Offline'}`);
             
             return true;
         } catch (error) {
@@ -76,121 +84,59 @@ class VirtualAssistantModule {
     }
 
     /**
-     * ⚙️ Cargar configuración
-     */
-    async loadSettings() {
-        try {
-            const settingsDoc = await this.db
-                .collection('users')
-                .doc(this.userId)
-                .collection('settings')
-                .doc('assistant')
-                .get();
-            
-            if (settingsDoc.exists) {
-                const settings = settingsDoc.data();
-                this.claudeAPIKey = settings.apiKey || this.claudeAPIKey;
-                this.useOnlineMode = settings.onlineMode || this.useOnlineMode;
-            }
-        } catch (error) {
-            console.warn('⚠️ No se pudo cargar configuración del asistente');
-        }
-    }
-
-    /**
-     * 💾 Guardar configuración
-     */
-    async saveSettings() {
-        try {
-            await this.db
-                .collection('users')
-                .doc(this.userId)
-                .collection('settings')
-                .doc('assistant')
-                .set({
-                    apiKey: this.claudeAPIKey,
-                    onlineMode: this.useOnlineMode,
-                    lastUpdated: new Date()
-                });
-            
-            // También guardar en localStorage
-            localStorage.setItem('claudeAPIKey', this.claudeAPIKey);
-            localStorage.setItem('assistantOnlineMode', this.useOnlineMode);
-            
-            return true;
-        } catch (error) {
-            console.error('Error guardando configuración:', error);
-            return false;
-        }
-    }
-
-    /**
-     * 📊 Cargar datos del usuario
+     * 📊 Cargar datos del usuario desde Firestore
      */
     async loadUserData() {
         try {
-            // Cargar gastos recientes (últimos 30 días)
-            const thirtyDaysAgo = new Date();
-            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            // Cargar gastos del mes actual
+            const now = new Date();
+            const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
             
-            const expensesSnap = await this.db
+            const expensesSnapshot = await this.db
                 .collection('users')
                 .doc(this.userId)
                 .collection('expenses')
-                .where('date', '>=', thirtyDaysAgo.toISOString().split('T')[0])
+                .where('date', '>=', startOfMonth.toISOString())
                 .get();
             
-            this.userData.expenses = expensesSnap.docs.map(doc => ({
+            this.userData.expenses = expensesSnapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
             }));
             
             // Cargar ingresos
-            const incomesSnap = await this.db
+            const incomesSnapshot = await this.db
                 .collection('users')
                 .doc(this.userId)
-                .collection('incomes')
-                .orderBy('date', 'desc')
-                .limit(10)
+                .collection('income')
+                .where('date', '>=', startOfMonth.toISOString())
                 .get();
             
-            this.userData.incomes = incomesSnap.docs.map(doc => ({
+            this.userData.incomes = incomesSnapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
             }));
             
             // Cargar presupuestos
-            const budgetsSnap = await this.db
+            const budgetsSnapshot = await this.db
                 .collection('users')
                 .doc(this.userId)
-                .collection('settings')
-                .doc('budgets')
+                .collection('budgets')
                 .get();
             
-            if (budgetsSnap.exists) {
-                this.userData.budgets = budgetsSnap.data();
-            }
+            budgetsSnapshot.docs.forEach(doc => {
+                const data = doc.data();
+                this.userData.budgets[data.category] = data.amount;
+            });
             
             // Cargar metas
-            const goalsSnap = await this.db
+            const goalsSnapshot = await this.db
                 .collection('users')
                 .doc(this.userId)
                 .collection('goals')
                 .get();
             
-            this.userData.goals = goalsSnap.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }));
-            
-            // Cargar gastos recurrentes
-            const recurringSnap = await this.db
-                .collection('users')
-                .doc(this.userId)
-                .collection('recurringExpenses')
-                .get();
-            
-            this.userData.recurringExpenses = recurringSnap.docs.map(doc => ({
+            this.userData.goals = goalsSnapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
             }));
@@ -204,9 +150,71 @@ class VirtualAssistantModule {
                 (sum, inc) => sum + (parseFloat(inc.amount) || 0), 0
             );
             
-            console.log('✅ Datos del usuario cargados');
+            console.log('✅ Datos del usuario cargados:', {
+                gastos: this.userData.expenses.length,
+                ingresos: this.userData.incomes.length,
+                presupuestos: Object.keys(this.userData.budgets).length,
+                metas: this.userData.goals.length
+            });
         } catch (error) {
             console.error('Error cargando datos del usuario:', error);
+        }
+    }
+
+    /**
+     * 📜 Cargar historial de conversaciones
+     */
+    async loadConversationHistory() {
+        try {
+            const historySnapshot = await this.db
+                .collection('users')
+                .doc(this.userId)
+                .collection('assistant_conversations')
+                .orderBy('timestamp', 'desc')
+                .limit(1)
+                .get();
+            
+            if (!historySnapshot.empty) {
+                const lastConversation = historySnapshot.docs[0];
+                this.currentConversationId = lastConversation.id;
+                this.conversationHistory = lastConversation.data().messages || [];
+            }
+        } catch (error) {
+            console.warn('⚠️ No se pudo cargar historial previo');
+        }
+    }
+
+    /**
+     * 💾 Guardar conversación
+     */
+    async saveConversation() {
+        try {
+            if (!this.currentConversationId) {
+                // Crear nueva conversación
+                const docRef = await this.db
+                    .collection('users')
+                    .doc(this.userId)
+                    .collection('assistant_conversations')
+                    .add({
+                        messages: this.conversationHistory,
+                        timestamp: new Date(),
+                        lastUpdate: new Date()
+                    });
+                this.currentConversationId = docRef.id;
+            } else {
+                // Actualizar conversación existente
+                await this.db
+                    .collection('users')
+                    .doc(this.userId)
+                    .collection('assistant_conversations')
+                    .doc(this.currentConversationId)
+                    .update({
+                        messages: this.conversationHistory,
+                        lastUpdate: new Date()
+                    });
+            }
+        } catch (error) {
+            console.error('Error guardando conversación:', error);
         }
     }
 
@@ -226,11 +234,13 @@ class VirtualAssistantModule {
             // Decidir si usar modo online u offline
             let assistantResponse;
             
-            if (this.useOnlineMode && this.claudeAPIKey && this.isOnline) {
-                // Modo Online - Claude API
+            if (this.useOnlineMode && this.isOnline) {
+                // Modo Online - Vercel Function + Claude API
+                console.log('🌐 Usando modo online (Vercel + Claude)');
                 assistantResponse = await this.getOnlineResponse(userMessage);
             } else {
                 // Modo Offline - Respuestas inteligentes locales
+                console.log('📴 Usando modo offline');
                 assistantResponse = await this.getOfflineResponse(userMessage);
             }
             
@@ -239,7 +249,7 @@ class VirtualAssistantModule {
                 role: 'assistant',
                 content: assistantResponse,
                 timestamp: new Date(),
-                mode: this.useOnlineMode && this.claudeAPIKey ? 'online' : 'offline'
+                mode: this.useOnlineMode && this.isOnline ? 'online' : 'offline'
             };
             this.conversationHistory.push(assistantMsg);
             
@@ -255,58 +265,57 @@ class VirtualAssistantModule {
     }
 
     /**
-     * 🌐 Obtener respuesta online (Claude API)
+     * 🌐 Obtener respuesta online (Vercel Function + Claude API)
+     * 🔥 CORREGIDO: Ahora usa Vercel en lugar de llamar directamente a Anthropic
      */
     async getOnlineResponse(userMessage) {
         try {
-            // Preparar contexto con datos del usuario
-            const context = this.buildUserContext();
+            console.log('📡 Llamando a Vercel Function...');
             
-            const systemPrompt = `Eres un asistente financiero personal experto y amigable. Ayudas a usuarios a gestionar sus finanzas personales con consejos prácticos y análisis detallados.
+            // Preparar payload con todos los datos financieros
+            const payload = {
+                message: userMessage,
+                expenses: this.userData.expenses,
+                income: this.userData.incomes,
+                budgets: Object.entries(this.userData.budgets).map(([category, amount]) => ({
+                    category,
+                    amount
+                })),
+                goals: this.userData.goals
+            };
 
-Contexto del usuario:
-${context}
-
-Instrucciones:
-- Da respuestas concisas y prácticas (máximo 150 palabras)
-- Usa emojis apropiados para hacer la conversación más amigable
-- Basa tus análisis en los datos reales del usuario cuando estén disponibles
-- Si detectas problemas financieros, ofrece soluciones específicas
-- Sé empático y motivador
-- Usa formato markdown para mejor legibilidad`;
-
-            const response = await fetch('https://api.anthropic.com/v1/messages', {
+            // 🔥 Llamar a la función de Vercel
+            const response = await fetch(this.apiEndpoint, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'x-api-key': this.claudeAPIKey,
-                    'anthropic-version': '2023-06-01'
+                    'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({
-                    model: 'claude-3-5-sonnet-20241022',
-                    max_tokens: 500,
-                    system: systemPrompt,
-                    messages: [
-                        {
-                            role: 'user',
-                            content: userMessage
-                        }
-                    ]
-                })
+                body: JSON.stringify(payload)
             });
 
             if (!response.ok) {
-                console.error('Error en API de Claude:', response.status);
+                const errorData = await response.json();
+                console.error('❌ Error en Vercel Function:', errorData);
+                
                 // Fallback a modo offline
+                console.log('↩️ Fallback a modo offline');
                 return this.getOfflineResponse(userMessage);
             }
 
             const data = await response.json();
-            return data.content[0].text;
+            
+            if (data.success && data.message) {
+                console.log('✅ Respuesta de Claude recibida');
+                return data.message;
+            } else {
+                throw new Error('Respuesta inválida del servidor');
+            }
 
         } catch (error) {
-            console.error('Error en modo online:', error);
+            console.error('❌ Error en modo online:', error);
+            
             // Fallback a modo offline
+            console.log('↩️ Fallback a modo offline por error');
             return this.getOfflineResponse(userMessage);
         }
     }
@@ -325,7 +334,7 @@ Instrucciones:
             return this.generateFinancialAnalysis();
         }
         
-        if (intent === 'expenses' || messageLower.includes('gasté') || messageLower.includes('gastando')) {
+        if (intent === 'expenses' || messageLower.includes('gasté') || messageLower.includes('gastando') || messageLower.includes('gastos')) {
             return this.generateExpenseInsight();
         }
         
@@ -341,6 +350,10 @@ Instrucciones:
             return this.generateSavingsAdvice();
         }
         
+        if (messageLower.includes('inver') || messageLower.includes('trading')) {
+            return this.generateInvestmentAdvice();
+        }
+        
         // 3. Búsqueda en knowledge base
         for (const [category, data] of Object.entries(this.knowledgeBase)) {
             const hasKeyword = data.keywords.some(kw => messageLower.includes(kw));
@@ -350,21 +363,28 @@ Instrucciones:
             }
         }
         
-        // 4. Respuesta por defecto con análisis básico
+        // 4. Respuesta por defecto
         return this.getDefaultResponse();
     }
 
+    // ============================================
+    // CONTINUARÁ EN LA PARTE 2...
+    // ============================================
+    // ============================================
+    // PARTE 2: FUNCIONES DE ANÁLISIS FINANCIERO
+    // ============================================
+
     /**
-     * 🎯 Detectar intención del mensaje
+     * 🔍 Detectar intención del mensaje
      */
     detectIntent(message) {
         const intents = {
-            analysis: ['análisis', 'resumen', 'cómo voy', 'situación', 'estado'],
-            expenses: ['gasté', 'gastando', 'compré', 'gastos', 'cuánto gasto'],
-            budget: ['presupuesto', 'límite', 'cuánto puedo', 'sobrepaso'],
-            goals: ['meta', 'objetivo', 'ahorrar para', 'quiero'],
-            savings: ['ahorrar', 'ahorro', 'guardar'],
-            help: ['ayuda', 'help', 'qué puedes', 'cómo funciona']
+            analysis: ['análisis', 'resumen', 'situación', 'estado', 'cómo voy', 'overview'],
+            expenses: ['gasté', 'gastando', 'gasto', 'cuánto', 'dinero'],
+            budget: ['presupuesto', 'límite', 'cuánto puedo gastar'],
+            goals: ['meta', 'objetivo', 'ahorro', 'ahorrar'],
+            savings: ['ahorrar', 'guardar', 'economizar'],
+            investment: ['invertir', 'inversión', 'trading', 'acciones']
         };
         
         for (const [intent, keywords] of Object.entries(intents)) {
@@ -377,21 +397,32 @@ Instrucciones:
     }
 
     /**
-     * 📊 Generar análisis financiero
+     * 📊 Generar análisis financiero completo
      */
     generateFinancialAnalysis() {
-        const { totalExpenses, totalIncome, expenses, budgets } = this.userData;
-        
-        let analysis = '📊 **Análisis Financiero**\n\n';
-        
-        // Situación actual
+        const { totalIncome, totalExpenses, expenses, budgets, goals } = this.userData;
         const balance = totalIncome - totalExpenses;
-        analysis += `💰 **Balance del mes:**\n`;
-        analysis += `Ingresos: $${totalIncome.toFixed(2)}\n`;
-        analysis += `Gastos: $${totalExpenses.toFixed(2)}\n`;
-        analysis += `Balance: ${balance >= 0 ? '✅' : '⚠️'} $${balance.toFixed(2)}\n\n`;
+        const savingsRate = totalIncome > 0 ? ((balance / totalIncome) * 100).toFixed(1) : 0;
         
-        // Análisis por categorías
+        let analysis = '📊 **ANÁLISIS FINANCIERO COMPLETO**\n\n';
+        
+        // Balance general
+        analysis += `💰 **Balance del mes:**\n`;
+        analysis += `• Ingresos: $${totalIncome.toFixed(2)}\n`;
+        analysis += `• Gastos: $${totalExpenses.toFixed(2)}\n`;
+        analysis += `• Balance: $${balance.toFixed(2)} ${balance >= 0 ? '✅' : '⚠️'}\n`;
+        analysis += `• Tasa de ahorro: ${savingsRate}%\n\n`;
+        
+        // Estado del balance
+        if (balance < 0) {
+            analysis += `🚨 **Alerta:** Estás gastando más de lo que ganas. Necesitas ajustar tu presupuesto urgentemente.\n\n`;
+        } else if (savingsRate < 10) {
+            analysis += `⚠️ **Atención:** Tu tasa de ahorro es baja. Objetivo recomendado: 20%.\n\n`;
+        } else if (savingsRate >= 20) {
+            analysis += `🌟 **¡Excelente!** Estás ahorrando ${savingsRate}%. Sigue así.\n\n`;
+        }
+        
+        // Análisis por categoría
         const categoryTotals = this.calculateCategoryTotals(expenses);
         const topCategories = Object.entries(categoryTotals)
             .sort((a, b) => b[1] - a[1])
@@ -401,13 +432,41 @@ Instrucciones:
             analysis += `📈 **Top 3 Categorías de Gasto:**\n`;
             topCategories.forEach(([cat, amount], i) => {
                 const emoji = ['🥇', '🥈', '🥉'][i];
-                analysis += `${emoji} ${cat}: $${amount.toFixed(2)}\n`;
+                const percentage = ((amount / totalExpenses) * 100).toFixed(1);
+                analysis += `${emoji} ${cat}: $${amount.toFixed(2)} (${percentage}%)\n`;
             });
             analysis += '\n';
         }
         
+        // Estado de presupuestos
+        if (Object.keys(budgets).length > 0) {
+            analysis += `🎯 **Estado de Presupuestos:**\n`;
+            let budgetWarnings = 0;
+            
+            for (const [category, limit] of Object.entries(budgets)) {
+                const spent = categoryTotals[category] || 0;
+                const percentage = ((spent / limit) * 100).toFixed(0);
+                
+                let status = '✅';
+                if (percentage >= 95) {
+                    status = '🚨';
+                    budgetWarnings++;
+                } else if (percentage >= 80) {
+                    status = '⚠️';
+                    budgetWarnings++;
+                }
+                
+                analysis += `${status} ${category}: ${percentage}% usado\n`;
+            }
+            
+            if (budgetWarnings > 0) {
+                analysis += `\n⚠️ Tienes ${budgetWarnings} ${budgetWarnings === 1 ? 'presupuesto' : 'presupuestos'} cerca del límite.\n`;
+            }
+            analysis += '\n';
+        }
+        
         // Recomendaciones
-        analysis += this.generateRecommendations(balance, categoryTotals);
+        analysis += this.generateRecommendations(balance, categoryTotals, savingsRate);
         
         return analysis;
     }
@@ -416,31 +475,46 @@ Instrucciones:
      * 💸 Generar insight de gastos
      */
     generateExpenseInsight() {
-        const { expenses } = this.userData;
+        const { expenses, totalExpenses } = this.userData;
         
         if (expenses.length === 0) {
-            return '📝 Aún no tienes gastos registrados. ¡Empieza a registrar tus gastos para obtener análisis personalizados!';
+            return '📝 Aún no tienes gastos registrados este mes. ¡Empieza a registrar tus gastos para obtener análisis personalizados!';
         }
         
-        const total = expenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
-        const avgDaily = total / 30;
+        const avgDaily = totalExpenses / new Date().getDate(); // Promedio hasta hoy
+        const projectedMonthly = avgDaily * 30;
         
         // Análisis por categoría
         const categoryTotals = this.calculateCategoryTotals(expenses);
         const topCategory = Object.entries(categoryTotals)
             .sort((a, b) => b[1] - a[1])[0];
         
-        let insight = `💸 **Análisis de Gastos (últimos 30 días)**\n\n`;
-        insight += `Total gastado: $${total.toFixed(2)}\n`;
-        insight += `Promedio diario: $${avgDaily.toFixed(2)}\n\n`;
+        let insight = `💸 **ANÁLISIS DE GASTOS**\n\n`;
+        insight += `📅 **Este mes (hasta hoy):**\n`;
+        insight += `• Total gastado: $${totalExpenses.toFixed(2)}\n`;
+        insight += `• Promedio diario: $${avgDaily.toFixed(2)}\n`;
+        insight += `• Proyección mensual: $${projectedMonthly.toFixed(2)}\n`;
+        insight += `• Número de gastos: ${expenses.length}\n\n`;
         
         if (topCategory) {
-            insight += `Tu categoría principal es **${topCategory[0]}** con $${topCategory[1].toFixed(2)}\n\n`;
+            const percentage = ((topCategory[1] / totalExpenses) * 100).toFixed(1);
+            insight += `🎯 **Categoría principal:**\n`;
+            insight += `${topCategory[0]}: $${topCategory[1].toFixed(2)} (${percentage}%)\n\n`;
         }
         
-        // Consejo
+        // Análisis de tendencia
+        const recentExpenses = expenses.slice(-7); // Últimos 7 gastos
+        const avgRecent = recentExpenses.reduce((sum, e) => sum + (e.amount || 0), 0) / recentExpenses.length;
+        
+        if (avgRecent > avgDaily * 1.2) {
+            insight += `📈 **Tendencia:** Tus gastos recientes están por encima del promedio. Modera un poco.\n\n`;
+        }
+        
+        // Consejo personalizado
         if (avgDaily > 50) {
-            insight += `💡 **Consejo:** Con $${avgDaily.toFixed(2)}/día, podrías ahorrar $${(avgDaily * 0.2).toFixed(2)}/día reduciendo gastos pequeños.`;
+            const savingsPotential = avgDaily * 0.15 * 30; // 15% de ahorro
+            insight += `💡 **Oportunidad de ahorro:**\n`;
+            insight += `Reduciendo un 15% tus gastos diarios, podrías ahorrar $${savingsPotential.toFixed(2)} al mes.\n`;
         }
         
         return insight;
@@ -453,24 +527,71 @@ Instrucciones:
         const { budgets, expenses } = this.userData;
         
         if (Object.keys(budgets).length === 0) {
-            return '📋 Aún no has configurado presupuestos. Te recomiendo usar la regla 50/30/20: 50% necesidades, 30% gustos, 20% ahorro.';
+            return `📋 **CONFIGURA TU PRESUPUESTO**\n\n` +
+                   `Aún no has configurado presupuestos. Te recomiendo usar la regla 50/30/20:\n\n` +
+                   `💡 **Regla 50/30/20:**\n` +
+                   `• 50% - Necesidades (comida, vivienda, transporte)\n` +
+                   `• 30% - Gustos (entretenimiento, compras)\n` +
+                   `• 20% - Ahorro e inversión\n\n` +
+                   `Ve a la sección de Presupuesto para configurar tus límites mensuales.`;
         }
         
         const categoryTotals = this.calculateCategoryTotals(expenses);
         
-        let insight = '💰 **Estado del Presupuesto**\n\n';
+        let insight = '💰 **ESTADO DEL PRESUPUESTO**\n\n';
         
-        for (const [category, limit] of Object.entries(budgets)) {
+        const budgetItems = Object.entries(budgets).map(([category, limit]) => {
             const spent = categoryTotals[category] || 0;
+            const remaining = limit - spent;
             const percentage = (spent / limit) * 100;
             
             let status = '✅';
-            if (percentage >= 95) status = '🚨';
-            else if (percentage >= 80) status = '⚠️';
+            let advice = '';
             
-            insight += `${status} **${category}**\n`;
-            insight += `$${spent.toFixed(2)} / $${limit.toFixed(2)} (${percentage.toFixed(0)}%)\n\n`;
-        }
+            if (percentage >= 95) {
+                status = '🚨';
+                advice = '¡Límite alcanzado!';
+            } else if (percentage >= 80) {
+                status = '⚠️';
+                advice = 'Cerca del límite';
+            } else if (percentage < 50) {
+                status = '💚';
+                advice = 'Excelente control';
+            }
+            
+            return {
+                category,
+                spent,
+                limit,
+                remaining,
+                percentage,
+                status,
+                advice
+            };
+        });
+        
+        // Ordenar por porcentaje (más críticos primero)
+        budgetItems.sort((a, b) => b.percentage - a.percentage);
+        
+        budgetItems.forEach(item => {
+            insight += `${item.status} **${item.category}**\n`;
+            insight += `$${item.spent.toFixed(2)} / $${item.limit.toFixed(2)} (${item.percentage.toFixed(0)}%)\n`;
+            insight += `Disponible: $${item.remaining.toFixed(2)}`;
+            if (item.advice) {
+                insight += ` - ${item.advice}`;
+            }
+            insight += `\n\n`;
+        });
+        
+        // Resumen general
+        const totalBudget = Object.values(budgets).reduce((sum, b) => sum + b, 0);
+        const totalSpent = Object.values(categoryTotals).reduce((sum, s) => sum + s, 0);
+        const overallPercentage = ((totalSpent / totalBudget) * 100).toFixed(1);
+        
+        insight += `📊 **Resumen General:**\n`;
+        insight += `Total presupuestado: $${totalBudget.toFixed(2)}\n`;
+        insight += `Total gastado: $${totalSpent.toFixed(2)}\n`;
+        insight += `Uso general: ${overallPercentage}%\n`;
         
         return insight;
     }
@@ -479,26 +600,69 @@ Instrucciones:
      * 🎯 Generar insight de metas
      */
     generateGoalsInsight() {
-        const { goals } = this.userData;
+        const { goals, totalIncome, totalExpenses } = this.userData;
         
         if (goals.length === 0) {
-            return '🎯 Aún no has creado metas de ahorro. ¡Define una meta y te ayudaré a alcanzarla! Usa el método SMART: Específica, Medible, Alcanzable, Relevante y con Tiempo definido.';
+            return `🎯 **ESTABLECE TUS METAS**\n\n` +
+                   `Aún no has creado metas de ahorro. ¡Define una meta y te ayudaré a alcanzarla!\n\n` +
+                   `💡 **Método SMART para metas:**\n` +
+                   `• **E**specífica: Define claramente qué quieres\n` +
+                   `• **M**edible: Con monto y fecha específicos\n` +
+                   `• **A**lcanzable: Realista según tus ingresos\n` +
+                   `• **R**elevante: Importante para ti\n` +
+                   `• **T**emporal: Con fecha límite\n\n` +
+                   `Ejemplo: "Ahorrar $5,000 para vacaciones en 6 meses"`;
         }
         
-        let insight = '🎯 **Progreso de Metas**\n\n';
+        const balance = totalIncome - totalExpenses;
+        
+        let insight = '🎯 **PROGRESO DE METAS**\n\n';
         
         goals.forEach(goal => {
-            const progress = ((goal.current || 0) / (goal.target || 1)) * 100;
-            const remaining = (goal.target || 0) - (goal.current || 0);
+            const current = parseFloat(goal.current) || 0;
+            const target = parseFloat(goal.target) || 1;
+            const progress = ((current / target) * 100).toFixed(1);
+            const remaining = target - current;
             
             let emoji = '🌱';
-            if (progress >= 75) emoji = '🔥';
-            else if (progress >= 50) emoji = '💪';
+            let status = 'En progreso';
+            
+            if (progress >= 100) {
+                emoji = '🎉';
+                status = '¡Completada!';
+            } else if (progress >= 75) {
+                emoji = '🔥';
+                status = 'Casi llegando';
+            } else if (progress >= 50) {
+                emoji = '💪';
+                status = 'Buen avance';
+            } else if (progress >= 25) {
+                emoji = '📈';
+                status = 'Avanzando';
+            }
             
             insight += `${emoji} **${goal.name}**\n`;
-            insight += `Progreso: ${progress.toFixed(0)}% ($${(goal.current || 0).toFixed(2)} / $${(goal.target || 0).toFixed(2)})\n`;
-            insight += `Falta: $${remaining.toFixed(2)}\n\n`;
+            insight += `• Progreso: ${progress}% - ${status}\n`;
+            insight += `• Actual: $${current.toFixed(2)} / $${target.toFixed(2)}\n`;
+            insight += `• Falta: $${remaining.toFixed(2)}\n`;
+            
+            // Calcular meses para completar
+            if (balance > 0 && remaining > 0) {
+                const monthsNeeded = Math.ceil(remaining / balance);
+                insight += `• Tiempo estimado: ${monthsNeeded} ${monthsNeeded === 1 ? 'mes' : 'meses'} (al ritmo actual)\n`;
+            }
+            
+            insight += `\n`;
         });
+        
+        // Consejo general
+        if (balance > 0) {
+            insight += `💡 **Consejo:** Con tu ahorro mensual actual de $${balance.toFixed(2)}, `;
+            insight += `puedes destinar una parte a tus metas de manera automática.\n`;
+        } else {
+            insight += `⚠️ **Atención:** Necesitas generar un balance positivo para avanzar en tus metas. `;
+            insight += `Revisa tus gastos y ajusta tu presupuesto.\n`;
+        }
         
         return insight;
     }
@@ -507,31 +671,321 @@ Instrucciones:
      * 💎 Generar consejos de ahorro
      */
     generateSavingsAdvice() {
-        const { totalIncome, totalExpenses } = this.userData;
+        const { totalIncome, totalExpenses, expenses } = this.userData;
         const savings = totalIncome - totalExpenses;
         const savingsRate = totalIncome > 0 ? (savings / totalIncome) * 100 : 0;
         
-        let advice = '💎 **Consejos de Ahorro**\n\n';
+        let advice = '💎 **CONSEJOS DE AHORRO PERSONALIZADOS**\n\n';
+        
+        // Análisis de tasa de ahorro
+        advice += `📊 **Tu tasa de ahorro actual: ${savingsRate.toFixed(1)}%**\n\n`;
         
         if (savingsRate < 10) {
-            advice += '⚠️ Tu tasa de ahorro es muy baja. Objetivo recomendado: 20%\n\n';
-            advice += '**Acciones inmediatas:**\n';
-            advice += '1. Identifica 3 gastos que puedas reducir\n';
-            advice += '2. Automatiza un ahorro de al menos 10%\n';
-            advice += '3. Revisa suscripciones no usadas\n';
+            advice += `🚨 **Nivel Crítico** - Objetivo recomendado: 20%\n\n`;
+            advice += `**Plan de acción inmediato:**\n`;
+            advice += `1. 🔍 Identifica 3 gastos que puedas reducir o eliminar\n`;
+            advice += `2. 💳 Cancela suscripciones que no uses activamente\n`;
+            advice += `3. 🍽️ Reduce comidas fuera de casa a 2 veces por semana\n`;
+            advice += `4. 🛒 Haz lista antes de comprar (evita compras impulsivas)\n`;
+            advice += `5. 💰 Automatiza ahorro del 10% apenas recibas ingresos\n\n`;
+            
+            const targetSavings = totalIncome * 0.20;
+            const needToSave = targetSavings - savings;
+            advice += `💡 **Meta:** Necesitas ahorrar $${needToSave.toFixed(2)} más para llegar al 20%\n`;
+            
         } else if (savingsRate < 20) {
-            advice += '👍 Vas bien, pero puedes mejorar. Objetivo: 20%\n\n';
-            advice += '**Siguiente paso:**\n';
-            advice += `Aumenta tu ahorro en $${((totalIncome * 0.20) - savings).toFixed(2)} para alcanzar el 20%`;
+            advice += `⚠️ **Nivel Intermedio** - Vas bien, pero puedes mejorar\n\n`;
+            advice += `**Siguientes pasos:**\n`;
+            advice += `1. 📈 Aumenta tu ahorro gradualmente (1% cada mes)\n`;
+            advice += `2. 🎯 Establece una meta de ahorro específica\n`;
+            advice += `3. 💳 Paga deudas de alto interés primero\n`;
+            advice += `4. 🏪 Compara precios antes de comprar\n`;
+            advice += `5. ⚡ Reduce gastos en servicios (luz, gas, internet)\n\n`;
+            
+            const targetSavings = totalIncome * 0.20;
+            const needToSave = targetSavings - savings;
+            advice += `💡 **Próximo nivel:** Solo $${needToSave.toFixed(2)} más para alcanzar el 20%\n`;
+            
         } else {
-            advice += '🌟 ¡Excelente! Estás ahorrando más del 20%\n\n';
-            advice += '**Considera:**\n';
-            advice += '1. Crear un fondo de emergencia (3-6 meses)\n';
-            advice += '2. Invertir en instrumentos a largo plazo\n';
-            advice += '3. Establecer nuevas metas financieras\n';
+            advice += `🌟 **¡Excelente nivel!** - Estás en la élite financiera\n\n`;
+            advice += `**Maximiza tus finanzas:**\n`;
+            advice += `1. 🏦 Crea fondo de emergencia (3-6 meses de gastos)\n`;
+            advice += `2. 📈 Invierte en instrumentos de largo plazo\n`;
+            advice += `3. 🎓 Invierte en educación financiera\n`;
+            advice += `4. 💼 Considera diversificar ingresos\n`;
+            advice += `5. 🎯 Establece nuevas metas financieras ambiciosas\n\n`;
+            
+            advice += `💡 **Oportunidad:** Con tu capacidad de ahorro, puedes crear riqueza a largo plazo\n`;
+        }
+        
+        // Análisis de categorías con potencial de ahorro
+        const categoryTotals = this.calculateCategoryTotals(expenses);
+        const discretionaryCategories = ['Entretenimiento', 'Restaurantes', 'Compras', 'Suscripciones'];
+        
+        const potentialSavings = discretionaryCategories
+            .filter(cat => categoryTotals[cat])
+            .map(cat => ({
+                category: cat,
+                amount: categoryTotals[cat],
+                potential: categoryTotals[cat] * 0.30 // 30% de reducción posible
+            }));
+        
+        if (potentialSavings.length > 0) {
+            const totalPotential = potentialSavings.reduce((sum, p) => sum + p.potential, 0);
+            advice += `\n🎯 **Potencial de ahorro identificado:**\n`;
+            advice += `Reduciendo 30% en gastos discrecionales: $${totalPotential.toFixed(2)}/mes\n\n`;
+            
+            potentialSavings.forEach(p => {
+                advice += `• ${p.category}: Ahorrar $${p.potential.toFixed(2)}\n`;
+            });
         }
         
         return advice;
+    }
+
+    /**
+     * 📈 Generar consejos de inversión y trading
+     * 🆕 NUEVA FUNCIÓN
+     */
+    generateInvestmentAdvice() {
+        const { totalIncome, totalExpenses } = this.userData;
+        const disposableIncome = totalIncome - totalExpenses;
+        
+        let advice = '📈 **GUÍA DE INVERSIÓN Y TRADING PARA PRINCIPIANTES**\n\n';
+        
+        // Evaluar capacidad de inversión
+        if (disposableIncome <= 0) {
+            advice += `⚠️ **Primero lo primero:** Necesitas tener un balance positivo antes de invertir.\n\n`;
+            advice += `**Pasos previos:**\n`;
+            advice += `1. Reduce gastos y genera ahorro mensual\n`;
+            advice += `2. Crea un fondo de emergencia (3-6 meses)\n`;
+            advice += `3. Elimina deudas de alto interés\n`;
+            advice += `4. Aprende sobre finanzas personales\n`;
+            return advice;
+        }
+        
+        const emergencyFund = totalExpenses * 3; // 3 meses de gastos
+        const canInvest = disposableIncome > 0;
+        
+        advice += `💰 **Tu capacidad de inversión:** $${disposableIncome.toFixed(2)}/mes\n\n`;
+        
+        if (canInvest) {
+            advice += `**📚 PASO 1: FUNDAMENTOS**\n`;
+            advice += `Antes de invertir, asegúrate de:\n`;
+            advice += `• ✅ Tener fondo de emergencia ($${emergencyFund.toFixed(2)})\n`;
+            advice += `• ✅ No tener deudas de alto interés\n`;
+            advice += `• ✅ Educarte sobre inversiones básicas\n`;
+            advice += `• ✅ Definir tu perfil de riesgo\n\n`;
+            
+            advice += `**💼 PASO 2: OPCIONES DE INVERSIÓN**\n\n`;
+            
+            // Inversiones conservadoras
+            advice += `🔵 **Nivel Principiante (Bajo Riesgo):**\n`;
+            advice += `• CETES (México): Rendimiento 10-11% anual\n`;
+            advice += `• Fondos indexados (S&P 500): Promedio 10% anual\n`;
+            advice += `• Bonos gubernamentales: Bajo riesgo, rendimiento estable\n`;
+            advice += `• Certificados de depósito (CDs): Seguro y predecible\n\n`;
+            
+            // Inversiones moderadas
+            advice += `🟡 **Nivel Intermedio (Riesgo Moderado):**\n`;
+            advice += `• ETFs diversificados: Balance riesgo/rendimiento\n`;
+            advice += `• Fondos de inversión: Administración profesional\n`;
+            advice += `• Bienes raíces (REITs): Ingreso pasivo + apreciación\n`;
+            advice += `• Acciones blue chip: Empresas establecidas\n\n`;
+            
+            // Inversiones avanzadas
+            advice += `🔴 **Nivel Avanzado (Alto Riesgo):**\n`;
+            advice += `• Trading de acciones: Requiere estudio intensivo\n`;
+            advice += `• Opciones y futuros: Para traders experimentados\n`;
+            advice += `• Criptomonedas: Alta volatilidad, solo 5-10% portafolio\n`;
+            advice += `• Startups: Alto riesgo, alto potencial\n\n`;
+            
+            advice += `**📊 PASO 3: ESTRATEGIA RECOMENDADA**\n\n`;
+            const monthlyInvestment = Math.min(disposableIncome * 0.7, disposableIncome);
+            
+            advice += `Invierte: $${monthlyInvestment.toFixed(2)}/mes\n\n`;
+            advice += `Distribución sugerida:\n`;
+            advice += `• 60% - Fondos indexados (S&P 500)\n`;
+            advice += `• 25% - CETES o bonos\n`;
+            advice += `• 10% - ETFs sectoriales\n`;
+            advice += `• 5% - Educación/práctica trading\n\n`;
+            
+            advice += `**🎯 PARA TRADING:**\n`;
+            advice += `Si quieres hacer trading, empieza con:\n`;
+            advice += `1. 📚 Educación: Cursos, libros, simuladores\n`;
+            advice += `2. 💰 Capital pequeño: Máximo 10% de tus ahorros\n`;
+            advice += `3. 📊 Paper trading: Practica sin dinero real 3-6 meses\n`;
+            advice += `4. 📈 Estrategia simple: Aprende análisis técnico básico\n`;
+            advice += `5. 🛡️ Stop loss: SIEMPRE protege tu capital\n`;
+            advice += `6. 🧘 Control emocional: No operes con emociones\n\n`;
+            
+            advice += `**⚠️ REGLAS DE ORO:**\n`;
+            advice += `• Nunca inviertas dinero que necesites a corto plazo\n`;
+            advice += `• Diversifica (no pongas todo en un solo lugar)\n`;
+            advice += `• Piensa a largo plazo (5-10+ años)\n`;
+            advice += `• Reinvierte los rendimientos (interés compuesto)\n`;
+            advice += `• Edúcate constantemente\n`;
+        }
+        
+        return advice;
+    }
+
+    // ============================================
+    // CONTINUARÁ EN LA PARTE 3...
+    // ============================================
+    // ============================================
+    // PARTE 3: KNOWLEDGE BASE Y FUNCIONES AUXILIARES
+    // ============================================
+
+    /**
+     * 📚 Construir knowledge base mejorada
+     */
+    buildEnhancedKnowledgeBase() {
+        return {
+            budget: {
+                keywords: ['presupuesto', 'límite', 'cuánto puedo gastar', 'control'],
+                responses: [
+                    `📊 Un presupuesto es tu plan de gastos mensual. Te ayuda a controlar tus finanzas.\n\n` +
+                    `**Regla 50/30/20:**\n` +
+                    `• 50% Necesidades\n• 30% Gustos\n• 20% Ahorro/Inversión\n\n` +
+                    `Configura tus presupuestos en la sección de Presupuesto.`,
+                    
+                    `💰 Para crear un presupuesto efectivo:\n\n` +
+                    `1. Calcula tus ingresos mensuales\n` +
+                    `2. Lista todos tus gastos fijos\n` +
+                    `3. Define límites por categoría\n` +
+                    `4. Revisa semanalmente\n` +
+                    `5. Ajusta según necesites\n\n` +
+                    `Un buen presupuesto es flexible pero disciplinado.`
+                ]
+            },
+            
+            savings: {
+                keywords: ['ahorrar', 'ahorro', 'guardar dinero', 'economizar'],
+                responses: [
+                    `💎 Tips para ahorrar efectivamente:\n\n` +
+                    `1. Paga primero a ti mismo (automatiza)\n` +
+                    `2. Regla de las 24 horas (espera antes de comprar)\n` +
+                    `3. Reduce gastos hormiga\n` +
+                    `4. Compara precios siempre\n` +
+                    `5. Usa cupones y promociones\n\n` +
+                    `Meta: Ahorra mínimo 20% de tus ingresos.`,
+                    
+                    `🎯 Método del sobre (versión digital):\n\n` +
+                    `Divide tu dinero en categorías:\n` +
+                    `• Necesidades - 50%\n• Gustos - 30%\n• Ahorro - 20%\n\n` +
+                    `Cuando una categoría se vacía, espera al siguiente mes. ¡Disciplina!`
+                ]
+            },
+            
+            investment: {
+                keywords: ['invertir', 'inversión', 'acciones', 'bolsa', 'stocks'],
+                responses: [
+                    `📈 Empezar a invertir:\n\n` +
+                    `**Para principiantes:**\n` +
+                    `1. Fondo de emergencia primero (3-6 meses)\n` +
+                    `2. Elimina deudas de alto interés\n` +
+                    `3. Empieza con fondos indexados (S&P 500)\n` +
+                    `4. Invierte regularmente (DCA - Dollar Cost Averaging)\n` +
+                    `5. Piensa a largo plazo (5-10+ años)\n\n` +
+                    `Recuerda: Nunca inviertas dinero que necesites pronto.`,
+                    
+                    `💼 Tipos de inversión por perfil:\n\n` +
+                    `🔵 Conservador: CETES, bonos, CDs\n` +
+                    `🟡 Moderado: ETFs, fondos mutuos\n` +
+                    `🔴 Agresivo: Acciones individuales, crypto (max 10%)\n\n` +
+                    `Diversifica SIEMPRE. No pongas todos los huevos en una canasta.`
+                ]
+            },
+            
+            trading: {
+                keywords: ['trading', 'trade', 'comprar acciones', 'trader', 'day trading'],
+                responses: [
+                    `⚡ Trading para principiantes:\n\n` +
+                    `**ADVERTENCIA:** 90% de traders pierden dinero.\n\n` +
+                    `Si quieres intentarlo:\n` +
+                    `1. Edúcate 6-12 meses (cursos, libros, YouTube)\n` +
+                    `2. Paper trading 3-6 meses (sin dinero real)\n` +
+                    `3. Empieza con $500-1000 máximo\n` +
+                    `4. Usa SIEMPRE stop loss\n` +
+                    `5. Máximo 1-2% de riesgo por trade\n\n` +
+                    `Mejor opción: Invierte a largo plazo en índices.`,
+                    
+                    `📊 Conceptos básicos de trading:\n\n` +
+                    `• **Stop Loss:** Límite de pérdida automático\n` +
+                    `• **Take Profit:** Vende automáticamente en ganancia\n` +
+                    `• **Risk/Reward:** Mínimo 1:2 (arriesga $1 para ganar $2)\n` +
+                    `• **Position Size:** Nunca arriesgues más del 2%\n` +
+                    `• **Diversificación:** Múltiples activos\n\n` +
+                    `La disciplina y el control emocional son el 80% del éxito.`
+                ]
+            },
+            
+            debt: {
+                keywords: ['deuda', 'debo', 'crédito', 'préstamo', 'tarjeta'],
+                responses: [
+                    `💳 Manejo de deudas:\n\n` +
+                    `**Método Avalancha (óptimo):**\n` +
+                    `Paga primero deudas con mayor interés.\n\n` +
+                    `**Método Bola de Nieve (psicológico):**\n` +
+                    `Paga primero deudas más pequeñas.\n\n` +
+                    `Tips:\n` +
+                    `• Paga más del mínimo siempre\n` +
+                    `• Consolida si es posible\n` +
+                    `• No adquieras más deuda\n` +
+                    `• Usa windfalls para pagar`,
+                    
+                    `🎯 Prioridad de pago:\n\n` +
+                    `1. Tarjetas de crédito (18-40% anual)\n` +
+                    `2. Préstamos personales (12-25%)\n` +
+                    `3. Préstamos estudiantiles (6-8%)\n` +
+                    `4. Hipoteca (3-6%)\n\n` +
+                    `Paga las de mayor interés primero. Cada peso cuenta.`
+                ]
+            },
+            
+            emergency: {
+                keywords: ['emergencia', 'fondo', 'imprevistos', 'contingencia'],
+                responses: [
+                    `🚨 Fondo de emergencia:\n\n` +
+                    `**¿Cuánto?** 3-6 meses de gastos\n` +
+                    `**¿Dónde?** Cuenta de ahorro líquida\n` +
+                    `**¿Para qué?** Emergencias REALES:\n` +
+                    `• Pérdida de empleo\n• Emergencia médica\n• Reparación urgente\n\n` +
+                    `**NO es para:**\n` +
+                    `• Vacaciones\n• Compras\n• Antojos\n\n` +
+                    `Construye $1000 primero, luego ve por los 3-6 meses.`
+                ]
+            },
+            
+            income: {
+                keywords: ['ingresos', 'ganar', 'dinero extra', 'side hustle'],
+                responses: [
+                    `💰 Aumentar ingresos:\n\n` +
+                    `**Corto plazo:**\n` +
+                    `• Freelancing en tu área\n• Vende cosas que no uses\n` +
+                    `• Uber/Rappi part-time\n• Tutorías o clases\n\n` +
+                    `**Largo plazo:**\n` +
+                    `• Desarrolla nuevas habilidades\n• Negocía aumento\n` +
+                    `• Cambia de trabajo\n• Inicia negocio\n\n` +
+                    `Recuerda: Aumentar ingresos + controlar gastos = Riqueza`
+                ]
+            },
+            
+            goals: {
+                keywords: ['meta', 'objetivo', 'alcanzar', 'lograr'],
+                responses: [
+                    `🎯 Establecer metas SMART:\n\n` +
+                    `• **E**specífica: Clara y concreta\n` +
+                    `• **M**edible: Con números definidos\n` +
+                    `• **A**lcanzable: Realista\n` +
+                    `• **R**elevante: Importante para ti\n` +
+                    `• **T**emporal: Con fecha límite\n\n` +
+                    `Ejemplo: "Ahorrar $10,000 para enganche de auto en 12 meses" ✅\n` +
+                    `NO: "Quiero ahorrar" ❌`
+                ]
+            }
+        };
     }
 
     /**
@@ -539,6 +993,8 @@ Instrucciones:
      */
     calculateCategoryTotals(expenses) {
         const totals = {};
+        if (!expenses || !Array.isArray(expenses)) return totals;
+        
         expenses.forEach(expense => {
             const category = expense.category || 'Sin categoría';
             totals[category] = (totals[category] || 0) + parseFloat(expense.amount || 0);
@@ -549,20 +1005,40 @@ Instrucciones:
     /**
      * 💡 Generar recomendaciones
      */
-    generateRecommendations(balance, categoryTotals) {
-        let recommendations = '💡 **Recomendaciones:**\n';
+    generateRecommendations(balance, categoryTotals, savingsRate) {
+        let recommendations = '💡 **RECOMENDACIONES PERSONALIZADAS:**\n\n';
         
+        // Recomendación según balance
         if (balance < 0) {
-            recommendations += '⚠️ Estás gastando más de lo que ganas. Prioriza reducir gastos.\n';
+            recommendations += `🚨 **URGENTE:** Gastas más de lo que ganas.\n`;
+            recommendations += `Acción inmediata: Reduce gastos en 20% este mes.\n\n`;
+        } else if (savingsRate < 10) {
+            recommendations += `⚠️ **IMPORTANTE:** Aumenta tu tasa de ahorro.\n`;
+            recommendations += `Meta: Llegar al 20% en 3 meses.\n\n`;
         }
         
-        // Categoría con más gasto
-        const topCategory = Object.entries(categoryTotals)
-            .sort((a, b) => b[1] - a[1])[0];
+        // Análisis de categorías
+        const sortedCategories = Object.entries(categoryTotals)
+            .sort((a, b) => b[1] - a[1]);
         
-        if (topCategory && topCategory[1] > 500) {
-            recommendations += `Revisa tus gastos en ${topCategory[0]} - es tu categoría más alta.\n`;
+        if (sortedCategories.length > 0) {
+            const topCategory = sortedCategories[0];
+            const topAmount = topCategory[1];
+            const totalSpent = Object.values(categoryTotals).reduce((sum, amount) => sum + amount, 0);
+            const topPercentage = ((topAmount / totalSpent) * 100).toFixed(0);
+            
+            if (topPercentage > 40) {
+                recommendations += `📊 **ATENCIÓN:** ${topCategory[0]} representa el ${topPercentage}% de tus gastos.\n`;
+                recommendations += `Considera reducir esta categoría en 15-20%.\n\n`;
+            }
         }
+        
+        // Consejos generales
+        recommendations += `**Pasos siguientes:**\n`;
+        recommendations += `1. Revisa tus gastos semanalmente\n`;
+        recommendations += `2. Automatiza tu ahorro\n`;
+        recommendations += `3. Elimina gastos innecesarios\n`;
+        recommendations += `4. Establece metas claras\n`;
         
         return recommendations;
     }
@@ -573,7 +1049,12 @@ Instrucciones:
     personalizeResponse(response, category) {
         // Agregar datos específicos del usuario si están disponibles
         if (category === 'budget' && Object.keys(this.userData.budgets).length > 0) {
-            response += '\n\n💡 Según tus datos, revisa tus presupuestos en la sección de Presupuesto.';
+            response += '\n\n💡 Ve a la sección de Presupuesto para ajustar tus límites mensuales.';
+        }
+        
+        if (category === 'savings' && this.userData.totalExpenses > 0) {
+            const savingsPotential = this.userData.totalExpenses * 0.15;
+            response += `\n\n💰 Potencial: Podrías ahorrar $${savingsPotential.toFixed(2)}/mes reduciendo un 15% tus gastos.`;
         }
         
         return response;
@@ -584,270 +1065,242 @@ Instrucciones:
      */
     getDefaultResponse() {
         const responses = [
-            '¡Hola! 👋 Soy tu asistente financiero. Puedo ayudarte con análisis de gastos, presupuestos, metas y consejos de ahorro. ¿En qué te puedo ayudar?',
-            'Estoy aquí para ayudarte con tus finanzas. Puedo darte un análisis de tus gastos, revisar tu presupuesto o darte consejos personalizados. ¿Qué necesitas?',
-            'Como tu asistente financiero, puedo analizar tus patrones de gasto, revisar tus metas o darte consejos para mejorar tus finanzas. ¿Quieres saber algo específico?'
+            '¡Hola! 👋 Soy tu asistente financiero inteligente.\n\n' +
+            'Puedo ayudarte con:\n' +
+            '• 📊 Análisis de gastos e ingresos\n' +
+            '• 💰 Optimización de presupuestos\n' +
+            '• 🎯 Seguimiento de metas\n' +
+            '• 💎 Consejos de ahorro\n' +
+            '• 📈 Guías de inversión y trading\n\n' +
+            '¿En qué te puedo ayudar?',
+            
+            'Estoy aquí para mejorar tu salud financiera. 💪\n\n' +
+            'Algunas cosas que puedo hacer:\n' +
+            '• Analizar tus patrones de gasto\n' +
+            '• Darte tips personalizados de ahorro\n' +
+            '• Explicarte conceptos de inversión\n' +
+            '• Ayudarte a alcanzar tus metas\n\n' +
+            '¿Qué quieres saber?',
+            
+            '¡Bienvenido! 🤖\n\n' +
+            'Como tu asesor financiero personal, puedo:\n' +
+            '✅ Revisar tu situación financiera\n' +
+            '✅ Crear planes de ahorro personalizados\n' +
+            '✅ Enseñarte sobre inversiones\n' +
+            '✅ Darte consejos de trading básico\n\n' +
+            'Pregúntame cualquier cosa sobre finanzas.'
         ];
         
         return responses[Math.floor(Math.random() * responses.length)];
     }
 
     /**
-     * 🧠 Construir contexto del usuario para Claude API
-     */
-    buildUserContext() {
-        const { totalIncome, totalExpenses, expenses, budgets, goals } = this.userData;
-        
-        let context = '';
-        
-        // Resumen financiero
-        context += `Resumen Financiero (últimos 30 días):\n`;
-        context += `- Ingresos totales: $${totalIncome.toFixed(2)}\n`;
-        context += `- Gastos totales: $${totalExpenses.toFixed(2)}\n`;
-        context += `- Balance: $${(totalIncome - totalExpenses).toFixed(2)}\n\n`;
-        
-        // Gastos por categoría
-        if (expenses.length > 0) {
-            const categoryTotals = this.calculateCategoryTotals(expenses);
-            context += `Gastos por categoría:\n`;
-            Object.entries(categoryTotals)
-                .sort((a, b) => b[1] - a[1])
-                .slice(0, 5)
-                .forEach(([cat, amount]) => {
-                    context += `- ${cat}: $${amount.toFixed(2)}\n`;
-                });
-            context += '\n';
-        }
-        
-        // Presupuestos
-        if (Object.keys(budgets).length > 0) {
-            context += `Presupuestos configurados:\n`;
-            Object.entries(budgets).forEach(([cat, limit]) => {
-                context += `- ${cat}: $${limit.toFixed(2)}\n`;
-            });
-            context += '\n';
-        }
-        
-        // Metas
-        if (goals.length > 0) {
-            context += `Metas de ahorro:\n`;
-            goals.slice(0, 3).forEach(goal => {
-                const progress = ((goal.current || 0) / (goal.target || 1)) * 100;
-                context += `- ${goal.name}: ${progress.toFixed(0)}% completado\n`;
-            });
-        }
-        
-        return context;
-    }
-
-    /**
-     * 💾 Guardar conversación
-     */
-    async saveConversation() {
-        try {
-            if (!this.currentConversationId) {
-                this.currentConversationId = Date.now().toString();
-            }
-            
-            await this.db
-                .collection('users')
-                .doc(this.userId)
-                .collection('assistantConversations')
-                .doc(this.currentConversationId)
-                .set({
-                    messages: this.conversationHistory,
-                    lastUpdated: new Date(),
-                    messageCount: this.conversationHistory.length
-                });
-        } catch (error) {
-            console.error('Error guardando conversación:', error);
-        }
-    }
-
-    /**
-     * 📜 Cargar historial de conversaciones
-     */
-    async loadConversationHistory() {
-        try {
-            const snapshot = await this.db
-                .collection('users')
-                .doc(this.userId)
-                .collection('assistantConversations')
-                .orderBy('lastUpdated', 'desc')
-                .limit(1)
-                .get();
-            
-            if (!snapshot.empty) {
-                const doc = snapshot.docs[0];
-                this.currentConversationId = doc.id;
-                this.conversationHistory = doc.data().messages || [];
-            }
-        } catch (error) {
-            console.warn('No se pudo cargar historial de conversaciones');
-        }
-    }
-
-    /**
-     * 🆕 Nueva conversación
-     */
-    startNewConversation() {
-        this.conversationHistory = [];
-        this.currentConversationId = Date.now().toString();
-    }
-
-    /**
-     * 🔄 Cambiar modo online/offline
-     */
-    async toggleMode() {
-        this.useOnlineMode = !this.useOnlineMode;
-        await this.saveSettings();
-        return this.useOnlineMode;
-    }
-
-    /**
-     * 🔑 Configurar API Key
-     */
-    async setAPIKey(apiKey) {
-        this.claudeAPIKey = apiKey;
-        await this.saveSettings();
-        return true;
-    }
-
-    /**
-     * 🌐 Mostrar estado de conexión
+     * 📡 Mostrar estado de conexión
      */
     showConnectionStatus(status) {
-        const message = status === 'online' 
-            ? '🌐 Conexión restaurada' 
-            : '📴 Sin conexión - Modo offline activado';
+        const statusMessage = status === 'online' 
+            ? '🌐 Modo Online activado - Análisis con Claude AI'
+            : '📴 Sin conexión - Usando modo offline';
         
-        if (window.Toastify) {
+        console.log(statusMessage);
+        
+        // Mostrar toast si Toastify está disponible
+        if (typeof Toastify !== 'undefined') {
             Toastify({
-                text: message,
+                text: statusMessage,
                 duration: 3000,
                 gravity: 'top',
                 position: 'center',
                 style: {
                     background: status === 'online' 
-                        ? 'linear-gradient(to right, #10b981, #059669)'
-                        : 'linear-gradient(to right, #f59e0b, #d97706)'
+                        ? 'linear-gradient(135deg, #05BFDB 0%, #0891B2 100%)'
+                        : 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)'
                 }
             }).showToast();
         }
     }
 
     /**
-     * 📚 Base de conocimientos mejorada
+     * 🎨 Renderizar interfaz del asistente
      */
-    buildEnhancedKnowledgeBase() {
-        return {
-            budget: {
-                keywords: ['presupuesto', 'budget', 'gastar', 'límite', 'cuanto puedo'],
-                responses: [
-                    '💰 **Presupuesto Inteligente:**\n\nLa regla 50/30/20 es ideal:\n• 50% Necesidades (renta, comida, servicios)\n• 30% Gustos (entretenimiento, salidas)\n• 20% Ahorro e inversión\n\n¿Quieres que analice tu presupuesto actual?',
-                    '📊 **Crear un Presupuesto:**\n\n1. Calcula tus ingresos fijos\n2. Lista gastos esenciales\n3. Define límites por categoría\n4. Revisa semanalmente\n\nUsa la app para automatizar este proceso.',
-                    '💡 **Tip de Presupuesto:**\n\nEmpieza simple con 5 categorías:\n• Vivienda\n• Alimentos\n• Transporte\n• Entretenimiento\n• Ahorro\n\nAjusta según tus necesidades.'
-                ]
-            },
-            
-            saving: {
-                keywords: ['ahorrar', 'ahorro', 'save', 'guardar', 'saving'],
-                responses: [
-                    '💎 **Estrategia de Ahorro:**\n\n1. **Págate primero** - Ahorra antes de gastar\n2. **Automatiza** - Configura transferencias automáticas\n3. **Meta 20%** - Intenta ahorrar al menos 20% de tus ingresos\n\n¿Quieres crear una meta de ahorro?',
-                    '🌟 **Fondo de Emergencia:**\n\nPrioridad #1: Crear un fondo de 3-6 meses de gastos.\n\nPasos:\n• Calcula tus gastos mensuales\n• Multiplica × 3 (mínimo)\n• Ahorra gradualmente\n• Guárdalo en cuenta separada',
-                    '🚀 **Desafío de Ahorro:**\n\n**Semana 1:** $10\n**Semana 2:** $20\n**Semana 3:** $30\n...\n**Semana 52:** $520\n\nTotal anual: $13,780\n\n¿Te animas?'
-                ]
-            },
-            
-            debt: {
-                keywords: ['deuda', 'debt', 'debo', 'préstamo', 'tarjeta', 'crédito', 'adeudo'],
-                responses: [
-                    '⛓️ **Método Bola de Nieve:**\n\n1. Lista deudas de menor a mayor\n2. Paga el mínimo en todas\n3. Pon extra en la más pequeña\n4. Al terminarla, ataca la siguiente\n\nEfectivo psicológicamente - ¡victorias rápidas!',
-                    '📉 **Método Avalancha:**\n\n1. Lista deudas por tasa de interés\n2. Paga el mínimo en todas\n3. Pon extra en la de mayor interés\n4. Repite hasta liquidar\n\nAhorra más dinero a largo plazo.',
-                    '💪 **Plan Anti-Deudas:**\n\n• NO crear nuevas deudas\n• Vende artículos no usados\n• Busca ingresos extra\n• Negocia tasas de interés\n• Celebra cada pago\n\n¡Puedes lograrlo!'
-                ]
-            },
-            
-            investment: {
-                keywords: ['invertir', 'invest', 'inversión', 'acciones', 'stocks', 'etf'],
-                responses: [
-                    '📈 **Antes de Invertir:**\n\n✅ Fondo de emergencia (3-6 meses)\n✅ Deudas de alto interés pagadas\n✅ Metas claras definidas\n✅ Conocimiento básico\n✅ Horizonte de 5+ años\n\n¿Ya cumples estos requisitos?',
-                    '🎯 **Inversión para Principiantes:**\n\n• **ETFs/Fondos Indexados** - Bajo riesgo, diversificados\n• **Plazo Fijo** - Seguro, predecible\n• **CETES** - Respaldo gubernamental\n\nRegla: Diversifica siempre.',
-                    '⚠️ **Reglas de Oro:**\n\n1. Solo invierte dinero que NO necesites a corto plazo\n2. Diversifica - nunca todo en un lugar\n3. Piensa en años, no en días\n4. Aprende antes de invertir\n5. No sigas modas (crypto, meme stocks)'
-                ]
-            },
-            
-            goals: {
-                keywords: ['meta', 'goal', 'objetivo', 'lograr', 'alcanzar', 'propósito'],
-                responses: [
-                    '🎯 **Método SMART para Metas:**\n\n• **S**pecific (Específica)\n• **M**easurable (Medible)\n• **A**chievable (Alcanzable)\n• **R**elevant (Relevante)\n• **T**ime-bound (Con plazo)\n\nEjemplo: "Ahorrar $10,000 para vacaciones en 10 meses"',
-                    '🏆 **Divide y Vencerás:**\n\nMeta grande = Muchas pequeñas\n\n$10,000 en 1 año =\n$833/mes =\n$192/semana =\n$27/día\n\n¿Más alcanzable, verdad?',
-                    '📊 **Seguimiento de Metas:**\n\n• Revisa progreso semanalmente\n• Celebra pequeños logros\n• Ajusta si es necesario\n• Visualiza el resultado final\n\nEl seguimiento aumenta éxito en 42%'
-                ]
-            },
-            
-            expenses: {
-                keywords: ['gasto', 'expense', 'compra', 'gastando', 'compré', 'salida'],
-                responses: [
-                    '🐜 **Gastos Hormiga:**\n\nPequeños gastos que suman mucho:\n• Café diario: $90/mes\n• Snacks: $150/mes\n• Apps no usadas: $200/mes\n• Delivery: $400/mes\n\nTotal: $840/mes = $10,080/año',
-                    '🛒 **Regla de las 24 horas:**\n\nAntes de comprar algo:\n1. Espera 24 horas\n2. Pregúntate: ¿Realmente lo necesito?\n3. ¿Tengo presupuesto?\n4. ¿Hay alternativa más barata?\n\nEvita compras impulsivas',
-                    '📝 **Control de Gastos:**\n\nRegistra TODO:\n• Gastos grandes (obvios)\n• Gastos pequeños (los que más suman)\n• Gastos digitales (suscripciones)\n\nLo que se mide, se controla'
-                ]
-            },
-            
-            help: {
-                keywords: ['ayuda', 'help', 'qué puedes', 'cómo funciona', 'comandos'],
-                responses: [
-                    '🤖 **Puedo ayudarte con:**\n\n💰 Análisis de gastos\n📊 Estado de presupuesto\n🎯 Progreso de metas\n💡 Consejos personalizados\n📈 Patrones de gasto\n\n¿Qué te gustaría saber?',
-                    '💬 **Pregúntame sobre:**\n\n"¿Cómo voy este mes?"\n"Analiza mis gastos"\n"¿Cómo ahorro más?"\n"Estado de mi presupuesto"\n"Consejos para invertir"\n\nEstoy aquí para ayudarte',
-                    '🌟 **Dos modos disponibles:**\n\n📴 **Offline** - Respuestas inteligentes locales\n🌐 **Online** - Claude AI avanzado\n\nCambia en configuración según prefieras'
-                ]
-            }
-        };
+    renderAssistantUI() {
+        return `
+            <div class="assistant-container">
+                <div class="assistant-header">
+                    <div class="assistant-title">
+                        <span class="assistant-icon">🤖</span>
+                        <h2>Asistente Financiero AI</h2>
+                    </div>
+                    <div class="assistant-mode">
+                        ${this.useOnlineMode ? '🌐 Online' : '📴 Offline'}
+                    </div>
+                    <button class="assistant-close" onclick="window.closeAssistant()">✕</button>
+                </div>
+                
+                <div class="assistant-quick-actions">
+                    <button class="quick-action-btn" onclick="window.assistantQuickAction('analysis')">
+                        📊 Análisis
+                    </button>
+                    <button class="quick-action-btn" onclick="window.assistantQuickAction('expenses')">
+                        💸 Gastos
+                    </button>
+                    <button class="quick-action-btn" onclick="window.assistantQuickAction('budget')">
+                        💰 Presupuesto
+                    </button>
+                    <button class="quick-action-btn" onclick="window.assistantQuickAction('savings')">
+                        💎 Ahorro
+                    </button>
+                    <button class="quick-action-btn" onclick="window.assistantQuickAction('investment')">
+                        📈 Inversión
+                    </button>
+                </div>
+                
+                <div class="assistant-chat" id="assistant-chat">
+                    ${this.renderChatHistory()}
+                </div>
+                
+                <div class="assistant-input-container">
+                    <textarea 
+                        id="assistant-input"
+                        class="assistant-input"
+                        placeholder="Pregúntame sobre finanzas, gastos, ahorro, inversiones..."
+                        rows="2"
+                    ></textarea>
+                    <button class="assistant-send-btn" onclick="window.sendAssistantMessage()">
+                        <span class="send-icon">📤</span>
+                    </button>
+                </div>
+            </div>
+        `;
     }
 
     /**
-     * ⚡ Acciones rápidas predefinidas
+     * 💬 Renderizar historial de chat
      */
-    getQuickActions() {
-        return [
-            {
-                id: 'analysis',
-                icon: '📊',
-                label: 'Análisis del mes',
-                message: 'Dame un análisis completo de mis finanzas este mes'
-            },
-            {
-                id: 'budget_status',
-                icon: '💰',
-                label: 'Estado de presupuesto',
-                message: '¿Cómo va mi presupuesto?'
-            },
-            {
-                id: 'goals_progress',
-                icon: '🎯',
-                label: 'Progreso de metas',
-                message: 'Muéstrame el progreso de mis metas'
-            },
-            {
-                id: 'savings_tips',
-                icon: '💡',
-                label: 'Consejos de ahorro',
-                message: '¿Cómo puedo ahorrar más dinero?'
-            },
-            {
-                id: 'expense_patterns',
-                icon: '📈',
-                label: 'Patrones de gasto',
-                message: '¿En qué estoy gastando más?'
-            }
-        ];
+    renderChatHistory() {
+        if (this.conversationHistory.length === 0) {
+            return `
+                <div class="assistant-welcome">
+                    <div class="welcome-icon">👋</div>
+                    <h3>¡Hola! Soy tu asistente financiero</h3>
+                    <p>Pregúntame sobre tus finanzas, gastos, presupuestos, ahorro o inversiones.</p>
+                    <div class="welcome-examples">
+                        <p><strong>Ejemplos:</strong></p>
+                        <ul>
+                            <li>"¿Cómo van mis gastos este mes?"</li>
+                            <li>"Dame consejos para ahorrar más"</li>
+                            <li>"¿Cómo puedo empezar a invertir?"</li>
+                            <li>"Explícame sobre trading"</li>
+                        </ul>
+                    </div>
+                </div>
+            `;
+        }
+        
+        return this.conversationHistory.map(msg => {
+            const isUser = msg.role === 'user';
+            const mode = msg.mode === 'online' ? '🌐' : '📴';
+            
+            return `
+                <div class="chat-message ${isUser ? 'user-message' : 'assistant-message'}">
+                    <div class="message-avatar">
+                        ${isUser ? '👤' : '🤖'}
+                    </div>
+                    <div class="message-content">
+                        <div class="message-text">${this.formatMessage(msg.content)}</div>
+                        ${!isUser ? `<div class="message-mode">${mode}</div>` : ''}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    /**
+     * 📝 Formatear mensaje con markdown básico
+     */
+    formatMessage(text) {
+        return text
+            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.+?)\*/g, '<em>$1</em>')
+            .replace(/\n/g, '<br>');
+    }
+
+    /**
+     * 🔄 Actualizar UI del chat
+     */
+    updateChatUI() {
+        const chatContainer = document.getElementById('assistant-chat');
+        if (chatContainer) {
+            chatContainer.innerHTML = this.renderChatHistory();
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+    }
+
+    /**
+     * 🎬 Acción rápida
+     */
+    async quickAction(action) {
+        const messages = {
+            analysis: '¿Cómo está mi situación financiera este mes?',
+            expenses: '¿Cuánto he gastado y en qué categorías?',
+            budget: '¿Cómo va mi presupuesto?',
+            savings: 'Dame consejos para ahorrar más dinero',
+            investment: '¿Cómo puedo empezar a invertir mi dinero?'
+        };
+        
+        const message = messages[action] || 'Ayúdame con mis finanzas';
+        
+        // Agregar mensaje del usuario
+        this.conversationHistory.push({
+            role: 'user',
+            content: message,
+            timestamp: new Date()
+        });
+        
+        this.updateChatUI();
+        
+        // Obtener respuesta
+        const response = await this.sendMessage(message);
+        this.updateChatUI();
+        
+        return response;
+    }
+
+    /**
+     * 🗑️ Limpiar conversación
+     */
+    clearConversation() {
+        this.conversationHistory = [];
+        this.currentConversationId = null;
+        this.updateChatUI();
+    }
+
+    /**
+     * ⚙️ Cambiar modo (online/offline)
+     */
+    toggleMode() {
+        this.useOnlineMode = !this.useOnlineMode;
+        localStorage.setItem('assistantOnlineMode', this.useOnlineMode);
+        
+        const modeText = this.useOnlineMode ? 'Online (Claude AI)' : 'Offline';
+        console.log(`🔄 Modo cambiado a: ${modeText}`);
+        
+        if (typeof Toastify !== 'undefined') {
+            Toastify({
+                text: `Modo ${modeText} activado`,
+                duration: 2000,
+                gravity: 'top',
+                position: 'center',
+                style: {
+                    background: 'linear-gradient(135deg, #05BFDB 0%, #0891B2 100%)'
+                }
+            }).showToast();
+        }
     }
 }
 
 // Exportar para uso global
 if (typeof window !== 'undefined') {
     window.VirtualAssistantModule = VirtualAssistantModule;
+    console.log('✅ Módulo de Asistente Virtual cargado (versión mejorada con Vercel)');
 }
-
-console.log('✅ Módulo de Asistente Virtual cargado');
