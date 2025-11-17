@@ -3,38 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="description" content="Smarter Investment 💰🧠 - Tu gestor financiero personal para controlar gastos, ingresos, presupuestos y metas">
+    <meta name="description" content="Smarter Investment 💰🧠 - Tu gestor financiero personal">
     <meta name="theme-color" content="#05BFDB">
     
     <!-- PWA Meta Tags -->
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Smarter">
     
-    <!-- Apple Touch Icons -->
-    <link rel="apple-touch-icon" href="ios/180.png">
-    <link rel="apple-touch-icon" sizes="152x152" href="ios/152.png">
-    <link rel="apple-touch-icon" sizes="167x167" href="ios/167.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="ios/180.png">
-    
-    <!-- Favicon -->
-    <link rel="icon" type="image/png" sizes="32x32" href="ios/32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="ios/16.png">
-    
-    <!-- Manifest -->
-    <link rel="manifest" href="manifest.json">
-    
-    <title>Smarter Investment 💰🧠 - Tu Gestor Financiero Personal</title>
-    
-    <!-- Toastify para notificaciones -->
-    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <title>Smarter Investment 💰🧠</title>
     
     <!-- CSS Principal -->
     <link rel="stylesheet" href="styles.css">
-    
-    <!-- CSS de Gastos Recurrentes -->
-    <link rel="stylesheet" href="styles-RECURRING.css">
     
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
@@ -44,10 +24,6 @@
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     
-    <!-- Toastify JS -->
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
-    
-    <!-- Prevenir zoom en iOS -->
     <style>
         input[type="number"],
         input[type="text"],
@@ -63,13 +39,10 @@
     </style>
 </head>
 <body>
-    <!-- ========================================
-         CONTENEDOR DE AUTENTICACIÓN
-         ======================================== -->
+    <!-- CONTENEDOR DE AUTENTICACIÓN -->
     <div id="auth-container" style="display: none;">
         <div class="auth-wrapper">
             <div class="auth-card">
-                <!-- Logo y título -->
                 <div class="auth-header">
                     <div class="auth-logo">💰</div>
                     <h1>Smarter Investment</h1>
@@ -132,9 +105,7 @@
         </div>
     </div>
     
-    <!-- ========================================
-         CONTENEDOR DE LA APLICACIÓN
-         ======================================== -->
+    <!-- CONTENEDOR DE LA APLICACIÓN -->
     <div id="app-container" style="display: none;">
         <!-- Header -->
         <header class="app-header">
@@ -171,11 +142,6 @@
                 <span class="nav-label">Presupuesto</span>
             </button>
             
-            <button class="bottom-nav-item" data-tab="recurring">
-                <span class="nav-icon">🔄</span>
-                <span class="nav-label">Recurrentes</span>
-            </button>
-            
             <button class="bottom-nav-item" data-tab="goals">
                 <span class="nav-icon">🎯</span>
                 <span class="nav-label">Metas</span>
@@ -187,7 +153,7 @@
             </button>
         </nav>
         
-        <!-- Botón FAB (Floating Action Button) -->
+        <!-- Botón FAB -->
         <button id="fab-button" class="fab-button" onclick="toggleFabMenu()">
             <span class="fab-icon">➕</span>
         </button>
@@ -198,64 +164,17 @@
                 <span class="fab-menu-icon">💸</span>
                 <span class="fab-menu-label">Nuevo Gasto</span>
             </button>
-            
-            <button class="fab-menu-item" onclick="openIncomeModal()">
-                <span class="fab-menu-icon">📈</span>
-                <span class="fab-menu-label">Nuevo Ingreso</span>
-            </button>
-            
-            <button class="fab-menu-item" onclick="openComparison()">
-                <span class="fab-menu-icon">📊</span>
-                <span class="fab-menu-label">Comparación</span>
-            </button>
         </div>
     </div>
     
-    <!-- Loader Global -->
-    <div id="global-loader" style="display: none;">
-        <div class="loader-backdrop"></div>
-        <div class="loader-spinner">
-            <div class="spinner"></div>
-            <p id="loader-text">Cargando...</p>
-        </div>
-    </div>
-    
-    <!-- ✨✨✨ MÓDULOS DE FUNCIONALIDADES ✨✨✨ -->
-    
-    <!-- Notificaciones Inteligentes -->
-    <script src="notifications-module.js"></script>
-    
-    <!-- Gastos Recurrentes -->
-    <script src="recurring-expenses-module.js"></script>
-    
-    <!-- Comparación de Gastos -->
-    <script src="comparison-module.js"></script>
-    
-    <!-- Asistente Virtual AI -->
-    <script src="assistant-module.js"></script>
-    
-    <!-- 📊 Reportes Interactivos -->
-    <script src="reports-module.js"></script>
-    
-    <!-- 📊 Gráficos de Gastos Recurrentes -->
-    <script src="recurring-charts.js"></script>
+    <!-- ⚠️ MÓDULOS EXTERNOS TEMPORALMENTE DESHABILITADOS -->
+    <!-- Los agregaremos uno por uno cuando la app funcione -->
     
     <!-- Script principal -->
     <script src="main.js"></script>
     
-    <!-- Service Worker -->
     <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./service-worker.js')
-                    .then(registration => {
-                        console.log('✅ Service Worker registrado con éxito:', registration.scope);
-                    })
-                    .catch(error => {
-                        console.log('⚠️ Error al registrar Service Worker (esto es normal en desarrollo):', error);
-                    });
-            });
-        }
+        console.log('✅ index.html cargado - versión limpia sin módulos externos');
     </script>
 </body>
 </html>
