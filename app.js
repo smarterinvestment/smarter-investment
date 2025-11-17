@@ -381,4 +381,4 @@ window.toggleFabMenu = toggleFabMenu;
 window.switchAuthMode = switchAuthMode;
 window.handleLogout = handleLogout;
 
-console.log('✅ app.js cargado completamente - Smarter Investment Simple v1.0');
+console.log('✅ app.js cargado completamente - Smarter Investment Simple v1.0');// Trigger deploy
