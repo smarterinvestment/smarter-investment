@@ -1998,10 +1998,6 @@ function renderBudget() {
                             <div style="font-size: 0.9rem; color: #f97316; margin-top: 0.5rem;">
                                 🔴 Solo te quedan $${(alert.budget - alert.spent).toLocaleString()}
                             </div>
-
-// ============================================
-// 📍 FIN PARTE 1 - CONTINÚA EN PARTE 2
-// ============================================
                         </div>
                     `).join('')}
                 </div>
@@ -2797,10 +2793,12 @@ function renderReportsSection() {
 }
 
 function renderBottomNav() {
+function renderBottomNav() {
     const tabs = [
-        { id: 'dashboard', icon: '📈', name: 'Inicio' },
-        { id: 'expenses', icon: '💰', name: 'Gastos' },
-        { id: 'recurring', icon: '🔄', name: 'Recurrentes' }, // ✨ NUEVO
+        { id: 'dashboard', icon: '📊', name: 'Dashboard' },
+        { id: 'expenses', icon: '💸', name: 'Gastos' },
+        { id: 'budget', icon: '💰', name: 'Presupuesto' },      // ✅ NUEVO
+        { id: 'recurring', icon: '🔄', name: 'Recurrentes' },   // ✅ YA LO TENÍAS
         { id: 'goals', icon: '🎯', name: 'Metas' },
         { id: 'more', icon: '⚙️', name: 'Más' }
     ];
@@ -3019,19 +3017,6 @@ function render() {
         if (activeTab === 'budget') fabAction = 'budget';
         
         // Para expenses, mostrar menú de opciones
-        const fabHTML = activeTab === 'expenses' ? `
-            <div id="fab-menu" class="fab-menu" style="display: none;">
-                <button class="fab-option" onclick="openModal('income')" style="background: var(--color-success);">
-                    💰 Ingreso
-                </button>
-                <button class="fab-option" onclick="openModal('expense')" style="background: var(--color-danger);">
-                    💸 Gasto
-                </button>
-                <!-- ✨✨✨ NUEVO BOTÓN DE GASTOS RECURRENTES ✨✨✨ -->
-
-// ============================================
-// 📍 FIN PARTE 2 - CONTINÚA EN PARTE 3
-// ============================================
         const fabHTML = activeTab === 'expenses' ? `
             <div id="fab-menu" class="fab-menu" style="display: none;">
                 <button class="fab-option" onclick="openModal('income')" style="background: var(--color-success);">
@@ -6073,7 +6058,3 @@ function generateExpenseAnalysis(recurring, unique, total) {
 // ========================================
 // FIN DE FUNCIONES NUEVAS
 // ========================================
-
-// ============================================
-// 📍 FIN PARTE 3 - ARCHIVO COMPLETO
-// ============================================
