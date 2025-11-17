@@ -3634,7 +3634,7 @@ function closeModal() {
     // Cerrar menú FAB si está abierto
     const fabMenu = document.getElementById('fab-menu');
     if (fabMenu) fabMenu.style.display = 'none';
-},
+}
 
 async function saveExpense() {
     const expense = {
@@ -3642,7 +3642,17 @@ async function saveExpense() {
         description: document.getElementById('expense-description').value,
         category: document.getElementById('expense-category').value,
         date: document.getElementById('expense-date').value
-    },// ========================================
+    };
+    
+    await addExpense(expense);
+    closeModal();
+    
+    // Cerrar menú FAB si está abierto
+    const fabMenu = document.getElementById('fab-menu');
+    if (fabMenu) fabMenu.style.display = 'none';
+}
+
+// ========================================
 // FUNCIONES DE VALIDACIÓN Y ALERTAS
 // ========================================
 
@@ -3731,14 +3741,6 @@ async function checkBudgetAlerts() {
     } catch (error) {
         console.warn('Error al verificar alertas:', error);
     }
-}
-    
-    await addExpense(expense);
-    closeModal();
-    
-    // Cerrar menú FAB si está abierto
-    const fabMenu = document.getElementById('fab-menu');
-    if (fabMenu) fabMenu.style.display = 'none';
 }
 
 async function saveGoal() {
