@@ -298,6 +298,8 @@ function handlePasswordResetSubmit() {
 // ========================================
 // FUNCIONES DE GASTOS
 // ========================================
+checkUnusualExpense()
+checkBudgetAlerts()
 async function addExpense(expense) {
     try {
         const docRef = await db.collection('users').doc(currentUser.uid)
@@ -3632,7 +3634,7 @@ function closeModal() {
     // Cerrar menú FAB si está abierto
     const fabMenu = document.getElementById('fab-menu');
     if (fabMenu) fabMenu.style.display = 'none';
-}
+},
 
 async function saveExpense() {
     const expense = {
@@ -3640,7 +3642,96 @@ async function saveExpense() {
         description: document.getElementById('expense-description').value,
         category: document.getElementById('expense-category').value,
         date: document.getElementById('expense-date').value
-    };
+    },// ========================================
+// FUNCIONES DE VALIDACIÓN Y ALERTAS
+// ========================================
+
+/**
+ * Verificar si un gasto es inusual
+ */
+function checkUnusualExpense(amount) {
+    try {
+        const avgExpense = expenses.length > 0 
+            ? expenses.reduce((sum, e) => sum + (e.amount || 0), 0) / expenses.length 
+            : 0;
+        
+        if (amount > avgExpense * 2 && avgExpense > 0) {
+            if (typeof Toastify !== 'undefined') {
+                Toastify({
+                    text: `⚠️ Gasto inusual: $${amount.toFixed(2)} (promedio: $${avgExpense.toFixed(2)})`,
+                    duration: 5000,
+                    gravity: "top",
+                    position: "right",
+                    style: {
+                        background: "linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%)",
+                    }
+                }).showToast();
+            }
+        }
+    } catch (error) {
+        console.warn('Error al verificar gasto inusual:', error);
+    }
+}
+
+/**
+ * Verificar alertas de presupuesto
+ */
+async function checkBudgetAlerts() {
+    try {
+        if (!currentUser) return;
+        
+        const now = new Date();
+        const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        
+        const monthlyExpenses = expenses.filter(e => e.date && e.date.startsWith(currentMonth));
+        
+        const categoryTotals = {};
+        monthlyExpenses.forEach(e => {
+            const category = e.category || 'Gastos Discrecionales';
+            categoryTotals[category] = (categoryTotals[category] || 0) + (e.amount || 0);
+        });
+        
+        Object.keys(categoryTotals).forEach(category => {
+            const spent = categoryTotals[category];
+            const budget = budgets[category] || 0;
+            
+            if (budget > 0) {
+                const percentage = (spent / budget) * 100;
+                
+                if (percentage >= 80 && percentage < 100) {
+                    if (typeof Toastify !== 'undefined') {
+                        Toastify({
+                            text: `⚡ ${category}: ${percentage.toFixed(0)}% del presupuesto`,
+                            duration: 5000,
+                            gravity: "top",
+                            position: "right",
+                            style: {
+                                background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+                            }
+                        }).showToast();
+                    }
+                }
+                
+                if (percentage >= 100) {
+                    if (typeof Toastify !== 'undefined') {
+                        Toastify({
+                            text: `🚨 ${category}: Presupuesto excedido (${percentage.toFixed(0)}%)`,
+                            duration: 7000,
+                            gravity: "top",
+                            position: "right",
+                            style: {
+                                background: "linear-gradient(135deg, #ff6b6b 0%, #c92a2a 100%)",
+                            }
+                        }).showToast();
+                    }
+                }
+            }
+        });
+        
+    } catch (error) {
+        console.warn('Error al verificar alertas:', error);
+    }
+}
     
     await addExpense(expense);
     closeModal();
