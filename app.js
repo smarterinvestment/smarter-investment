@@ -99,6 +99,24 @@ let reportsModule = null;
 // 📈 NUEVO: Módulo de Comparación
 let comparisonModule = null;
 
+// ✨ CATEGORÍAS PARA GASTOS E INGRESOS
+const categorias = [
+    { nombre: 'Alimentación', emoji: '🍔', color: '#ef4444', tipo: 'gasto' },
+    { nombre: 'Transporte', emoji: '🚗', color: '#f59e0b', tipo: 'gasto' },
+    { nombre: 'Entretenimiento', emoji: '🎬', color: '#8b5cf6', tipo: 'gasto' },
+    { nombre: 'Salud', emoji: '💊', color: '#ec4899', tipo: 'gasto' },
+    { nombre: 'Educación', emoji: '📚', color: '#3b82f6', tipo: 'gasto' },
+    { nombre: 'Vivienda', emoji: '🏠', color: '#10b981', tipo: 'gasto' },
+    { nombre: 'Servicios', emoji: '💡', color: '#14b8a6', tipo: 'gasto' },
+    { nombre: 'Ropa', emoji: '👕', color: '#f43f5e', tipo: 'gasto' },
+    { nombre: 'Tecnología', emoji: '💻', color: '#6366f1', tipo: 'gasto' },
+    { nombre: 'Mascotas', emoji: '🐕', color: '#fb923c', tipo: 'gasto' },
+    { nombre: 'Gastos Esenciales', emoji: '🏠', color: '#10b981', tipo: 'gasto' },
+    { nombre: 'Gastos Discrecionales', emoji: '🎭', color: '#8b5cf6', tipo: 'gasto' },
+    { nombre: 'Pago Deudas', emoji: '💳', color: '#ef4444', tipo: 'gasto' },
+    { nombre: 'Otros', emoji: '📌', color: '#64748b', tipo: 'gasto' }
+];
+
 // ========================================
 // LISTENER DE AUTENTICACIÓN
 // ========================================
@@ -1658,27 +1676,35 @@ function renderDashboard() {
 }
 
 function renderExpenses() {
-    // ✅ CORRECCIÓN: Separar en pestañas Gastos e Ingresos
+    // Variable para controlar qué tab está activo
+    if (!window.activeExpensesTab) {
+        window.activeExpensesTab = 'expenses';
+    }
+    
     return `
         <div class="card">
             <div class="card-title">
                 <span>📊</span> Historial de Transacciones
             </div>
             
-            <!-- Pestañas -->
+            <!-- 🔄 NUEVO: 3 Pestañas -->
             <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 2px solid rgba(5, 191, 219, 0.3); padding-bottom: 0.5rem;">
-                <button class="tab-button active" id="tab-expenses" onclick="switchTransactionTab('expenses')" 
-                    style="flex: 1; padding: 0.75rem; background: rgba(5, 191, 219, 0.2); border: 2px solid var(--color-primary); border-radius: 0.5rem; color: white; font-weight: bold; cursor: pointer; transition: all 0.3s ease;">
+                <button class="tab-button" id="tab-expenses" onclick="switchTransactionTab('expenses')" 
+                    style="flex: 1; padding: 0.75rem; background: ${window.activeExpensesTab === 'expenses' ? 'rgba(5, 191, 219, 0.2)' : 'rgba(255,255,255,0.1)'}; border: 2px solid ${window.activeExpensesTab === 'expenses' ? 'var(--color-primary)' : 'rgba(255,255,255,0.2)'}; border-radius: 0.5rem; color: ${window.activeExpensesTab === 'expenses' ? 'white' : 'rgba(255,255,255,0.7)'}; font-weight: ${window.activeExpensesTab === 'expenses' ? 'bold' : 'normal'}; cursor: pointer; transition: all 0.3s ease;">
                     💸 Gastos (${expenses.length})
                 </button>
                 <button class="tab-button" id="tab-incomes" onclick="switchTransactionTab('incomes')" 
-                    style="flex: 1; padding: 0.75rem; background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.2); border-radius: 0.5rem; color: rgba(255,255,255,0.7); font-weight: bold; cursor: pointer; transition: all 0.3s ease;">
+                    style="flex: 1; padding: 0.75rem; background: ${window.activeExpensesTab === 'incomes' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(255,255,255,0.1)'}; border: 2px solid ${window.activeExpensesTab === 'incomes' ? 'var(--color-success)' : 'rgba(255,255,255,0.2)'}; border-radius: 0.5rem; color: ${window.activeExpensesTab === 'incomes' ? 'white' : 'rgba(255,255,255,0.7)'}; font-weight: ${window.activeExpensesTab === 'incomes' ? 'bold' : 'normal'}; cursor: pointer; transition: all 0.3s ease;">
                     💰 Ingresos (${incomeHistory.length})
+                </button>
+                <button class="tab-button" id="tab-recurring" onclick="switchTransactionTab('recurring')" 
+                    style="flex: 1; padding: 0.75rem; background: ${window.activeExpensesTab === 'recurring' ? 'rgba(168, 85, 247, 0.2)' : 'rgba(255,255,255,0.1)'}; border: 2px solid ${window.activeExpensesTab === 'recurring' ? 'var(--color-secondary)' : 'rgba(255,255,255,0.2)'}; border-radius: 0.5rem; color: ${window.activeExpensesTab === 'recurring' ? 'white' : 'rgba(255,255,255,0.7)'}; font-weight: ${window.activeExpensesTab === 'recurring' ? 'bold' : 'normal'}; cursor: pointer; transition: all 0.3s ease;">
+                    🔄 Recurrentes (${recurringModule ? recurringModule.recurringExpenses.filter(r => r.active).length : 0})
                 </button>
             </div>
             
             <!-- Contenido de Gastos -->
-            <div id="expenses-content" style="display: block;">
+            <div id="expenses-content" style="display: ${window.activeExpensesTab === 'expenses' ? 'block' : 'none'};">
                 ${expenses.length > 0 ? `
                     <ul class="expense-list">
                         ${expenses.map(exp => `
@@ -1709,7 +1735,7 @@ function renderExpenses() {
             </div>
             
             <!-- Contenido de Ingresos -->
-            <div id="incomes-content" style="display: none;">
+            <div id="incomes-content" style="display: ${window.activeExpensesTab === 'incomes' ? 'block' : 'none'};">
                 ${incomeHistory.length > 0 ? `
                     <ul class="expense-list">
                         ${incomeHistory.map(inc => `
@@ -1737,6 +1763,11 @@ function renderExpenses() {
                         <p>No hay ingresos registrados<br>Presiona el botón + para agregar tu primer ingreso</p>
                     </div>
                 `}
+            </div>
+            
+            <!-- 🔄 NUEVO: Contenido de Recurrentes -->
+            <div id="recurring-content" style="display: ${window.activeExpensesTab === 'recurring' ? 'block' : 'none'};">
+                ${typeof renderRecurringExpensesViewIntegrated === 'function' ? renderRecurringExpensesViewIntegrated() : '<div style="padding: 2rem; text-align: center;">Cargando módulo de recurrentes...</div>'}
             </div>
         </div>
     `;
@@ -3883,7 +3914,7 @@ function render() {
                     💸 Gasto
                 </button>
                 <!-- ✨✨✨ NUEVO BOTÓN DE GASTOS RECURRENTES ✨✨✨ -->
-                <button class="fab-option" onclick="openAddRecurringExpenseModal()" style="background: var(--color-secondary);">
+                <button class="fab-option" onclick="openRecurringFromFAB()" style="background: var(--color-secondary);">
                     🔄 Recurrente
                 </button>
             </div>
@@ -5838,35 +5869,1089 @@ function switchTab(tab) {
 
 // ✅ Función para cambiar entre pestañas de Gastos e Ingresos
 function switchTransactionTab(tab) {
+    window.activeExpensesTab = tab;
+    
     const expensesContent = document.getElementById('expenses-content');
     const incomesContent = document.getElementById('incomes-content');
+    const recurringContent = document.getElementById('recurring-content');
     const expensesTab = document.getElementById('tab-expenses');
     const incomesTab = document.getElementById('tab-incomes');
+    const recurringTab = document.getElementById('tab-recurring');
     
-    if (tab === 'expenses') {
-        expensesContent.style.display = 'block';
-        incomesContent.style.display = 'none';
-        expensesTab.style.background = 'rgba(5, 191, 219, 0.2)';
-        expensesTab.style.borderColor = 'var(--color-primary)';
-        expensesTab.style.color = 'white';
-        incomesTab.style.background = 'rgba(255,255,255,0.1)';
-        incomesTab.style.borderColor = 'rgba(255,255,255,0.2)';
-        incomesTab.style.color = 'rgba(255,255,255,0.7)';
-    } else {
-        expensesContent.style.display = 'none';
-        incomesContent.style.display = 'block';
-        incomesTab.style.background = 'rgba(34, 197, 94, 0.2)';
-        incomesTab.style.borderColor = 'var(--color-success)';
-        incomesTab.style.color = 'white';
+    // Ocultar todos
+    if (expensesContent) expensesContent.style.display = 'none';
+    if (incomesContent) incomesContent.style.display = 'none';
+    if (recurringContent) recurringContent.style.display = 'none';
+    
+    // Resetear estilos de todos los tabs
+    if (expensesTab) {
         expensesTab.style.background = 'rgba(255,255,255,0.1)';
         expensesTab.style.borderColor = 'rgba(255,255,255,0.2)';
         expensesTab.style.color = 'rgba(255,255,255,0.7)';
+        expensesTab.style.fontWeight = 'normal';
+    }
+    if (incomesTab) {
+        incomesTab.style.background = 'rgba(255,255,255,0.1)';
+        incomesTab.style.borderColor = 'rgba(255,255,255,0.2)';
+        incomesTab.style.color = 'rgba(255,255,255,0.7)';
+        incomesTab.style.fontWeight = 'normal';
+    }
+    if (recurringTab) {
+        recurringTab.style.background = 'rgba(255,255,255,0.1)';
+        recurringTab.style.borderColor = 'rgba(255,255,255,0.2)';
+        recurringTab.style.color = 'rgba(255,255,255,0.7)';
+        recurringTab.style.fontWeight = 'normal';
+    }
+    
+    // Mostrar y estilizar el tab seleccionado
+    if (tab === 'expenses') {
+        if (expensesContent) expensesContent.style.display = 'block';
+        if (expensesTab) {
+            expensesTab.style.background = 'rgba(5, 191, 219, 0.2)';
+            expensesTab.style.borderColor = 'var(--color-primary)';
+            expensesTab.style.color = 'white';
+            expensesTab.style.fontWeight = 'bold';
+        }
+    } else if (tab === 'incomes') {
+        if (incomesContent) incomesContent.style.display = 'block';
+        if (incomesTab) {
+            incomesTab.style.background = 'rgba(34, 197, 94, 0.2)';
+            incomesTab.style.borderColor = 'var(--color-success)';
+            incomesTab.style.color = 'white';
+            incomesTab.style.fontWeight = 'bold';
+        }
+    } else if (tab === 'recurring') {
+        if (recurringContent) recurringContent.style.display = 'block';
+        if (recurringTab) {
+            recurringTab.style.background = 'rgba(168, 85, 247, 0.2)';
+            recurringTab.style.borderColor = 'var(--color-secondary)';
+            recurringTab.style.color = 'white';
+            recurringTab.style.fontWeight = 'bold';
+        }
+        
+        // Renderizar gráficos si está en la sub-pestaña de gráficas
+        setTimeout(() => {
+            if (document.getElementById('recurring-tab-charts') && 
+                document.getElementById('recurring-tab-charts').style.borderColor === 'var(--color-primary)') {
+                if (typeof renderRecurringChartsCanvas === 'function') {
+                    renderRecurringChartsCanvas();
+                }
+            }
+        }, 100);
     }
 }
 
 // ========================================
 // INICIAR APP
 // ========================================
+
+// ========================================
+// 🔄 VISTA DE GASTOS RECURRENTES - CÓDIGO COMPLETO
+// ========================================
+// Este código va DESPUÉS de la función renderMoreSection() en app.js
+
+/**
+ * 🔄 Renderizar vista completa de gastos recurrentes
+ */
+function renderRecurringExpensesView() {
+    if (!recurringModule || !recurringModule.isInitialized) {
+        return `
+            <div class="card" style="text-align: center; padding: 2rem;">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
+                <h3>Módulo de Gastos Recurrentes no disponible</h3>
+                <p style="color: rgba(255,255,255,0.7); margin-top: 0.5rem;">
+                    Por favor, recarga la página
+                </p>
+            </div>
+        `;
+    }
+
+    const stats = recurringModule.getStatistics();
+    const upcoming = recurringModule.getUpcomingExpenses(30);
+    const activeRecurring = recurringModule.recurringExpenses.filter(r => r.active);
+    const pausedRecurring = recurringModule.recurringExpenses.filter(r => !r.active);
+
+    return `
+        <div style="padding: 1rem;">
+            <!-- Header con botón volver -->
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
+                <button onclick="switchTab('more')" class="btn-back" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); padding: 0.5rem 1rem; border-radius: 0.5rem; color: white; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;">
+                    ← Volver
+                </button>
+                <h2 style="margin: 0; flex: 1; text-align: center;">🔄 Gastos Recurrentes</h2>
+                <div style="width: 80px;"></div>
+            </div>
+
+            <!-- Estadísticas rápidas -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+                <div class="card" style="text-align: center; padding: 1rem;">
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">✅</div>
+                    <div style="font-size: 1.5rem; font-weight: bold; color: var(--color-success);">${stats.active}</div>
+                    <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6); margin-top: 0.25rem;">Activos</div>
+                </div>
+                <div class="card" style="text-align: center; padding: 1rem;">
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">⏸️</div>
+                    <div style="font-size: 1.5rem; font-weight: bold; color: var(--color-warning);">${stats.paused}</div>
+                    <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6); margin-top: 0.25rem;">Pausados</div>
+                </div>
+                <div class="card" style="text-align: center; padding: 1rem;">
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">💰</div>
+                    <div style="font-size: 1.5rem; font-weight: bold; color: var(--color-primary);">$${stats.monthlyEstimate.toFixed(0)}</div>
+                    <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6); margin-top: 0.25rem;">Mensual estimado</div>
+                </div>
+                <div class="card" style="text-align: center; padding: 1rem;">
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">📋</div>
+                    <div style="font-size: 1.5rem; font-weight: bold; color: var(--color-info);">${stats.totalGenerated}</div>
+                    <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6); margin-top: 0.25rem;">Generados (30d)</div>
+                </div>
+            </div>
+
+            <!-- Botón para agregar nuevo -->
+            <button 
+                onclick="openRecurringModal()" 
+                class="add-recurring-btn"
+                style="width: 100%; padding: 1rem; background: linear-gradient(135deg, var(--color-primary), var(--color-secondary)); border: none; border-radius: 0.85rem; color: white; font-size: 1rem; font-weight: 600; cursor: pointer; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; box-shadow: 0 4px 12px rgba(5, 191, 219, 0.3);">
+                <span style="font-size: 1.5rem;">+</span>
+                Agregar Gasto Recurrente
+            </button>
+
+            <!-- Tabs: Activos / Pausados / Próximos / Gráficas -->
+            <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; overflow-x: auto; padding-bottom: 0.5rem;">
+                <button onclick="switchRecurringTab('active')" id="recurring-tab-active" class="recurring-tab" style="padding: 0.75rem 1.5rem; background: rgba(5, 191, 219, 0.2); border: 1px solid var(--color-primary); border-radius: 0.5rem; color: white; cursor: pointer; white-space: nowrap; font-weight: 600;">
+                    ✅ Activos (${stats.active})
+                </button>
+                <button onclick="switchRecurringTab('paused')" id="recurring-tab-paused" class="recurring-tab" style="padding: 0.75rem 1.5rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 0.5rem; color: rgba(255,255,255,0.7); cursor: pointer; white-space: nowrap;">
+                    ⏸️ Pausados (${stats.paused})
+                </button>
+                <button onclick="switchRecurringTab('upcoming')" id="recurring-tab-upcoming" class="recurring-tab" style="padding: 0.75rem 1.5rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 0.5rem; color: rgba(255,255,255,0.7); cursor: pointer; white-space: nowrap;">
+                    📅 Próximos (${upcoming.length})
+                </button>
+                <button onclick="switchRecurringTab('charts')" id="recurring-tab-charts" class="recurring-tab" style="padding: 0.75rem 1.5rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 0.5rem; color: rgba(255,255,255,0.7); cursor: pointer; white-space: nowrap;">
+                    📊 Gráficas
+                </button>
+            </div>
+
+            <!-- Contenido de tabs -->
+            <div id="recurring-content-active" class="recurring-content">
+                ${renderRecurringList(activeRecurring, 'active')}
+            </div>
+
+            <div id="recurring-content-paused" class="recurring-content" style="display: none;">
+                ${renderRecurringList(pausedRecurring, 'paused')}
+            </div>
+
+            <div id="recurring-content-upcoming" class="recurring-content" style="display: none;">
+                ${renderUpcomingExpenses(upcoming)}
+            </div>
+
+            <div id="recurring-content-charts" class="recurring-content" style="display: none;">
+                ${renderRecurringCharts(stats)}
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * 📋 Renderizar lista de gastos recurrentes
+ */
+function renderRecurringList(recurringList, type) {
+    if (recurringList.length === 0) {
+        const messages = {
+            active: { icon: '✅', text: 'No hay gastos recurrentes activos', subtext: 'Agrega uno para automatizar tus gastos' },
+            paused: { icon: '⏸️', text: 'No hay gastos pausados', subtext: 'Los gastos pausados aparecerán aquí' }
+        };
+        const msg = messages[type];
+        
+        return `
+            <div class="card" style="text-align: center; padding: 2rem;">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">${msg.icon}</div>
+                <h3>${msg.text}</h3>
+                <p style="color: rgba(255,255,255,0.6); margin-top: 0.5rem;">${msg.subtext}</p>
+            </div>
+        `;
+    }
+
+    return recurringList.map(recurring => {
+        const freqInfo = recurringModule.frequencies[recurring.frequency];
+        const nextDate = new Date(recurring.nextDate);
+        const daysUntil = Math.ceil((nextDate - new Date()) / (1000 * 60 * 60 * 24));
+        const isOverdue = daysUntil < 0;
+        const category = categorias.find(c => c.nombre === recurring.category);
+        
+        return `
+            <div class="card" style="margin-bottom: 1rem; position: relative; border-left: 4px solid ${category ? category.color : 'var(--color-primary)'};">
+                <!-- Badge de estado -->
+                ${isOverdue ? `
+                    <div style="position: absolute; top: 0.75rem; right: 0.75rem; background: var(--color-danger); color: white; padding: 0.25rem 0.75rem; border-radius: 1rem; font-size: 0.75rem; font-weight: 600;">
+                        ⚠️ Vencido
+                    </div>
+                ` : ''}
+                
+                <!-- Contenido principal -->
+                <div style="display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 1rem;">
+                    <!-- Icono de frecuencia -->
+                    <div style="font-size: 2.5rem; flex-shrink: 0;">${freqInfo.icon}</div>
+                    
+                    <!-- Información -->
+                    <div style="flex: 1; min-width: 0;">
+                        <h3 style="margin: 0 0 0.5rem 0; font-size: 1.1rem;">${recurring.description}</h3>
+                        
+                        <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 0.5rem;">
+                            <!-- Monto -->
+                            <div style="background: rgba(239, 68, 68, 0.2); padding: 0.35rem 0.75rem; border-radius: 0.5rem; font-weight: 600; color: var(--color-danger);">
+                                $${recurring.amount.toFixed(2)}
+                            </div>
+                            
+                            <!-- Frecuencia -->
+                            <div style="background: rgba(5, 191, 219, 0.2); padding: 0.35rem 0.75rem; border-radius: 0.5rem; font-size: 0.85rem; color: var(--color-primary);">
+                                ${freqInfo.label}
+                            </div>
+                            
+                            <!-- Categoría -->
+                            <div style="background: rgba(255,255,255,0.1); padding: 0.35rem 0.75rem; border-radius: 0.5rem; font-size: 0.85rem; color: rgba(255,255,255,0.8);">
+                                ${category ? category.emoji : '📌'} ${recurring.category}
+                            </div>
+                        </div>
+                        
+                        <!-- Próxima fecha -->
+                        <div style="font-size: 0.9rem; color: rgba(255,255,255,0.7);">
+                            ${type === 'active' ? `
+                                📅 Próximo: ${nextDate.toLocaleDateString('es-ES')}
+                                ${!isOverdue ? `<span style="color: var(--color-info);">(en ${daysUntil} día${daysUntil !== 1 ? 's' : ''})</span>` : ''}
+                            ` : `
+                                🗓️ Desde: ${new Date(recurring.startDate).toLocaleDateString('es-ES')}
+                            `}
+                        </div>
+                        
+                        <!-- Estadísticas -->
+                        <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6); margin-top: 0.5rem;">
+                            📊 Generado ${recurring.timesGenerated || 0} veces
+                            ${recurring.lastGenerated ? ` · Último: ${new Date(recurring.lastGenerated.seconds * 1000).toLocaleDateString('es-ES')}` : ''}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Botones de acción -->
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                    ${type === 'active' ? `
+                        <button onclick="pauseRecurring('${recurring.id}')" style="flex: 1; min-width: 120px; padding: 0.65rem; background: rgba(251, 191, 36, 0.2); border: 1px solid var(--color-warning); border-radius: 0.5rem; color: var(--color-warning); cursor: pointer; font-weight: 600;">
+                            ⏸️ Pausar
+                        </button>
+                    ` : `
+                        <button onclick="activateRecurring('${recurring.id}')" style="flex: 1; min-width: 120px; padding: 0.65rem; background: rgba(34, 197, 94, 0.2); border: 1px solid var(--color-success); border-radius: 0.5rem; color: var(--color-success); cursor: pointer; font-weight: 600;">
+                            ▶️ Activar
+                        </button>
+                    `}
+                    
+                    <button onclick="editRecurring('${recurring.id}')" style="flex: 1; min-width: 120px; padding: 0.65rem; background: rgba(5, 191, 219, 0.2); border: 1px solid var(--color-primary); border-radius: 0.5rem; color: var(--color-primary); cursor: pointer; font-weight: 600;">
+                        ✏️ Editar
+                    </button>
+                    
+                    <button onclick="deleteRecurring('${recurring.id}')" style="flex: 1; min-width: 120px; padding: 0.65rem; background: rgba(239, 68, 68, 0.2); border: 1px solid var(--color-danger); border-radius: 0.5rem; color: var(--color-danger); cursor: pointer; font-weight: 600;">
+                        🗑️ Eliminar
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+/**
+ * 📅 Renderizar próximos gastos (calendario)
+ */
+function renderUpcomingExpenses(upcoming) {
+    if (upcoming.length === 0) {
+        return `
+            <div class="card" style="text-align: center; padding: 2rem;">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">📅</div>
+                <h3>No hay gastos próximos</h3>
+                <p style="color: rgba(255,255,255,0.6); margin-top: 0.5rem;">Los próximos 30 días están libres</p>
+            </div>
+        `;
+    }
+
+    // Agrupar por semana
+    const byWeek = {};
+    upcoming.forEach(item => {
+        const weekStart = new Date(item.dueDate);
+        weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+        const weekKey = weekStart.toISOString().split('T')[0];
+        
+        if (!byWeek[weekKey]) {
+            byWeek[weekKey] = [];
+        }
+        byWeek[weekKey].push(item);
+    });
+
+    return Object.entries(byWeek).map(([weekKey, items]) => {
+        const weekStart = new Date(weekKey);
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekEnd.getDate() + 6);
+        
+        const totalWeek = items.reduce((sum, item) => sum + item.amount, 0);
+        
+        return `
+            <div class="card" style="margin-bottom: 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                    <h3 style="margin: 0;">
+                        📅 ${weekStart.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} - ${weekEnd.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+                    </h3>
+                    <div style="font-weight: 600; color: var(--color-danger);">
+                        $${totalWeek.toFixed(2)}
+                    </div>
+                </div>
+                
+                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                    ${items.map(item => {
+                        const category = categorias.find(c => c.nombre === item.category);
+                        const isToday = item.daysUntil === 0;
+                        const isTomorrow = item.daysUntil === 1;
+                        
+                        return `
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: rgba(255,255,255,0.05); border-radius: 0.5rem; ${isToday ? 'border: 2px solid var(--color-warning);' : ''}">
+                                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                    <div style="font-size: 1.5rem;">${category ? category.emoji : '📌'}</div>
+                                    <div>
+                                        <div style="font-weight: 600;">${item.description}</div>
+                                        <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6);">
+                                            ${item.dueDate.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'short' })}
+                                            ${isToday ? '<span style="color: var(--color-warning); font-weight: 600;"> · HOY</span>' : ''}
+                                            ${isTomorrow ? '<span style="color: var(--color-info); font-weight: 600;"> · MAÑANA</span>' : ''}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div style="font-weight: 600; color: var(--color-danger);">
+                                    $${item.amount.toFixed(2)}
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+/**
+ * 📊 Renderizar gráficas
+ */
+function renderRecurringCharts(stats) {
+    return `
+        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+            <!-- Gráfica: Distribución por categoría -->
+            <div class="card">
+                <h3 style="margin-bottom: 1rem;">📊 Distribución por Categoría</h3>
+                <canvas id="recurring-category-chart" style="max-height: 300px;"></canvas>
+            </div>
+            
+            <!-- Gráfica: Distribución por frecuencia -->
+            <div class="card">
+                <h3 style="margin-bottom: 1rem;">🔄 Distribución por Frecuencia</h3>
+                <canvas id="recurring-frequency-chart" style="max-height: 300px;"></canvas>
+            </div>
+            
+            <!-- Comparativo: Gastos totales vs recurrentes -->
+            <div class="card">
+                <h3 style="margin-bottom: 1rem;">💰 Impacto en el Presupuesto</h3>
+                <div style="padding: 1rem; background: rgba(5, 191, 219, 0.1); border-radius: 0.5rem; margin-bottom: 1rem;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span style="color: rgba(255,255,255,0.7);">Gastos totales este mes:</span>
+                        <span style="font-weight: 600;">$${calculateMonthlyTotal().toFixed(2)}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span style="color: rgba(255,255,255,0.7);">Recurrentes estimados:</span>
+                        <span style="font-weight: 600; color: var(--color-primary);">$${stats.monthlyEstimate.toFixed(2)}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding-top: 0.5rem; border-top: 1px solid rgba(255,255,255,0.2);">
+                        <span style="color: rgba(255,255,255,0.9); font-weight: 600;">% del presupuesto:</span>
+                        <span style="font-weight: 700; color: var(--color-warning);">
+                            ${calculateMonthlyTotal() > 0 ? ((stats.monthlyEstimate / calculateMonthlyTotal()) * 100).toFixed(1) : 0}%
+                        </span>
+                    </div>
+                </div>
+                <canvas id="recurring-impact-chart" style="max-height: 250px;"></canvas>
+            </div>
+            
+            <!-- Timeline de generación -->
+            <div class="card">
+                <h3 style="margin-bottom: 1rem;">📈 Historial de Generación (últimos 30 días)</h3>
+                ${renderGenerationTimeline()}
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * 📈 Renderizar timeline de generación
+ */
+function renderGenerationTimeline() {
+    const history = recurringModule.generatedHistory;
+    
+    if (history.length === 0) {
+        return `
+            <div style="text-align: center; padding: 2rem; color: rgba(255,255,255,0.6);">
+                <div style="font-size: 2rem; margin-bottom: 0.5rem;">📋</div>
+                <div>No hay gastos generados en los últimos 30 días</div>
+            </div>
+        `;
+    }
+
+    // Agrupar por día
+    const byDay = {};
+    history.forEach(expense => {
+        const day = expense.date;
+        if (!byDay[day]) {
+            byDay[day] = [];
+        }
+        byDay[day].push(expense);
+    });
+
+    return `
+        <div style="max-height: 400px; overflow-y: auto;">
+            ${Object.entries(byDay)
+                .sort((a, b) => new Date(b[0]) - new Date(a[0]))
+                .map(([day, expenses]) => {
+                    const totalDay = expenses.reduce((sum, e) => sum + e.amount, 0);
+                    const date = new Date(day);
+                    
+                    return `
+                        <div style="margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                <span style="font-weight: 600;">
+                                    ${date.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
+                                </span>
+                                <span style="font-weight: 600; color: var(--color-danger);">
+                                    $${totalDay.toFixed(2)}
+                                </span>
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-left: 1rem;">
+                                ${expenses.map(expense => {
+                                    const category = categorias.find(c => c.nombre === expense.category);
+                                    return `
+                                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem;">
+                                            <span style="color: rgba(255,255,255,0.8);">
+                                                ${category ? category.emoji : '📌'} ${expense.description}
+                                            </span>
+                                            <span style="color: rgba(255,255,255,0.9);">
+                                                $${expense.amount.toFixed(2)}
+                                            </span>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+                    `;
+                }).join('')}
+        </div>
+    `;
+}
+
+/**
+ * 🎯 Cambiar entre tabs de recurrentes
+ */
+function switchRecurringTab(tab) {
+    // Actualizar tabs
+    ['active', 'paused', 'upcoming', 'charts'].forEach(t => {
+        const tabButton = document.getElementById(`recurring-tab-${t}`);
+        const content = document.getElementById(`recurring-content-${t}`);
+        
+        if (t === tab) {
+            tabButton.style.background = 'rgba(5, 191, 219, 0.2)';
+            tabButton.style.borderColor = 'var(--color-primary)';
+            tabButton.style.color = 'white';
+            tabButton.style.fontWeight = '600';
+            content.style.display = 'block';
+        } else {
+            tabButton.style.background = 'rgba(255,255,255,0.1)';
+            tabButton.style.borderColor = 'rgba(255,255,255,0.2)';
+            tabButton.style.color = 'rgba(255,255,255,0.7)';
+            tabButton.style.fontWeight = '400';
+            content.style.display = 'none';
+        }
+    });
+
+    // Renderizar gráficos si es necesario
+    if (tab === 'charts') {
+        setTimeout(() => {
+            renderRecurringChartsCanvas();
+        }, 100);
+    }
+}
+
+/**
+ * 📊 Renderizar gráficos con Chart.js
+ */
+function renderRecurringChartsCanvas() {
+    if (typeof Chart === 'undefined') {
+        console.warn('Chart.js no está cargado');
+        return;
+    }
+
+    const stats = recurringModule.getStatistics();
+
+    // Gráfico de categorías
+    const categoryCanvas = document.getElementById('recurring-category-chart');
+    if (categoryCanvas && stats.byCategory) {
+        const categories = Object.keys(stats.byCategory);
+        const amounts = Object.values(stats.byCategory);
+        const colors = categories.map(cat => {
+            const category = categorias.find(c => c.nombre === cat);
+            return category ? category.color : 'rgba(5, 191, 219, 0.7)';
+        });
+
+        new Chart(categoryCanvas, {
+            type: 'doughnut',
+            data: {
+                labels: categories,
+                datasets: [{
+                    data: amounts,
+                    backgroundColor: colors,
+                    borderWidth: 2,
+                    borderColor: '#000b2e'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { color: 'white', padding: 15 }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => {
+                                const label = context.label || '';
+                                const value = context.parsed || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((value / total) * 100).toFixed(1);
+                                return `${label}: $${value.toFixed(2)} (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Gráfico de frecuencias
+    const frequencyCanvas = document.getElementById('recurring-frequency-chart');
+    if (frequencyCanvas && stats.byFrequency) {
+        const frequencies = Object.keys(stats.byFrequency);
+        const counts = Object.values(stats.byFrequency);
+        const labels = frequencies.map(f => recurringModule.frequencies[f]?.label || f);
+
+        new Chart(frequencyCanvas, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Cantidad',
+                    data: counts,
+                    backgroundColor: 'rgba(5, 191, 219, 0.7)',
+                    borderColor: 'var(--color-primary)',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { 
+                            color: 'white',
+                            stepSize: 1
+                        },
+                        grid: {
+                            color: 'rgba(255,255,255,0.1)'
+                        }
+                    },
+                    x: {
+                        ticks: { color: 'white' },
+                        grid: {
+                            color: 'rgba(255,255,255,0.1)'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+    }
+
+    // Gráfico de impacto
+    const impactCanvas = document.getElementById('recurring-impact-chart');
+    if (impactCanvas) {
+        const totalExpenses = calculateMonthlyTotal();
+        const recurring = stats.monthlyEstimate;
+        const other = Math.max(0, totalExpenses - recurring);
+
+        new Chart(impactCanvas, {
+            type: 'pie',
+            data: {
+                labels: ['Gastos Recurrentes', 'Otros Gastos'],
+                datasets: [{
+                    data: [recurring, other],
+                    backgroundColor: [
+                        'rgba(5, 191, 219, 0.7)',
+                        'rgba(239, 68, 68, 0.7)'
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#000b2e'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { color: 'white', padding: 15 }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => {
+                                const value = context.parsed || 0;
+                                const total = totalExpenses;
+                                const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                return `${context.label}: $${value.toFixed(2)} (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+}
+
+/**
+ * 💰 Calcular total de gastos del mes
+ */
+function calculateMonthlyTotal() {
+    const now = new Date();
+    const month = now.getMonth();
+    const year = now.getFullYear();
+    
+    return expenses
+        .filter(e => {
+            const expenseDate = new Date(e.date);
+            return expenseDate.getMonth() === month && expenseDate.getFullYear() === year;
+        })
+        .reduce((sum, e) => sum + e.amount, 0);
+}
+
+/**
+ * ➕ Abrir modal para crear/editar gasto recurrente
+ */
+function openRecurringModal(recurringId = null) {
+    const isEdit = recurringId !== null;
+    const recurring = isEdit ? recurringModule.recurringExpenses.find(r => r.id === recurringId) : null;
+
+    const modalHTML = `
+        <div class="modal-backdrop" onclick="closeRecurringModal()"></div>
+        <div class="modal-content" style="max-width: 500px; max-height: 90vh; overflow-y: auto;">
+            <div class="modal-header">
+                <h2>${isEdit ? '✏️ Editar' : '➕ Agregar'} Gasto Recurrente</h2>
+                <button onclick="closeRecurringModal()" class="modal-close">×</button>
+            </div>
+            
+            <form id="recurring-form" onsubmit="handleRecurringSubmit(event, ${isEdit ? `'${recurringId}'` : 'null'})" style="padding: 1.5rem;">
+                <!-- Descripción -->
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">
+                        Descripción *
+                    </label>
+                    <input 
+                        type="text" 
+                        id="recurring-description" 
+                        value="${isEdit ? recurring.description : ''}"
+                        placeholder="Ej: Netflix, Renta, Gym"
+                        required
+                        style="width: 100%; padding: 0.75rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 0.5rem; color: white;"
+                    />
+                </div>
+
+                <!-- Monto -->
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">
+                        Monto ($) *
+                    </label>
+                    <input 
+                        type="number" 
+                        id="recurring-amount" 
+                        value="${isEdit ? recurring.amount : ''}"
+                        step="0.01" 
+                        min="0.01" 
+                        placeholder="0.00"
+                        required
+                        style="width: 100%; padding: 0.75rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 0.5rem; color: white;"
+                    />
+                </div>
+
+                <!-- Categoría -->
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">
+                        Categoría *
+                    </label>
+                    <select 
+                        id="recurring-category" 
+                        required
+                        style="width: 100%; padding: 0.75rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 0.5rem; color: white;"
+                    >
+                        <option value="" ${!isEdit ? 'selected' : ''}>Selecciona una categoría</option>
+                        ${categorias.filter(c => c.tipo === 'gasto').map(cat => `
+                            <option value="${cat.nombre}" ${isEdit && recurring.category === cat.nombre ? 'selected' : ''}>
+                                ${cat.emoji} ${cat.nombre}
+                            </option>
+                        `).join('')}
+                    </select>
+                </div>
+
+                <!-- Frecuencia -->
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">
+                        Frecuencia *
+                    </label>
+                    <select 
+                        id="recurring-frequency" 
+                        required
+                        onchange="toggleDayOfMonth()"
+                        style="width: 100%; padding: 0.75rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 0.5rem; color: white;"
+                    >
+                        ${Object.entries(recurringModule.frequencies).map(([key, freq]) => `
+                            <option value="${key}" ${isEdit && recurring.frequency === key ? 'selected' : ''}>
+                                ${freq.icon} ${freq.label}
+                            </option>
+                        `).join('')}
+                    </select>
+                </div>
+
+                <!-- Día del mes (solo para mensual) -->
+                <div id="day-of-month-container" style="margin-bottom: 1.5rem; display: ${isEdit && recurring.frequency === 'monthly' ? 'block' : 'none'};">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">
+                        Día del mes (opcional)
+                    </label>
+                    <input 
+                        type="number" 
+                        id="recurring-day-of-month" 
+                        value="${isEdit && recurring.dayOfMonth ? recurring.dayOfMonth : ''}"
+                        min="1" 
+                        max="31"
+                        placeholder="Ej: 15 (día 15 de cada mes)"
+                        style="width: 100%; padding: 0.75rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 0.5rem; color: white;"
+                    />
+                    <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6); margin-top: 0.5rem;">
+                        Si no especificas, se usará el día de la fecha de inicio
+                    </div>
+                </div>
+
+                <!-- Fecha de inicio -->
+                ${!isEdit ? `
+                    <div style="margin-bottom: 1.5rem;">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">
+                            Fecha de inicio *
+                        </label>
+                        <input 
+                            type="date" 
+                            id="recurring-start-date" 
+                            value="${new Date().toISOString().split('T')[0]}"
+                            required
+                            style="width: 100%; padding: 0.75rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 0.5rem; color: white;"
+                        />
+                        <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6); margin-top: 0.5rem;">
+                            Primera vez que se generará este gasto
+                        </div>
+                    </div>
+                ` : `
+                    <div style="margin-bottom: 1.5rem; padding: 1rem; background: rgba(5, 191, 219, 0.1); border-radius: 0.5rem;">
+                        <div style="font-size: 0.9rem; color: rgba(255,255,255,0.7); margin-bottom: 0.25rem;">
+                            Fecha de inicio:
+                        </div>
+                        <div style="font-weight: 600;">
+                            ${new Date(recurring.startDate).toLocaleDateString('es-ES')}
+                        </div>
+                        <div style="font-size: 0.9rem; color: rgba(255,255,255,0.7); margin-top: 0.75rem; margin-bottom: 0.25rem;">
+                            Próxima ejecución:
+                        </div>
+                        <div style="font-weight: 600; color: var(--color-primary);">
+                            ${new Date(recurring.nextDate).toLocaleDateString('es-ES')}
+                        </div>
+                    </div>
+                `}
+
+                <!-- Botones -->
+                <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                    <button 
+                        type="button" 
+                        onclick="closeRecurringModal()"
+                        style="flex: 1; padding: 0.75rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 0.5rem; color: white; cursor: pointer; font-weight: 600;"
+                    >
+                        Cancelar
+                    </button>
+                    <button 
+                        type="submit"
+                        style="flex: 1; padding: 0.75rem; background: linear-gradient(135deg, var(--color-primary), var(--color-secondary)); border: none; border-radius: 0.5rem; color: white; cursor: pointer; font-weight: 600;"
+                    >
+                        ${isEdit ? '💾 Guardar Cambios' : '➕ Crear Recurrente'}
+                    </button>
+                </div>
+            </form>
+        </div>
+    `;
+
+    // Insertar modal
+    const modalContainer = document.createElement('div');
+    modalContainer.id = 'recurring-modal';
+    modalContainer.className = 'modal';
+    modalContainer.innerHTML = modalHTML;
+    document.body.appendChild(modalContainer);
+}
+
+/**
+ * 🔧 Toggle día del mes
+ */
+function toggleDayOfMonth() {
+    const frequency = document.getElementById('recurring-frequency').value;
+    const container = document.getElementById('day-of-month-container');
+    
+    if (frequency === 'monthly') {
+        container.style.display = 'block';
+    } else {
+        container.style.display = 'none';
+        document.getElementById('recurring-day-of-month').value = '';
+    }
+}
+
+/**
+ * ❌ Cerrar modal de recurrentes
+ */
+function closeRecurringModal() {
+    const modal = document.getElementById('recurring-modal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+/**
+ * 💾 Manejar submit del formulario de recurrentes
+ */
+async function handleRecurringSubmit(event, recurringId = null) {
+    event.preventDefault();
+    
+    const description = document.getElementById('recurring-description').value.trim();
+    const amount = parseFloat(document.getElementById('recurring-amount').value);
+    const category = document.getElementById('recurring-category').value;
+    const frequency = document.getElementById('recurring-frequency').value;
+    const dayOfMonth = document.getElementById('recurring-day-of-month')?.value || null;
+    const startDate = document.getElementById('recurring-start-date')?.value || null;
+
+    const isEdit = recurringId !== null;
+
+    try {
+        let result;
+        
+        if (isEdit) {
+            // Actualizar
+            result = await recurringModule.updateRecurringExpense(recurringId, {
+                description,
+                amount,
+                category,
+                frequency,
+                dayOfMonth: dayOfMonth ? parseInt(dayOfMonth) : null
+            });
+        } else {
+            // Crear nuevo
+            result = await recurringModule.createRecurringExpense({
+                description,
+                amount,
+                category,
+                frequency,
+                startDate,
+                dayOfMonth: dayOfMonth ? parseInt(dayOfMonth) : null
+            });
+        }
+
+        if (result.success) {
+            closeRecurringModal();
+            // Recargar vista
+            switchTab('more-recurring');
+        }
+    } catch (error) {
+        console.error('Error en formulario de recurrentes:', error);
+        alert('Error: ' + error.message);
+    }
+}
+
+/**
+ * ⏸️ Pausar gasto recurrente
+ */
+async function pauseRecurring(id) {
+    if (confirm('¿Pausar este gasto recurrente?\n\nNo se generarán nuevos gastos hasta que lo reactives.')) {
+        const result = await recurringModule.toggleActive(id);
+        if (result.success) {
+            switchTab('more-recurring');
+        }
+    }
+}
+
+/**
+ * ▶️ Activar gasto recurrente
+ */
+async function activateRecurring(id) {
+    const result = await recurringModule.toggleActive(id);
+    if (result.success) {
+        switchTab('more-recurring');
+    }
+}
+
+/**
+ * ✏️ Editar gasto recurrente
+ */
+function editRecurring(id) {
+    openRecurringModal(id);
+}
+
+/**
+ * 🗑️ Eliminar gasto recurrente
+ */
+async function deleteRecurring(id) {
+    const recurring = recurringModule.recurringExpenses.find(r => r.id === id);
+    
+    if (!recurring) return;
+    
+    if (confirm(`¿Eliminar "${recurring.description}"?\n\nEsta acción no se puede deshacer. Los gastos ya generados NO serán eliminados.`)) {
+        const result = await recurringModule.deleteRecurringExpense(id);
+        if (result.success) {
+            switchTab('more-recurring');
+        }
+    }
+}
+
+
+// ========================================
+// 🔄 FUNCIONES DE RECURRENTES INTEGRADAS
+// ========================================
+
+/**
+ * 🔄 Renderizar vista INTEGRADA de gastos recurrentes
+ */
+function renderRecurringExpensesViewIntegrated() {
+    if (!recurringModule || !recurringModule.isInitialized) {
+        return `
+            <div style="text-align: center; padding: 2rem;">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
+                <h3>Módulo de Gastos Recurrentes no disponible</h3>
+                <p style="color: rgba(255,255,255,0.7); margin-top: 0.5rem;">
+                    Por favor, recarga la página
+                </p>
+            </div>
+        `;
+    }
+
+    const stats = recurringModule.getStatistics();
+    const upcoming = recurringModule.getUpcomingExpenses(30);
+    const activeRecurring = recurringModule.recurringExpenses.filter(r => r.active);
+    const pausedRecurring = recurringModule.recurringExpenses.filter(r => !r.active);
+
+    return `
+        <div style="padding: 0;">
+            <!-- Estadísticas rápidas -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+                <div style="text-align: center; padding: 1rem; background: rgba(34, 197, 94, 0.1); border-radius: 0.75rem; border: 1px solid var(--color-success);">
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">✅</div>
+                    <div style="font-size: 1.5rem; font-weight: bold; color: var(--color-success);">${stats.active}</div>
+                    <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6); margin-top: 0.25rem;">Activos</div>
+                </div>
+                <div style="text-align: center; padding: 1rem; background: rgba(251, 191, 36, 0.1); border-radius: 0.75rem; border: 1px solid var(--color-warning);">
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">⏸️</div>
+                    <div style="font-size: 1.5rem; font-weight: bold; color: var(--color-warning);">${stats.paused}</div>
+                    <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6); margin-top: 0.25rem;">Pausados</div>
+                </div>
+                <div style="text-align: center; padding: 1rem; background: rgba(5, 191, 219, 0.1); border-radius: 0.75rem; border: 1px solid var(--color-primary);">
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">💰</div>
+                    <div style="font-size: 1.5rem; font-weight: bold; color: var(--color-primary);">$${stats.monthlyEstimate.toFixed(0)}</div>
+                    <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6); margin-top: 0.25rem;">Mensual</div>
+                </div>
+                <div style="text-align: center; padding: 1rem; background: rgba(168, 85, 247, 0.1); border-radius: 0.75rem; border: 1px solid var(--color-secondary);">
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">📋</div>
+                    <div style="font-size: 1.5rem; font-weight: bold; color: var(--color-secondary);">${stats.totalGenerated}</div>
+                    <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6); margin-top: 0.25rem;">Generados</div>
+                </div>
+            </div>
+
+            <!-- Botón para agregar nuevo -->
+            <button 
+                onclick="openRecurringModal()" 
+                class="add-recurring-btn"
+                style="width: 100%; padding: 1rem; background: linear-gradient(135deg, var(--color-primary), var(--color-secondary)); border: none; border-radius: 0.85rem; color: white; font-size: 1rem; font-weight: 600; cursor: pointer; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; box-shadow: 0 4px 12px rgba(5, 191, 219, 0.3); transition: all 0.3s ease;">
+                <span style="font-size: 1.5rem;">+</span>
+                Agregar Gasto Recurrente
+            </button>
+
+            <!-- Tabs: Activos / Pausados / Próximos / Gráficas -->
+            <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; overflow-x: auto; padding-bottom: 0.5rem;">
+                <button onclick="switchRecurringTab('active')" id="recurring-tab-active" class="recurring-tab" style="padding: 0.75rem 1.5rem; background: rgba(5, 191, 219, 0.2); border: 1px solid var(--color-primary); border-radius: 0.5rem; color: white; cursor: pointer; white-space: nowrap; font-weight: 600; font-size: 0.9rem;">
+                    ✅ Activos (${stats.active})
+                </button>
+                <button onclick="switchRecurringTab('paused')" id="recurring-tab-paused" class="recurring-tab" style="padding: 0.75rem 1.5rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 0.5rem; color: rgba(255,255,255,0.7); cursor: pointer; white-space: nowrap; font-size: 0.9rem;">
+                    ⏸️ Pausados (${stats.paused})
+                </button>
+                <button onclick="switchRecurringTab('upcoming')" id="recurring-tab-upcoming" class="recurring-tab" style="padding: 0.75rem 1.5rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 0.5rem; color: rgba(255,255,255,0.7); cursor: pointer; white-space: nowrap; font-size: 0.9rem;">
+                    📅 Próximos (${upcoming.length})
+                </button>
+                <button onclick="switchRecurringTab('charts')" id="recurring-tab-charts" class="recurring-tab" style="padding: 0.75rem 1.5rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 0.5rem; color: rgba(255,255,255,0.7); cursor: pointer; white-space: nowrap; font-size: 0.9rem;">
+                    📊 Gráficas
+                </button>
+            </div>
+
+            <!-- Contenido de tabs -->
+            <div id="recurring-content-active" class="recurring-content">
+                ${renderRecurringList(activeRecurring, 'active')}
+            </div>
+
+            <div id="recurring-content-paused" class="recurring-content" style="display: none;">
+                ${renderRecurringList(pausedRecurring, 'paused')}
+            </div>
+
+            <div id="recurring-content-upcoming" class="recurring-content" style="display: none;">
+                ${renderUpcomingExpenses(upcoming)}
+            </div>
+
+            <div id="recurring-content-charts" class="recurring-content" style="display: none;">
+                ${renderRecurringCharts(stats)}
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * ➕ Abrir modal para crear/editar gasto recurrente desde FAB
+ */
+function openRecurringFromFAB() {
+    window.activeExpensesTab = 'recurring';
+    switchTransactionTab('recurring');
+    
+    // Cerrar el menú FAB
+    const fabMenu = document.getElementById('fab-menu');
+    if (fabMenu) {
+        fabMenu.style.display = 'none';
+    }
+    
+    // Scroll al inicio y resaltar botón
+    setTimeout(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        const addButton = document.querySelector('.add-recurring-btn');
+        if (addButton) {
+            addButton.style.animation = 'pulse 1s ease 3';
+        }
+    }, 300);
+}
+
+
 
 // ✅ CRÍTICO: Exponer funciones al scope global para onclick
 window.deleteIncome = deleteIncome;
@@ -5926,6 +7011,20 @@ window.pauseRecurring = pauseRecurring;
 window.activateRecurring = activateRecurring;
 window.editRecurring = editRecurring;
 window.deleteRecurring = deleteRecurring;
+
+// 🔄 Funciones de gastos recurrentes
+window.switchRecurringTab = switchRecurringTab;
+window.openRecurringModal = openRecurringModal;
+window.closeRecurringModal = closeRecurringModal;
+window.handleRecurringSubmit = handleRecurringSubmit;
+window.toggleDayOfMonth = toggleDayOfMonth;
+window.pauseRecurring = pauseRecurring;
+window.activateRecurring = activateRecurring;
+window.editRecurring = editRecurring;
+window.deleteRecurring = deleteRecurring;
+window.openRecurringFromFAB = openRecurringFromFAB;
+window.renderRecurringExpensesViewIntegrated = renderRecurringExpensesViewIntegrated;
+
 render();
 
 // ========================================
