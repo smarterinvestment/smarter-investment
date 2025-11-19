@@ -4774,6 +4774,7 @@ window.updateRecurringPreview = updateRecurringPreview;
 window.handleModalSubmit = handleModalSubmit;
 
 
+
 function closeModal() {
     document.getElementById('modal').classList.remove('active');
     
@@ -6093,6 +6094,11 @@ function switchTab(tab) {
 }
 
 // ✅ Función para cambiar entre pestañas de Gastos e Ingresos
+// ========================================
+// 🔄 FUNCIÓN ACTUALIZADA: switchTransactionTab
+// ========================================
+// REEMPLAZAR la función switchTransactionTab existente con esta versión
+
 function switchTransactionTab(tab) {
     window.activeExpensesTab = tab;
     
@@ -6154,17 +6160,20 @@ function switchTransactionTab(tab) {
             recurringTab.style.fontWeight = 'bold';
         }
         
-        // Renderizar gráficos si está en la sub-pestaña de gráficas
+        // ✨ NUEVO: Renderizar gráficos cuando se muestra el tab de recurrentes
         setTimeout(() => {
-            if (document.getElementById('recurring-tab-charts') && 
-                document.getElementById('recurring-tab-charts').style.borderColor === 'var(--color-primary)') {
-                if (typeof renderRecurringChartsCanvas === 'function') {
-                    renderRecurringChartsCanvas();
-                }
+            if (typeof renderRecurringCharts === 'function') {
+                renderRecurringCharts();
             }
         }, 100);
     }
 }
+
+// Exportar
+window.switchTransactionTab = switchTransactionTab;
+
+
+
 
 // ========================================
 // INICIAR APP
@@ -6434,85 +6443,91 @@ function renderUpcomingExpenses(upcoming) {
                         
                         return `
                             <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: rgba(255,255,255,0.05); border-radius: 0.5rem; ${isToday ? 'border: 2px solid var(--color-warning);' : ''}">
-// ========================================
-// 🔄 FUNCIÓN ACTUALIZADA: switchTransactionTab
-// ========================================
-// REEMPLAZAR la función switchTransactionTab existente con esta versión
-
-function switchTransactionTab(tab) {
-    window.activeExpensesTab = tab;
-    
-    const expensesContent = document.getElementById('expenses-content');
-    const incomesContent = document.getElementById('incomes-content');
-    const recurringContent = document.getElementById('recurring-content');
-    const expensesTab = document.getElementById('tab-expenses');
-    const incomesTab = document.getElementById('tab-incomes');
-    const recurringTab = document.getElementById('tab-recurring');
-    
-    // Ocultar todos
-    if (expensesContent) expensesContent.style.display = 'none';
-    if (incomesContent) incomesContent.style.display = 'none';
-    if (recurringContent) recurringContent.style.display = 'none';
-    
-    // Resetear estilos de todos los tabs
-    if (expensesTab) {
-        expensesTab.style.background = 'rgba(255,255,255,0.1)';
-        expensesTab.style.borderColor = 'rgba(255,255,255,0.2)';
-        expensesTab.style.color = 'rgba(255,255,255,0.7)';
-        expensesTab.style.fontWeight = 'normal';
-    }
-    if (incomesTab) {
-        incomesTab.style.background = 'rgba(255,255,255,0.1)';
-        incomesTab.style.borderColor = 'rgba(255,255,255,0.2)';
-        incomesTab.style.color = 'rgba(255,255,255,0.7)';
-        incomesTab.style.fontWeight = 'normal';
-    }
-    if (recurringTab) {
-        recurringTab.style.background = 'rgba(255,255,255,0.1)';
-        recurringTab.style.borderColor = 'rgba(255,255,255,0.2)';
-        recurringTab.style.color = 'rgba(255,255,255,0.7)';
-        recurringTab.style.fontWeight = 'normal';
-    }
-    
-    // Mostrar y estilizar el tab seleccionado
-    if (tab === 'expenses') {
-        if (expensesContent) expensesContent.style.display = 'block';
-        if (expensesTab) {
-            expensesTab.style.background = 'rgba(5, 191, 219, 0.2)';
-            expensesTab.style.borderColor = 'var(--color-primary)';
-            expensesTab.style.color = 'white';
-            expensesTab.style.fontWeight = 'bold';
-        }
-    } else if (tab === 'incomes') {
-        if (incomesContent) incomesContent.style.display = 'block';
-        if (incomesTab) {
-            incomesTab.style.background = 'rgba(34, 197, 94, 0.2)';
-            incomesTab.style.borderColor = 'var(--color-success)';
-            incomesTab.style.color = 'white';
-            incomesTab.style.fontWeight = 'bold';
-        }
-    } else if (tab === 'recurring') {
-        if (recurringContent) recurringContent.style.display = 'block';
-        if (recurringTab) {
-            recurringTab.style.background = 'rgba(168, 85, 247, 0.2)';
-            recurringTab.style.borderColor = 'var(--color-secondary)';
-            recurringTab.style.color = 'white';
-            recurringTab.style.fontWeight = 'bold';
-        }
-        
-        // ✨ NUEVO: Renderizar gráficos cuando se muestra el tab de recurrentes
-        setTimeout(() => {
-            if (typeof renderRecurringCharts === 'function') {
-                renderRecurringCharts();
-            }
-        }, 100);
-    }
+                                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                    <div style="font-size: 1.5rem;">${category ? category.emoji : '📌'}</div>
+                                    <div>
+                                        <div style="font-weight: 600;">${item.description}</div>
+                                        <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6);">
+                                            ${item.dueDate.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'short' })}
+                                            ${isToday ? '<span style="color: var(--color-warning); font-weight: 600;"> · HOY</span>' : ''}
+                                            ${isTomorrow ? '<span style="color: var(--color-info); font-weight: 600;"> · MAÑANA</span>' : ''}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div style="font-weight: 600; color: var(--color-danger);">
+                                    $${item.amount.toFixed(2)}
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+        `;
+    }).join('');
 }
 
-// Exportar
-window.switchTransactionTab = switchTransactionTab;
+/**
+ * 📊 Renderizar gráficas
+ */
+function renderRecurringCharts(stats) {
+    return `
+        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+            <!-- Gráfica: Distribución por categoría -->
+            <div class="card">
+                <h3 style="margin-bottom: 1rem;">📊 Distribución por Categoría</h3>
+                <canvas id="recurring-category-chart" style="max-height: 300px;"></canvas>
+            </div>
+            
+            <!-- Gráfica: Distribución por frecuencia -->
+            <div class="card">
+                <h3 style="margin-bottom: 1rem;">🔄 Distribución por Frecuencia</h3>
+                <canvas id="recurring-frequency-chart" style="max-height: 300px;"></canvas>
+            </div>
+            
+            <!-- Comparativo: Gastos totales vs recurrentes -->
+            <div class="card">
+                <h3 style="margin-bottom: 1rem;">💰 Impacto en el Presupuesto</h3>
+                <div style="padding: 1rem; background: rgba(5, 191, 219, 0.1); border-radius: 0.5rem; margin-bottom: 1rem;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span style="color: rgba(255,255,255,0.7);">Gastos totales este mes:</span>
+                        <span style="font-weight: 600;">$${calculateMonthlyTotal().toFixed(2)}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span style="color: rgba(255,255,255,0.7);">Recurrentes estimados:</span>
+                        <span style="font-weight: 600; color: var(--color-primary);">$${stats.monthlyEstimate.toFixed(2)}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding-top: 0.5rem; border-top: 1px solid rgba(255,255,255,0.2);">
+                        <span style="color: rgba(255,255,255,0.9); font-weight: 600;">% del presupuesto:</span>
+                        <span style="font-weight: 700; color: var(--color-warning);">
+                            ${calculateMonthlyTotal() > 0 ? ((stats.monthlyEstimate / calculateMonthlyTotal()) * 100).toFixed(1) : 0}%
+                        </span>
+                    </div>
+                </div>
+                <canvas id="recurring-impact-chart" style="max-height: 250px;"></canvas>
+            </div>
+            
+            <!-- Timeline de generación -->
+            <div class="card">
+                <h3 style="margin-bottom: 1rem;">📈 Historial de Generación (últimos 30 días)</h3>
+                ${renderGenerationTimeline()}
+            </div>
+        </div>
+    `;
+}
 
-
+/**
+ * 📈 Renderizar timeline de generación
+ */
+function renderGenerationTimeline() {
+    const history = recurringModule.generatedHistory;
+    
+    if (history.length === 0) {
+        return `
+            <div style="text-align: center; padding: 2rem; color: rgba(255,255,255,0.6);">
+                <div style="font-size: 2rem; margin-bottom: 0.5rem;">📋</div>
+                <div>No hay gastos generados en los últimos 30 días</div>
+            </div>
+        `;
     }
 
     // Agrupar por día
@@ -7058,424 +7073,6 @@ async function deleteRecurring(id) {
 /**
  * 🔄 Renderizar vista INTEGRADA de gastos recurrentes
  */
-function renderRecurringExpensesViewIntegrated() {
-    if (!recurringModule || !recurringModule.isInitialized) {
-        return `
-            <div style="text-align: center; padding: 2rem;">
-                <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
-                <h3>Módulo de Gastos Recurrentes no disponible</h3>
-                <p style="color: rgba(255,255,255,0.7); margin-top: 0.5rem;">
-                    Por favor, recarga la página
-                </p>
-            </div>
-        `;
-    }
-
-    const stats = recurringModule.getStatistics();
-    const upcoming = recurringModule.getUpcomingExpenses(30);
-    const activeRecurring = recurringModule.recurringExpenses.filter(r => r.active);
-    const pausedRecurring = recurringModule.recurringExpenses.filter(r => !r.active);
-
-    return `
-        <div style="padding: 0;">
-            <!-- Estadísticas rápidas -->
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
-                <div style="text-align: center; padding: 1rem; background: rgba(34, 197, 94, 0.1); border-radius: 0.75rem; border: 1px solid var(--color-success);">
-                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">✅</div>
-                    <div style="font-size: 1.5rem; font-weight: bold; color: var(--color-success);">${stats.active}</div>
-                    <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6); margin-top: 0.25rem;">Activos</div>
-                </div>
-                <div style="text-align: center; padding: 1rem; background: rgba(251, 191, 36, 0.1); border-radius: 0.75rem; border: 1px solid var(--color-warning);">
-                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">⏸️</div>
-                    <div style="font-size: 1.5rem; font-weight: bold; color: var(--color-warning);">${stats.paused}</div>
-                    <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6); margin-top: 0.25rem;">Pausados</div>
-                </div>
-                <div style="text-align: center; padding: 1rem; background: rgba(5, 191, 219, 0.1); border-radius: 0.75rem; border: 1px solid var(--color-primary);">
-                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">💰</div>
-                    <div style="font-size: 1.5rem; font-weight: bold; color: var(--color-primary);">$${stats.monthlyEstimate.toFixed(0)}</div>
-                    <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6); margin-top: 0.25rem;">Mensual</div>
-                </div>
-                <div style="text-align: center; padding: 1rem; background: rgba(168, 85, 247, 0.1); border-radius: 0.75rem; border: 1px solid var(--color-secondary);">
-                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">📋</div>
-                    <div style="font-size: 1.5rem; font-weight: bold; color: var(--color-secondary);">${stats.totalGenerated}</div>
-                    <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6); margin-top: 0.25rem;">Generados</div>
-                </div>
-            </div>
-
-            <!-- Botón para agregar nuevo -->
-            <button 
-                onclick="openRecurringModal()" 
-                class="add-recurring-btn"
-                style="width: 100%; padding: 1rem; background: linear-gradient(135deg, var(--color-primary), var(--color-secondary)); border: none; border-radius: 0.85rem; color: white; font-size: 1rem; font-weight: 600; cursor: pointer; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; box-shadow: 0 4px 12px rgba(5, 191, 219, 0.3); transition: all 0.3s ease;">
-                <span style="font-size: 1.5rem;">+</span>
-                Agregar Gasto Recurrente
-            </button>
-
-            <!-- Tabs: Activos / Pausados / Próximos / Gráficas -->
-            <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; overflow-x: auto; padding-bottom: 0.5rem;">
-                <button onclick="switchRecurringTab('active')" id="recurring-tab-active" class="recurring-tab" style="padding: 0.75rem 1.5rem; background: rgba(5, 191, 219, 0.2); border: 1px solid var(--color-primary); border-radius: 0.5rem; color: white; cursor: pointer; white-space: nowrap; font-weight: 600; font-size: 0.9rem;">
-                    ✅ Activos (${stats.active})
-                </button>
-                <button onclick="switchRecurringTab('paused')" id="recurring-tab-paused" class="recurring-tab" style="padding: 0.75rem 1.5rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 0.5rem; color: rgba(255,255,255,0.7); cursor: pointer; white-space: nowrap; font-size: 0.9rem;">
-                    ⏸️ Pausados (${stats.paused})
-                </button>
-                <button onclick="switchRecurringTab('upcoming')" id="recurring-tab-upcoming" class="recurring-tab" style="padding: 0.75rem 1.5rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 0.5rem; color: rgba(255,255,255,0.7); cursor: pointer; white-space: nowrap; font-size: 0.9rem;">
-                    📅 Próximos (${upcoming.length})
-                </button>
-                <button onclick="switchRecurringTab('charts')" id="recurring-tab-charts" class="recurring-tab" style="padding: 0.75rem 1.5rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 0.5rem; color: rgba(255,255,255,0.7); cursor: pointer; white-space: nowrap; font-size: 0.9rem;">
-                    📊 Gráficas
-                </button>
-            </div>
-
-            <!-- Contenido de tabs -->
-            <div id="recurring-content-active" class="recurring-content">
-                ${renderRecurringList(activeRecurring, 'active')}
-            </div>
-
-            <div id="recurring-content-paused" class="recurring-content" style="display: none;">
-                ${renderRecurringList(pausedRecurring, 'paused')}
-            </div>
-
-            <div id="recurring-content-upcoming" class="recurring-content" style="display: none;">
-                ${renderUpcomingExpenses(upcoming)}
-            </div>
-
-            <div id="recurring-content-charts" class="recurring-content" style="display: none;">
-                ${renderRecurringCharts(stats)}
-            </div>
-        </div>
-    `;
-}
-
-/**
- * ➕ Abrir modal para crear/editar gasto recurrente desde FAB
- */
-function openRecurringFromFAB() {
-    window.activeExpensesTab = 'recurring';
-    switchTransactionTab('recurring');
-    
-    // Cerrar el menú FAB
-    const fabMenu = document.getElementById('fab-menu');
-    if (fabMenu) {
-        fabMenu.style.display = 'none';
-    }
-    
-    // Scroll al inicio y resaltar botón
-    setTimeout(() => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        const addButton = document.querySelector('.add-recurring-btn');
-        if (addButton) {
-            addButton.style.animation = 'pulse 1s ease 3';
-        }
-    }, 300);
-}
-
-
-
-// ✅ CRÍTICO: Exponer funciones al scope global para onclick
-window.deleteIncome = deleteIncome;
-window.deleteExpense = deleteExpense;
-window.deleteGoal = deleteGoal;
-window.addMoneyToGoal = addMoneyToGoal;
-window.openAddExpenseModal = openAddExpenseModal;
-window.openAddIncomeModal = openAddIncomeModal;
-window.openAddGoalModal = openAddGoalModal;
-window.openAddBudgetModal = openAddBudgetModal;
-window.handleExpenseSubmit = handleExpenseSubmit;
-window.handleIncomeSubmit = handleIncomeSubmit;
-window.handleGoalSubmit = handleGoalSubmit;
-window.handleBudgetSubmit = handleBudgetSubmit;
-window.closeModal = closeModal;
-window.switchTab = switchTab;
-window.switchTransactionTab = switchTransactionTab;
-window.loginSubmit = loginSubmit;
-window.registerSubmit = registerSubmit;
-window.handleLogout = handleLogout;
-window.openCategoryDetails = openCategoryDetails;
-window.showCategoryDetailsBudget = showCategoryDetailsBudget;
-window.openFinancialDetailModal = openFinancialDetailModal;
-window.editBudgetForCategory = editBudgetForCategory;
-window.saveSingleBudget = saveSingleBudget;
-window.generateAutoBudget = generateAutoBudget;
-window.applyAutoBudget = applyAutoBudget;
-window.generateFromIncome = generateFromIncome;
-window.generateFromHistory = generateFromHistory;
-window.showHistoricalDataNeeded = showHistoricalDataNeeded;
-window.updateRemainderCalculation = updateRemainderCalculation;
-window.applyIncomeBudget = applyIncomeBudget;
-window.generateBudgetFromExpenses = generateBudgetFromExpenses; // ✨ NUEVA - Flujo principal
-window.confirmBudgetFromExpenses = confirmBudgetFromExpenses; // ✨ NUEVA
-window.startTutorial = startTutorial; // ✨ TUTORIAL
-window.nextTutorialStep = nextTutorialStep; // ✨ TUTORIAL
-window.previousTutorialStep = previousTutorialStep; // ✨ TUTORIAL
-window.skipTutorial = skipTutorial; // ✨ TUTORIAL
-// 🔐 NUEVAS - Recuperación de contraseña
-window.showPasswordResetModal = showPasswordResetModal;
-window.handlePasswordReset = handlePasswordReset;
-window.handlePasswordResetSubmit = handlePasswordResetSubmit;
-// 💰💸 NUEVAS - Modales de flujo de presupuesto
-window.showNeedIncomesModal = showNeedIncomesModal;
-window.showNeedExpensesModal = showNeedExpensesModal;
-// 🤖 NUEVAS - Asistente Virtual
-window.showAssistant = showAssistant;
-window.sendAssistantMessage = sendAssistantMessage;
-window.quickAssistantAction = quickAssistantAction;
-// 🔄 Funciones de gastos recurrentes
-window.switchRecurringTab = switchRecurringTab;
-window.openRecurringModal = openRecurringModal;
-window.closeRecurringModal = closeRecurringModal;
-window.handleRecurringSubmit = handleRecurringSubmit;
-window.toggleDayOfMonth = toggleDayOfMonth;
-window.pauseRecurring = pauseRecurring;
-window.activateRecurring = activateRecurring;
-window.editRecurring = editRecurring;
-window.deleteRecurring = deleteRecurring;
-
-// 🔄 Funciones de gastos recurrentes
-window.switchRecurringTab = switchRecurringTab;
-window.openRecurringModal = openRecurringModal;
-window.closeRecurringModal = closeRecurringModal;
-window.handleRecurringSubmit = handleRecurringSubmit;
-window.toggleDayOfMonth = toggleDayOfMonth;
-window.pauseRecurring = pauseRecurring;
-window.activateRecurring = activateRecurring;
-window.editRecurring = editRecurring;
-window.deleteRecurring = deleteRecurring;
-window.openRecurringFromFAB = openRecurringFromFAB;
-window.renderRecurringExpensesViewIntegrated = renderRecurringExpensesViewIntegrated;
-
-render();
-
-// ========================================
-// 🤖 FUNCIONES DEL ASISTENTE AI
-// ========================================
-
-async function sendAssistantMessage() {
-    if (!assistantModule) return;
-    
-    const input = document.getElementById('assistant-input');
-    const message = input.value.trim();
-    
-    if (!message) return;
-    
-    input.value = '';
-    input.disabled = true;
-    
-    try {
-        const response = await assistantModule.sendMessage(message);
-        render();
-        
-        // Scroll al final
-        setTimeout(() => {
-            const chatArea = document.getElementById('assistant-chat');
-            if (chatArea) {
-                chatArea.scrollTop = chatArea.scrollHeight;
-            }
-        }, 100);
-    } catch (error) {
-        console.error('Error enviando mensaje:', error);
-        alert('Error al enviar mensaje');
-    } finally {
-        input.disabled = false;
-        input.focus();
-    }
-}
-
-async function sendQuickAction(actionId, message) {
-    if (!assistantModule) return;
-    
-    document.getElementById('assistant-input').value = message;
-    await sendAssistantMessage();
-}
-
-async function toggleAssistantMode() {
-    if (!assistantModule) return;
-    
-    const newMode = await assistantModule.toggleMode();
-    
-    if (window.Toastify) {
-        Toastify({
-            text: newMode ? '✅ Modo Online activado' : '📴 Modo Offline activado',
-            duration: 3000,
-            gravity: 'top',
-            position: 'center',
-            style: {
-                background: 'linear-gradient(to right, #10b981, #059669)'
-            }
-        }).showToast();
-    }
-    
-    render();
-}
-
-function configureAssistantAPIKey() {
-    const apiKey = prompt('Ingresa tu API Key de Claude:\n\nPuedes obtenerla en console.anthropic.com');
-    
-    if (apiKey && apiKey.trim()) {
-        assistantModule.setAPIKey(apiKey.trim());
-        
-        if (window.Toastify) {
-            Toastify({
-                text: '✅ API Key configurada correctamente',
-                duration: 3000,
-                gravity: 'top',
-                position: 'center',
-                style: {
-                    background: 'linear-gradient(to right, #10b981, #059669)'
-                }
-            }).showToast();
-        }
-        
-        render();
-    }
-}
-
-function startNewAssistantConversation() {
-    if (!assistantModule) return;
-    
-    if (confirm('¿Iniciar una nueva conversación? Se guardará la actual.')) {
-        assistantModule.startNewConversation();
-        render();
-    }
-}
-
-// ========================================
-// 🔄 FUNCIONES DE GASTOS RECURRENTES
-// ========================================
-
-function openCreateRecurringExpenseModal() {
-    const modal = document.getElementById('modal');
-    const modalTitle = document.getElementById('modal-title');
-    const modalBody = document.getElementById('modal-body');
-    
-    modalTitle.textContent = '🔄 Crear Gasto Recurrente';
-    modalBody.innerHTML = `
-        <form onsubmit="event.preventDefault(); createRecurringExpense();">
-            <div class="input-group">
-                <label>📝 Descripción</label>
-                <input type="text" id="recurring-description" placeholder="Netflix, Renta, etc." required autofocus>
-            </div>
-            
-            <div class="input-group">
-                <label>💰 Monto</label>
-                <input type="number" id="recurring-amount" placeholder="199.00" step="0.01" required>
-            </div>
-            
-            <div class="input-group">
-                <label>📂 Categoría</label>
-                <select id="recurring-category" required>
-                    <option value="">Seleccionar...</option>
-                    <option value="Gastos Esenciales">Gastos Esenciales</option>
-                    <option value="Gastos Discrecionales">Gastos Discrecionales</option>
-                    <option value="Pago Deudas">Pago Deudas</option>
-                    <option value="Ahorros">Ahorros</option>
-                    <option value="Inversiones">Inversiones</option>
-                </select>
-            </div>
-            
-            <div class="input-group">
-                <label>🔄 Frecuencia</label>
-                <select id="recurring-frequency" onchange="updateFrequencyOptions()" required>
-                    <option value="">Seleccionar...</option>
-                    <option value="daily">📅 Diaria</option>
-                    <option value="weekly">📆 Semanal</option>
-                    <option value="biweekly">🗓️ Quincenal</option>
-                    <option value="monthly">📋 Mensual</option>
-                    <option value="annual">🎂 Anual</option>
-                </select>
-            </div>
-            
-            <div class="input-group">
-                <label>📅 Fecha de inicio</label>
-                <input type="date" id="recurring-start-date" required>
-            </div>
-            
-            <div class="input-group" id="day-of-month-group" style="display: none;">
-                <label>📆 Día del mes (para frecuencia mensual)</label>
-                <input type="number" id="recurring-day-of-month" min="1" max="31" placeholder="15">
-            </div>
-            
-            <button type="submit" class="btn btn-primary">✅ Crear Gasto Recurrente</button>
-            <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
-        </form>
-    `;
-    
-    // Set default date to today
-    document.getElementById('recurring-start-date').valueAsDate = new Date();
-    
-    modal.classList.add('active');
-}
-
-function updateFrequencyOptions() {
-    const frequency = document.getElementById('recurring-frequency').value;
-    const dayOfMonthGroup = document.getElementById('day-of-month-group');
-    
-    if (frequency === 'monthly') {
-        dayOfMonthGroup.style.display = 'block';
-    } else {
-        dayOfMonthGroup.style.display = 'none';
-    }
-}
-
-async function createRecurringExpense() {
-    if (!recurringModule) return;
-    
-    const expenseData = {
-        description: document.getElementById('recurring-description').value,
-        amount: parseFloat(document.getElementById('recurring-amount').value),
-        category: document.getElementById('recurring-category').value,
-        frequency: document.getElementById('recurring-frequency').value,
-        startDate: document.getElementById('recurring-start-date').value,
-        dayOfMonth: document.getElementById('recurring-day-of-month').value || null
-    };
-    
-    const result = await recurringModule.createRecurringExpense(expenseData);
-    
-    if (result.success) {
-        closeModal();
-        render();
-    }
-}
-
-async function pauseRecurringExpense(id) {
-    if (!recurringModule) return;
-    
-    if (confirm('¿Pausar este gasto recurrente? Dejará de generarse automáticamente.')) {
-        await recurringModule.pauseRecurringExpense(id);
-        render();
-    }
-}
-
-async function resumeRecurringExpense(id) {
-    if (!recurringModule) return;
-    
-    await recurringModule.resumeRecurringExpense(id);
-    render();
-}
-
-async function editRecurringExpense(id) {
-    if (!recurringModule) return;
-    
-    const recurring = recurringModule.recurringExpenses.find(r => r.id === id);
-    if (!recurring) return;
-    
-    const modal = document.getElementById('modal');
-    const modalTitle = document.getElementById('modal-title');
-    const modalBody = document.getElementById('modal-body');
-    
-    modalTitle.textContent = '✏️ Editar Gasto Recurrente';
-    modalBody.innerHTML = `
-        <form onsubmit="event.preventDefault(); saveRecurringExpenseEdit('${id}');">
-            <div class="input-group">
-                <label>📝 Descripción</label>
-                <input type="text" id="edit-recurring-description" value="${recurring.description}" required>
-            </div>
-            
-            <div class="input-group">
-                <label>💰 Monto</label>
-                <input type="number" id="edit-recurring-amount" value="${recurring.amount}" step="0.01" required>
-            </div>
-            
 // ========================================
 // 🔄 VISTA COMPLETA DE RECURRENTES (Una sola página)
 // ========================================
@@ -7842,6 +7439,712 @@ function formatDate(dateString) {
 }
 
 
+
+
+/**
+ * ➕ Abrir modal para crear/editar gasto recurrente desde FAB
+ */
+function openRecurringFromFAB() {
+    window.activeExpensesTab = 'recurring';
+    switchTransactionTab('recurring');
+    
+    // Cerrar el menú FAB
+    const fabMenu = document.getElementById('fab-menu');
+    if (fabMenu) {
+        fabMenu.style.display = 'none';
+    }
+    
+    // Scroll al inicio y resaltar botón
+    setTimeout(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        const addButton = document.querySelector('.add-recurring-btn');
+        if (addButton) {
+            addButton.style.animation = 'pulse 1s ease 3';
+        }
+    }, 300);
+}
+
+
+
+// ✅ CRÍTICO: Exponer funciones al scope global para onclick
+window.deleteIncome = deleteIncome;
+window.deleteExpense = deleteExpense;
+window.deleteGoal = deleteGoal;
+window.addMoneyToGoal = addMoneyToGoal;
+window.openAddExpenseModal = openAddExpenseModal;
+window.openAddIncomeModal = openAddIncomeModal;
+window.openAddGoalModal = openAddGoalModal;
+window.openAddBudgetModal = openAddBudgetModal;
+window.handleExpenseSubmit = handleExpenseSubmit;
+window.handleIncomeSubmit = handleIncomeSubmit;
+window.handleGoalSubmit = handleGoalSubmit;
+window.handleBudgetSubmit = handleBudgetSubmit;
+window.closeModal = closeModal;
+window.switchTab = switchTab;
+window.switchTransactionTab = switchTransactionTab;
+window.loginSubmit = loginSubmit;
+window.registerSubmit = registerSubmit;
+window.handleLogout = handleLogout;
+window.openCategoryDetails = openCategoryDetails;
+window.showCategoryDetailsBudget = showCategoryDetailsBudget;
+window.openFinancialDetailModal = openFinancialDetailModal;
+window.editBudgetForCategory = editBudgetForCategory;
+window.saveSingleBudget = saveSingleBudget;
+window.generateAutoBudget = generateAutoBudget;
+window.applyAutoBudget = applyAutoBudget;
+window.generateFromIncome = generateFromIncome;
+window.generateFromHistory = generateFromHistory;
+window.showHistoricalDataNeeded = showHistoricalDataNeeded;
+window.updateRemainderCalculation = updateRemainderCalculation;
+window.applyIncomeBudget = applyIncomeBudget;
+window.generateBudgetFromExpenses = generateBudgetFromExpenses; // ✨ NUEVA - Flujo principal
+window.confirmBudgetFromExpenses = confirmBudgetFromExpenses; // ✨ NUEVA
+window.startTutorial = startTutorial; // ✨ TUTORIAL
+window.nextTutorialStep = nextTutorialStep; // ✨ TUTORIAL
+window.previousTutorialStep = previousTutorialStep; // ✨ TUTORIAL
+window.skipTutorial = skipTutorial; // ✨ TUTORIAL
+// 🔐 NUEVAS - Recuperación de contraseña
+window.showPasswordResetModal = showPasswordResetModal;
+window.handlePasswordReset = handlePasswordReset;
+window.handlePasswordResetSubmit = handlePasswordResetSubmit;
+// 💰💸 NUEVAS - Modales de flujo de presupuesto
+window.showNeedIncomesModal = showNeedIncomesModal;
+window.showNeedExpensesModal = showNeedExpensesModal;
+// 🤖 NUEVAS - Asistente Virtual
+window.showAssistant = showAssistant;
+window.sendAssistantMessage = sendAssistantMessage;
+window.quickAssistantAction = quickAssistantAction;
+// 🔄 Funciones de gastos recurrentes
+window.switchRecurringTab = switchRecurringTab;
+window.openRecurringModal = openRecurringModal;
+window.closeRecurringModal = closeRecurringModal;
+window.handleRecurringSubmit = handleRecurringSubmit;
+window.toggleDayOfMonth = toggleDayOfMonth;
+window.pauseRecurring = pauseRecurring;
+window.activateRecurring = activateRecurring;
+window.editRecurring = editRecurring;
+window.deleteRecurring = deleteRecurring;
+
+// 🔄 Funciones de gastos recurrentes
+window.switchRecurringTab = switchRecurringTab;
+window.openRecurringModal = openRecurringModal;
+window.closeRecurringModal = closeRecurringModal;
+window.handleRecurringSubmit = handleRecurringSubmit;
+window.toggleDayOfMonth = toggleDayOfMonth;
+window.pauseRecurring = pauseRecurring;
+window.activateRecurring = activateRecurring;
+window.editRecurring = editRecurring;
+window.deleteRecurring = deleteRecurring;
+window.openRecurringFromFAB = openRecurringFromFAB;
+
+// ========================================
+// 📊 GRÁFICOS COMPARATIVOS PARA RECURRENTES
+// ========================================
+// Funciones para renderizar gráficos con Chart.js
+
+/**
+ * 📊 Renderizar todos los gráficos de recurrentes
+ * Llamar después de que el DOM esté listo
+ */
+function renderRecurringCharts() {
+    // Esperar a que los canvas estén en el DOM
+    setTimeout(() => {
+        renderRecurringVsUniqueChart();
+        renderRecurringCategoriesChart();
+    }, 100);
+}
+
+/**
+ * 📊 Gráfico: Recurrentes vs Gastos Únicos
+ */
+function renderRecurringVsUniqueChart() {
+    const canvas = document.getElementById('recurring-vs-unique-chart');
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    
+    // Destruir gráfico anterior si existe
+    if (window.recurringVsUniqueChart) {
+        window.recurringVsUniqueChart.destroy();
+    }
+    
+    // Calcular datos
+    const recurringExpenses = expenses.filter(exp => exp.isRecurring);
+    const uniqueExpenses = expenses.filter(exp => !exp.isRecurring);
+    
+    const recurringTotal = recurringExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+    const uniqueTotal = uniqueExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+    
+    const recurringCount = recurringExpenses.length;
+    const uniqueCount = uniqueExpenses.length;
+    
+    // Crear gráfico
+    window.recurringVsUniqueChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Cantidad de Gastos', 'Monto Total'],
+            datasets: [
+                {
+                    label: '🔄 Recurrentes',
+                    data: [recurringCount, recurringTotal],
+                    backgroundColor: 'rgba(168, 85, 247, 0.7)',
+                    borderColor: 'rgba(168, 85, 247, 1)',
+                    borderWidth: 2
+                },
+                {
+                    label: '💸 Únicos',
+                    data: [uniqueCount, uniqueTotal],
+                    backgroundColor: 'rgba(5, 191, 219, 0.7)',
+                    borderColor: 'rgba(5, 191, 219, 1)',
+                    borderWidth: 2
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        color: 'rgba(255, 255, 255, 0.9)',
+                        font: {
+                            size: 12,
+                            weight: 'bold'
+                        },
+                        padding: 15
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 11, 46, 0.95)',
+                    titleColor: 'rgba(255, 255, 255, 1)',
+                    bodyColor: 'rgba(255, 255, 255, 0.9)',
+                    borderColor: 'rgba(5, 191, 219, 0.5)',
+                    borderWidth: 1,
+                    padding: 12,
+                    displayColors: true,
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.dataIndex === 1) {
+                                label += '$' + context.parsed.y.toFixed(2);
+                            } else {
+                                label += context.parsed.y;
+                            }
+                            return label;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        color: 'rgba(255, 255, 255, 0.7)',
+                        font: {
+                            size: 11
+                        },
+                        callback: function(value) {
+                            return value.toLocaleString();
+                        }
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)',
+                        drawBorder: false
+                    }
+                },
+                x: {
+                    ticks: {
+                        color: 'rgba(255, 255, 255, 0.7)',
+                        font: {
+                            size: 11
+                        }
+                    },
+                    grid: {
+                        display: false
+                    }
+                }
+            }
+        }
+    });
+}
+
+/**
+ * 🎯 Gráfico: Distribución por Categoría
+ */
+function renderRecurringCategoriesChart() {
+    const canvas = document.getElementById('recurring-categories-chart');
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    
+    // Destruir gráfico anterior si existe
+    if (window.recurringCategoriesChart) {
+        window.recurringCategoriesChart.destroy();
+    }
+    
+    if (!recurringModule || !recurringModule.recurringExpenses) {
+        return;
+    }
+    
+    // Agrupar por categoría
+    const categoryTotals = {};
+    const activeRecurring = recurringModule.recurringExpenses.filter(r => r.active);
+    
+    activeRecurring.forEach(recurring => {
+        const category = recurring.category;
+        if (!categoryTotals[category]) {
+            categoryTotals[category] = 0;
+        }
+        
+        // Calcular impacto mensual según frecuencia
+        let monthlyAmount = recurring.amount;
+        switch(recurring.frequency) {
+            case 'daily':
+                monthlyAmount = recurring.amount * 30;
+                break;
+            case 'weekly':
+                monthlyAmount = recurring.amount * 4;
+                break;
+            case 'yearly':
+                monthlyAmount = recurring.amount / 12;
+                break;
+        }
+        
+        categoryTotals[category] += monthlyAmount;
+    });
+    
+    // Preparar datos para el gráfico
+    const labels = Object.keys(categoryTotals);
+    const data = Object.values(categoryTotals);
+    
+    // Colores por categoría
+    const colors = labels.map(label => {
+        const cat = categorias.find(c => c.nombre === label);
+        return cat ? cat.color : '#64748b';
+    });
+    
+    if (labels.length === 0) {
+        ctx.font = '14px Arial';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        ctx.textAlign = 'center';
+        ctx.fillText('No hay datos suficientes', canvas.width / 2, canvas.height / 2);
+        return;
+    }
+    
+    // Crear gráfico
+    window.recurringCategoriesChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: data,
+                backgroundColor: colors.map(c => c + 'CC'),
+                borderColor: colors,
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'right',
+                    labels: {
+                        color: 'rgba(255, 255, 255, 0.9)',
+                        font: {
+                            size: 11
+                        },
+                        padding: 10,
+                        generateLabels: function(chart) {
+                            const data = chart.data;
+                            const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
+                            
+                            return data.labels.map((label, i) => {
+                                const value = data.datasets[0].data[i];
+                                const percentage = ((value / total) * 100).toFixed(1);
+                                
+                                return {
+                                    text: `${label}: $${value.toFixed(0)} (${percentage}%)`,
+                                    fillStyle: data.datasets[0].backgroundColor[i],
+                                    hidden: false,
+                                    index: i
+                                };
+                            });
+                        }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 11, 46, 0.95)',
+                    titleColor: 'rgba(255, 255, 255, 1)',
+                    bodyColor: 'rgba(255, 255, 255, 0.9)',
+                    borderColor: 'rgba(5, 191, 219, 0.5)',
+                    borderWidth: 1,
+                    padding: 12,
+                    displayColors: true,
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.parsed;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((value / total) * 100).toFixed(1);
+                            
+                            return `${label}: $${value.toFixed(2)} (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+/**
+ * 🔄 Actualizar gráficos cuando cambian los datos
+ */
+function updateRecurringChartsData() {
+    if (window.activeExpensesTab === 'recurring') {
+        renderRecurringCharts();
+    }
+}
+
+// Exportar funciones
+window.renderRecurringCharts = renderRecurringCharts;
+window.updateRecurringChartsData = updateRecurringChartsData;
+window.renderRecurringVsUniqueChart = renderRecurringVsUniqueChart;
+window.renderRecurringCategoriesChart = renderRecurringCategoriesChart;
+
+
+window.renderRecurringExpensesViewIntegrated = renderRecurringExpensesViewIntegrated;
+
+render();
+
+// ========================================
+// 🤖 FUNCIONES DEL ASISTENTE AI
+// ========================================
+
+async function sendAssistantMessage() {
+    if (!assistantModule) return;
+    
+    const input = document.getElementById('assistant-input');
+    const message = input.value.trim();
+    
+    if (!message) return;
+    
+    input.value = '';
+    input.disabled = true;
+    
+    try {
+        const response = await assistantModule.sendMessage(message);
+        render();
+        
+        // Scroll al final
+        setTimeout(() => {
+            const chatArea = document.getElementById('assistant-chat');
+            if (chatArea) {
+                chatArea.scrollTop = chatArea.scrollHeight;
+            }
+        }, 100);
+    } catch (error) {
+        console.error('Error enviando mensaje:', error);
+        alert('Error al enviar mensaje');
+    } finally {
+        input.disabled = false;
+        input.focus();
+    }
+}
+
+async function sendQuickAction(actionId, message) {
+    if (!assistantModule) return;
+    
+    document.getElementById('assistant-input').value = message;
+    await sendAssistantMessage();
+}
+
+async function toggleAssistantMode() {
+    if (!assistantModule) return;
+    
+    const newMode = await assistantModule.toggleMode();
+    
+    if (window.Toastify) {
+        Toastify({
+            text: newMode ? '✅ Modo Online activado' : '📴 Modo Offline activado',
+            duration: 3000,
+            gravity: 'top',
+            position: 'center',
+            style: {
+                background: 'linear-gradient(to right, #10b981, #059669)'
+            }
+        }).showToast();
+    }
+    
+    render();
+}
+
+function configureAssistantAPIKey() {
+    const apiKey = prompt('Ingresa tu API Key de Claude:\n\nPuedes obtenerla en console.anthropic.com');
+    
+    if (apiKey && apiKey.trim()) {
+        assistantModule.setAPIKey(apiKey.trim());
+        
+        if (window.Toastify) {
+            Toastify({
+                text: '✅ API Key configurada correctamente',
+                duration: 3000,
+                gravity: 'top',
+                position: 'center',
+                style: {
+                    background: 'linear-gradient(to right, #10b981, #059669)'
+                }
+            }).showToast();
+        }
+        
+        render();
+    }
+}
+
+function startNewAssistantConversation() {
+    if (!assistantModule) return;
+    
+    if (confirm('¿Iniciar una nueva conversación? Se guardará la actual.')) {
+        assistantModule.startNewConversation();
+        render();
+    }
+}
+
+// ========================================
+// 🔄 FUNCIONES DE GASTOS RECURRENTES
+// ========================================
+
+function openCreateRecurringExpenseModal() {
+    const modal = document.getElementById('modal');
+    const modalTitle = document.getElementById('modal-title');
+    const modalBody = document.getElementById('modal-body');
+    
+    modalTitle.textContent = '🔄 Crear Gasto Recurrente';
+    modalBody.innerHTML = `
+        <form onsubmit="event.preventDefault(); createRecurringExpense();">
+            <div class="input-group">
+                <label>📝 Descripción</label>
+                <input type="text" id="recurring-description" placeholder="Netflix, Renta, etc." required autofocus>
+            </div>
+            
+            <div class="input-group">
+                <label>💰 Monto</label>
+                <input type="number" id="recurring-amount" placeholder="199.00" step="0.01" required>
+            </div>
+            
+            <div class="input-group">
+                <label>📂 Categoría</label>
+                <select id="recurring-category" required>
+                    <option value="">Seleccionar...</option>
+                    <option value="Gastos Esenciales">Gastos Esenciales</option>
+                    <option value="Gastos Discrecionales">Gastos Discrecionales</option>
+                    <option value="Pago Deudas">Pago Deudas</option>
+                    <option value="Ahorros">Ahorros</option>
+                    <option value="Inversiones">Inversiones</option>
+                </select>
+            </div>
+            
+            <div class="input-group">
+                <label>🔄 Frecuencia</label>
+                <select id="recurring-frequency" onchange="updateFrequencyOptions()" required>
+                    <option value="">Seleccionar...</option>
+                    <option value="daily">📅 Diaria</option>
+                    <option value="weekly">📆 Semanal</option>
+                    <option value="biweekly">🗓️ Quincenal</option>
+                    <option value="monthly">📋 Mensual</option>
+                    <option value="annual">🎂 Anual</option>
+                </select>
+            </div>
+            
+            <div class="input-group">
+                <label>📅 Fecha de inicio</label>
+                <input type="date" id="recurring-start-date" required>
+            </div>
+            
+            <div class="input-group" id="day-of-month-group" style="display: none;">
+                <label>📆 Día del mes (para frecuencia mensual)</label>
+                <input type="number" id="recurring-day-of-month" min="1" max="31" placeholder="15">
+            </div>
+            
+            <button type="submit" class="btn btn-primary">✅ Crear Gasto Recurrente</button>
+            <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+        </form>
+    `;
+    
+    // Set default date to today
+    document.getElementById('recurring-start-date').valueAsDate = new Date();
+    
+    modal.classList.add('active');
+}
+
+function updateFrequencyOptions() {
+    const frequency = document.getElementById('recurring-frequency').value;
+    const dayOfMonthGroup = document.getElementById('day-of-month-group');
+    
+    if (frequency === 'monthly') {
+        dayOfMonthGroup.style.display = 'block';
+    } else {
+        dayOfMonthGroup.style.display = 'none';
+    }
+}
+
+async function createRecurringExpense() {
+    if (!recurringModule) return;
+    
+    const expenseData = {
+        description: document.getElementById('recurring-description').value,
+        amount: parseFloat(document.getElementById('recurring-amount').value),
+        category: document.getElementById('recurring-category').value,
+        frequency: document.getElementById('recurring-frequency').value,
+        startDate: document.getElementById('recurring-start-date').value,
+        dayOfMonth: document.getElementById('recurring-day-of-month').value || null
+    };
+    
+    const result = await recurringModule.createRecurringExpense(expenseData);
+    
+    if (result.success) {
+        closeModal();
+        render();
+    }
+}
+
+async function pauseRecurringExpense(id) {
+    if (!recurringModule) return;
+    
+    if (confirm('¿Pausar este gasto recurrente? Dejará de generarse automáticamente.')) {
+        await recurringModule.pauseRecurringExpense(id);
+        render();
+    }
+}
+
+async function resumeRecurringExpense(id) {
+    if (!recurringModule) return;
+    
+    await recurringModule.resumeRecurringExpense(id);
+    render();
+}
+
+async function editRecurringExpense(id) {
+    if (!recurringModule) return;
+    
+    const recurring = recurringModule.recurringExpenses.find(r => r.id === id);
+    if (!recurring) return;
+    
+    const modal = document.getElementById('modal');
+    const modalTitle = document.getElementById('modal-title');
+    const modalBody = document.getElementById('modal-body');
+    
+    modalTitle.textContent = '✏️ Editar Gasto Recurrente';
+    modalBody.innerHTML = `
+        <form onsubmit="event.preventDefault(); saveRecurringExpenseEdit('${id}');">
+            <div class="input-group">
+                <label>📝 Descripción</label>
+                <input type="text" id="edit-recurring-description" value="${recurring.description}" required>
+            </div>
+            
+            <div class="input-group">
+                <label>💰 Monto</label>
+                <input type="number" id="edit-recurring-amount" value="${recurring.amount}" step="0.01" required>
+            </div>
+            
+            <div class="input-group">
+                <label>📂 Categoría</label>
+                <select id="edit-recurring-category" required>
+                    <option value="Gastos Esenciales" ${recurring.category === 'Gastos Esenciales' ? 'selected' : ''}>Gastos Esenciales</option>
+                    <option value="Gastos Discrecionales" ${recurring.category === 'Gastos Discrecionales' ? 'selected' : ''}>Gastos Discrecionales</option>
+                    <option value="Pago Deudas" ${recurring.category === 'Pago Deudas' ? 'selected' : ''}>Pago Deudas</option>
+                    <option value="Ahorros" ${recurring.category === 'Ahorros' ? 'selected' : ''}>Ahorros</option>
+                    <option value="Inversiones" ${recurring.category === 'Inversiones' ? 'selected' : ''}>Inversiones</option>
+                </select>
+            </div>
+            
+            <button type="submit" class="btn btn-primary">💾 Guardar Cambios</button>
+            <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+        </form>
+    `;
+    
+    modal.classList.add('active');
+}
+
+async function saveRecurringExpenseEdit(id) {
+    if (!recurringModule) return;
+    
+    const updates = {
+        description: document.getElementById('edit-recurring-description').value,
+        amount: parseFloat(document.getElementById('edit-recurring-amount').value),
+        category: document.getElementById('edit-recurring-category').value
+    };
+    
+    const result = await recurringModule.updateRecurringExpense(id, updates);
+    
+    if (result.success) {
+        closeModal();
+        render();
+    }
+}
+
+async function deleteRecurringExpense(id) {
+    if (!recurringModule) return;
+    
+    if (confirm('¿Eliminar este gasto recurrente permanentemente?')) {
+        await recurringModule.deleteRecurringExpense(id);
+        render();
+    }
+}
+
+// ========================================
+// 📊 FUNCIONES DE REPORTES
+// ========================================
+
+function changeReportPeriod(period) {
+    if (!reportsModule) return;
+    
+    reportsModule.currentPeriod = period;
+    render();
+    
+    // Renderizar gráficos después de que se actualice el DOM
+    setTimeout(() => {
+        renderReportCharts();
+    }, 100);
+}
+
+function renderReportCharts() {
+    if (!reportsModule) return;
+    
+    try {
+        // Destruir gráficos anteriores
+        reportsModule.destroyAllCharts();
+        
+        // Crear gráfico de tendencias
+        reportsModule.createMonthlyComparisonChart('trends-chart', 6);
+        
+        // Crear gráfico de categorías con click habilitado
+        reportsModule.createCategoryChart('categories-chart', true);
+        
+        console.log('✅ Gráficos de reportes renderizados');
+    } catch (error) {
+        console.error('Error renderizando gráficos:', error);
+    }
+}
+
+function showCategoryDetails(categoryName) {
+    if (!reportsModule) return;
+    
+    const details = reportsModule.getCategoryDetails(categoryName);
+    
+    const modal = document.getElementById('modal');
+    const modalTitle = document.getElementById('modal-title');
+    const modalBody = document.getElementById('modal-body');
+    
+    modalTitle.textContent = `📂 ${categoryName}`;
+    modalBody.innerHTML = `
+        <div class="category-details-modal">
             <div class="category-stats-grid">
                 <div class="stat-item">
                     <div style="font-size: 0.75rem; color: rgba(255, 255, 255, 0.6);">Total</div>
@@ -8208,289 +8511,6 @@ function renderNotificationStats() {
                     `).join('')}
                 </div>
             </div>
-
-// ========================================
-// 📊 GRÁFICOS COMPARATIVOS PARA RECURRENTES
-// ========================================
-// Funciones para renderizar gráficos con Chart.js
-
-/**
- * 📊 Renderizar todos los gráficos de recurrentes
- * Llamar después de que el DOM esté listo
- */
-function renderRecurringCharts() {
-    // Esperar a que los canvas estén en el DOM
-    setTimeout(() => {
-        renderRecurringVsUniqueChart();
-        renderRecurringCategoriesChart();
-    }, 100);
-}
-
-/**
- * 📊 Gráfico: Recurrentes vs Gastos Únicos
- */
-function renderRecurringVsUniqueChart() {
-    const canvas = document.getElementById('recurring-vs-unique-chart');
-    if (!canvas) return;
-    
-    const ctx = canvas.getContext('2d');
-    
-    // Destruir gráfico anterior si existe
-    if (window.recurringVsUniqueChart) {
-        window.recurringVsUniqueChart.destroy();
-    }
-    
-    // Calcular datos
-    const recurringExpenses = expenses.filter(exp => exp.isRecurring);
-    const uniqueExpenses = expenses.filter(exp => !exp.isRecurring);
-    
-    const recurringTotal = recurringExpenses.reduce((sum, exp) => sum + exp.amount, 0);
-    const uniqueTotal = uniqueExpenses.reduce((sum, exp) => sum + exp.amount, 0);
-    
-    const recurringCount = recurringExpenses.length;
-    const uniqueCount = uniqueExpenses.length;
-    
-    // Crear gráfico
-    window.recurringVsUniqueChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: ['Cantidad de Gastos', 'Monto Total'],
-            datasets: [
-                {
-                    label: '🔄 Recurrentes',
-                    data: [recurringCount, recurringTotal],
-                    backgroundColor: 'rgba(168, 85, 247, 0.7)',
-                    borderColor: 'rgba(168, 85, 247, 1)',
-                    borderWidth: 2
-                },
-                {
-                    label: '💸 Únicos',
-                    data: [uniqueCount, uniqueTotal],
-                    backgroundColor: 'rgba(5, 191, 219, 0.7)',
-                    borderColor: 'rgba(5, 191, 219, 1)',
-                    borderWidth: 2
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-                legend: {
-                    display: true,
-                    position: 'top',
-                    labels: {
-                        color: 'rgba(255, 255, 255, 0.9)',
-                        font: {
-                            size: 12,
-                            weight: 'bold'
-                        },
-                        padding: 15
-                    }
-                },
-                tooltip: {
-                    backgroundColor: 'rgba(0, 11, 46, 0.95)',
-                    titleColor: 'rgba(255, 255, 255, 1)',
-                    bodyColor: 'rgba(255, 255, 255, 0.9)',
-                    borderColor: 'rgba(5, 191, 219, 0.5)',
-                    borderWidth: 1,
-                    padding: 12,
-                    displayColors: true,
-                    callbacks: {
-                        label: function(context) {
-                            let label = context.dataset.label || '';
-                            if (label) {
-                                label += ': ';
-                            }
-                            if (context.dataIndex === 1) {
-                                label += '$' + context.parsed.y.toFixed(2);
-                            } else {
-                                label += context.parsed.y;
-                            }
-                            return label;
-                        }
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        color: 'rgba(255, 255, 255, 0.7)',
-                        font: {
-                            size: 11
-                        },
-                        callback: function(value) {
-                            return value.toLocaleString();
-                        }
-                    },
-                    grid: {
-                        color: 'rgba(255, 255, 255, 0.1)',
-                        drawBorder: false
-                    }
-                },
-                x: {
-                    ticks: {
-                        color: 'rgba(255, 255, 255, 0.7)',
-                        font: {
-                            size: 11
-                        }
-                    },
-                    grid: {
-                        display: false
-                    }
-                }
-            }
-        }
-    });
-}
-
-/**
- * 🎯 Gráfico: Distribución por Categoría
- */
-function renderRecurringCategoriesChart() {
-    const canvas = document.getElementById('recurring-categories-chart');
-    if (!canvas) return;
-    
-    const ctx = canvas.getContext('2d');
-    
-    // Destruir gráfico anterior si existe
-    if (window.recurringCategoriesChart) {
-        window.recurringCategoriesChart.destroy();
-    }
-    
-    if (!recurringModule || !recurringModule.recurringExpenses) {
-        return;
-    }
-    
-    // Agrupar por categoría
-    const categoryTotals = {};
-    const activeRecurring = recurringModule.recurringExpenses.filter(r => r.active);
-    
-    activeRecurring.forEach(recurring => {
-        const category = recurring.category;
-        if (!categoryTotals[category]) {
-            categoryTotals[category] = 0;
-        }
-        
-        // Calcular impacto mensual según frecuencia
-        let monthlyAmount = recurring.amount;
-        switch(recurring.frequency) {
-            case 'daily':
-                monthlyAmount = recurring.amount * 30;
-                break;
-            case 'weekly':
-                monthlyAmount = recurring.amount * 4;
-                break;
-            case 'yearly':
-                monthlyAmount = recurring.amount / 12;
-                break;
-        }
-        
-        categoryTotals[category] += monthlyAmount;
-    });
-    
-    // Preparar datos para el gráfico
-    const labels = Object.keys(categoryTotals);
-    const data = Object.values(categoryTotals);
-    
-    // Colores por categoría
-    const colors = labels.map(label => {
-        const cat = categorias.find(c => c.nombre === label);
-        return cat ? cat.color : '#64748b';
-    });
-    
-    if (labels.length === 0) {
-        ctx.font = '14px Arial';
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-        ctx.textAlign = 'center';
-        ctx.fillText('No hay datos suficientes', canvas.width / 2, canvas.height / 2);
-        return;
-    }
-    
-    // Crear gráfico
-    window.recurringCategoriesChart = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: labels,
-            datasets: [{
-                data: data,
-                backgroundColor: colors.map(c => c + 'CC'),
-                borderColor: colors,
-                borderWidth: 2
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-                legend: {
-                    display: true,
-                    position: 'right',
-                    labels: {
-                        color: 'rgba(255, 255, 255, 0.9)',
-                        font: {
-                            size: 11
-                        },
-                        padding: 10,
-                        generateLabels: function(chart) {
-                            const data = chart.data;
-                            const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
-                            
-                            return data.labels.map((label, i) => {
-                                const value = data.datasets[0].data[i];
-                                const percentage = ((value / total) * 100).toFixed(1);
-                                
-                                return {
-                                    text: `${label}: $${value.toFixed(0)} (${percentage}%)`,
-                                    fillStyle: data.datasets[0].backgroundColor[i],
-                                    hidden: false,
-                                    index: i
-                                };
-                            });
-                        }
-                    }
-                },
-                tooltip: {
-                    backgroundColor: 'rgba(0, 11, 46, 0.95)',
-                    titleColor: 'rgba(255, 255, 255, 1)',
-                    bodyColor: 'rgba(255, 255, 255, 0.9)',
-                    borderColor: 'rgba(5, 191, 219, 0.5)',
-                    borderWidth: 1,
-                    padding: 12,
-                    displayColors: true,
-                    callbacks: {
-                        label: function(context) {
-                            const label = context.label || '';
-                            const value = context.parsed;
-                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                            const percentage = ((value / total) * 100).toFixed(1);
-                            
-                            return `${label}: $${value.toFixed(2)} (${percentage}%)`;
-                        }
-                    }
-                }
-            }
-        }
-    });
-}
-
-/**
- * 🔄 Actualizar gráficos cuando cambian los datos
- */
-function updateRecurringChartsData() {
-    if (window.activeExpensesTab === 'recurring') {
-        renderRecurringCharts();
-    }
-}
-
-// Exportar funciones
-window.renderRecurringCharts = renderRecurringCharts;
-window.updateRecurringChartsData = updateRecurringChartsData;
-window.renderRecurringVsUniqueChart = renderRecurringVsUniqueChart;
-window.renderRecurringCategoriesChart = renderRecurringCategoriesChart;
-
-
         `;
     } catch (error) {
         console.error('Error en renderNotificationStats:', error);
