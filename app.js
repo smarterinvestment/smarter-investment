@@ -4431,123 +4431,348 @@ function renderCategoryChart(category) {
 // ========================================
 // FUNCIONES DE MODAL
 // ========================================
+// ========================================
+// 🔄 MODAL DE GASTO MEJORADO CON RECURRENTES
+// ========================================
+// Este código REEMPLAZA la función openModal() existente
+
+/**
+ * 🆕 Abrir modal de gasto/ingreso con opción de recurrente
+ */
 function openModal(type) {
     const modal = document.getElementById('modal');
     const modalTitle = document.getElementById('modal-title');
-    const modalBody = document.getElementById('modal-body');
+    const modalForm = document.getElementById('modal-form');
     
-    if (type === 'income') {
-        modalTitle.textContent = '💰 Nuevo Ingreso';
-        modalBody.innerHTML = `
-            <form onsubmit="event.preventDefault(); saveIncome();">
-                <div class="input-group">
-                    <label>💵 Monto</label>
-                    <input type="number" id="income-amount" placeholder="1000" step="0.01" required autofocus>
+    // Determinar si es gasto o ingreso
+    const isExpense = type === 'expense';
+    
+    modalTitle.textContent = isExpense ? '💸 Agregar Gasto' : '💰 Agregar Ingreso';
+    
+    // ✨ NUEVO: Formulario con opción de recurrente
+    modalForm.innerHTML = `
+        <div class="form-group">
+            <label>Descripción</label>
+            <input 
+                type="text" 
+                id="modal-description" 
+                class="form-input" 
+                placeholder="${isExpense ? 'Ej: Supermercado' : 'Ej: Salario'}"
+                required
+            >
+        </div>
+        
+        <div class="form-group">
+            <label>Monto</label>
+            <input 
+                type="number" 
+                id="modal-amount" 
+                class="form-input" 
+                placeholder="0.00" 
+                step="0.01"
+                required
+            >
+        </div>
+        
+        <div class="form-group">
+            <label>${isExpense ? 'Categoría' : 'Tipo de ingreso'}</label>
+            <select id="modal-category" class="form-input" required>
+                ${isExpense ? `
+                    <option value="">Selecciona una categoría</option>
+                    ${categorias.map(cat => `
+                        <option value="${cat.nombre}">${cat.emoji} ${cat.nombre}</option>
+                    `).join('')}
+                ` : `
+                    <option value="">Selecciona un tipo</option>
+                    <option value="Salario">💼 Salario</option>
+                    <option value="Freelance">💻 Freelance</option>
+                    <option value="Inversiones">📈 Inversiones</option>
+                    <option value="Bonos">🎁 Bonos</option>
+                    <option value="Otros">📌 Otros</option>
+                `}
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label>Fecha</label>
+            <input 
+                type="date" 
+                id="modal-date" 
+                class="form-input" 
+                value="${new Date().toISOString().split('T')[0]}"
+                required
+            >
+        </div>
+        
+        ${isExpense ? `
+            <!-- ✨ NUEVO: Checkbox para marcar como recurrente -->
+            <div class="form-group" style="margin-top: 1.5rem; padding: 1rem; background: rgba(168, 85, 247, 0.1); border-radius: 0.75rem; border: 2px solid rgba(168, 85, 247, 0.3);">
+                <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer; font-size: 1rem; font-weight: 600;">
+                    <input 
+                        type="checkbox" 
+                        id="modal-is-recurring" 
+                        onchange="toggleRecurringOptions()"
+                        style="width: 20px; height: 20px; cursor: pointer;"
+                    >
+                    <span style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="font-size: 1.2rem;">🔄</span>
+                        <span>Este gasto es recurrente</span>
+                    </span>
+                </label>
+                <div style="font-size: 0.85rem; color: rgba(255,255,255,0.7); margin-top: 0.5rem; margin-left: 2.5rem;">
+                    El gasto se repetirá automáticamente según la frecuencia que elijas
                 </div>
-                <div class="input-group">
-                    <label>📝 Descripción</label>
-                    <input type="text" id="income-description" placeholder="Ej: Salario, Freelance" required>
-                </div>
-                <div class="input-group">
-                    <label>📂 Tipo</label>
-                    <select id="income-type">
-                        <option value="salary">💼 Salario</option>
-                        <option value="freelance">💻 Freelance</option>
-                        <option value="investments">📈 Inversiones</option>
-                        <option value="other">💰 Otro</option>
+            </div>
+            
+            <!-- ✨ NUEVO: Opciones de recurrencia (inicialmente ocultas) -->
+            <div id="recurring-options" style="display: none; margin-top: 1rem; padding: 1rem; background: rgba(168, 85, 247, 0.05); border-radius: 0.75rem; border-left: 4px solid var(--color-secondary);">
+                <h4 style="margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; color: var(--color-secondary);">
+                    <span style="font-size: 1.2rem;">⚙️</span>
+                    <span>Configuración de Recurrencia</span>
+                </h4>
+                
+                <div class="form-group">
+                    <label>Frecuencia</label>
+                    <select id="modal-frequency" class="form-input" onchange="updateRecurringPreview()">
+                        <option value="daily">📅 Diario</option>
+                        <option value="weekly">📆 Semanal</option>
+                        <option value="monthly" selected>🗓️ Mensual</option>
+                        <option value="yearly">📋 Anual</option>
                     </select>
                 </div>
-                <div class="input-group">
-                    <label>📅 Fecha</label>
-                    <input type="date" id="income-date" value="${new Date().toISOString().split('T')[0]}" required>
-                </div>
-                <button type="submit" class="btn btn-primary">Guardar Ingreso 💾</button>
-                <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
-            </form>
-        `;
-    } else if (type === 'expense') {
-        modalTitle.textContent = '➕ Nuevo Gasto';
-        modalBody.innerHTML = `
-            <form onsubmit="event.preventDefault(); saveExpense();">
-                <div class="input-group">
-                    <label>💵 Monto</label>
-                    <input type="number" id="expense-amount" placeholder="100" step="0.01" required autofocus>
-                </div>
-                <div class="input-group">
-                    <label>📝 Descripción</label>
-                    <input type="text" id="expense-description" placeholder="Ej: Supermercado" required>
-                </div>
-                <div class="input-group">
-                    <label>📂 Categoría</label>
-                    <select id="expense-category">
-                        <option>Gastos Esenciales</option>
-                        <option>Gastos Discrecionales</option>
-                        <option>Pago Deudas</option>
-                        <option>Ahorros</option>
-                        <option>Inversiones</option>
+                
+                <div class="form-group" id="day-of-month-group">
+                    <label>Día del mes</label>
+                    <select id="modal-day-of-month" class="form-input" onchange="updateRecurringPreview()">
+                        ${Array.from({length: 31}, (_, i) => i + 1).map(day => `
+                            <option value="${day}" ${day === new Date().getDate() ? 'selected' : ''}>
+                                Día ${day}
+                            </option>
+                        `).join('')}
                     </select>
                 </div>
-                <div class="input-group">
-                    <label>📅 Fecha</label>
-                    <input type="date" id="expense-date" value="${new Date().toISOString().split('T')[0]}" required>
-                </div>
-                <button type="submit" class="btn btn-primary">Guardar Gasto 💾</button>
-                <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
-            </form>
-        `;
-    } else if (type === 'goal') {
-        modalTitle.textContent = '🎯 Nueva Meta';
-        modalBody.innerHTML = `
-            <form onsubmit="event.preventDefault(); saveGoal();">
-                <div class="input-group">
-                    <label>🎯 Nombre de la meta</label>
-                    <input type="text" id="goal-name" placeholder="Ej: Vacaciones 2025" required autofocus>
-                </div>
-                <div class="input-group">
-                    <label>💰 Monto objetivo</label>
-                    <input type="number" id="goal-target" placeholder="5000" step="0.01" required>
-                </div>
-                <div class="input-group">
-                    <label>💵 Monto actual</label>
-                    <input type="number" id="goal-current" placeholder="0" value="0" step="0.01">
-                </div>
-                <div class="input-group">
-                    <label>📂 Tipo</label>
-                    <select id="goal-type">
-                        <option>Viajes</option>
-                        <option>Ahorro</option>
-                        <option>Inversión</option>
-                        <option>Compra</option>
-                        <option>Emergencia</option>
-                        <option>Educación</option>
-                        <option>Compra de Carro</option>
-                        <option>Emprendimiento</option>
-                        <option>Fondo de seguridad</option>
-                        <option>Otro</option>
+                
+                <div class="form-group" id="day-of-week-group" style="display: none;">
+                    <label>Día de la semana</label>
+                    <select id="modal-day-of-week" class="form-input" onchange="updateRecurringPreview()">
+                        <option value="0">Domingo</option>
+                        <option value="1">Lunes</option>
+                        <option value="2">Martes</option>
+                        <option value="3">Miércoles</option>
+                        <option value="4">Jueves</option>
+                        <option value="5">Viernes</option>
+                        <option value="6">Sábado</option>
                     </select>
                 </div>
-                <button type="submit" class="btn btn-primary">Crear Meta 🎯</button>
-                <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
-            </form>
-        `;
-    } else if (type === 'budget') {
-        modalTitle.textContent = '💰 Ajustar Presupuesto';
-        modalBody.innerHTML = `
-            <form onsubmit="event.preventDefault(); saveBudget();">
-                ${Object.entries(budgets).map(([cat, amount]) => `
-                    <div class="input-group">
-                        <label>${cat}</label>
-                        <input type="number" id="budget-${cat.replace(/\s+/g, '-')}" value="${amount}" step="0.01" required>
+                
+                <div class="form-group">
+                    <label>Fecha de inicio</label>
+                    <input 
+                        type="date" 
+                        id="modal-start-date" 
+                        class="form-input" 
+                        value="${new Date().toISOString().split('T')[0]}"
+                        onchange="updateRecurringPreview()"
+                    >
+                </div>
+                
+                <!-- Vista previa -->
+                <div id="recurring-preview" style="margin-top: 1rem; padding: 0.75rem; background: rgba(5, 191, 219, 0.1); border-radius: 0.5rem; border-left: 3px solid var(--color-primary);">
+                    <div style="font-size: 0.9rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--color-primary);">
+                        📅 Vista Previa
                     </div>
-                `).join('')}
-                <button type="submit" class="btn btn-primary">Guardar Cambios 💾</button>
-                <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
-            </form>
-        `;
+                    <div id="recurring-preview-text" style="font-size: 0.85rem; color: rgba(255,255,255,0.9);">
+                        Este gasto se repetirá cada mes
+                    </div>
+                </div>
+                
+                <div style="margin-top: 1rem; padding: 0.75rem; background: rgba(251, 191, 36, 0.1); border-radius: 0.5rem; display: flex; align-items: start; gap: 0.5rem;">
+                    <span style="font-size: 1.2rem;">💡</span>
+                    <div style="font-size: 0.85rem; color: rgba(255,255,255,0.8);">
+                        El primer gasto se creará hoy. Los siguientes se generarán automáticamente según la frecuencia elegida.
+                    </div>
+                </div>
+            </div>
+        ` : ''}
+        
+        <div class="modal-buttons" style="margin-top: 1.5rem;">
+            <button type="button" class="btn btn-secondary" onclick="closeModal()">
+                ❌ Cancelar
+            </button>
+            <button type="submit" class="btn btn-primary">
+                💾 Guardar
+            </button>
+        </div>
+    `;
+    
+    // Mostrar modal
+    modal.style.display = 'flex';
+    
+    // Manejar submit
+    modalForm.onsubmit = async (e) => {
+        e.preventDefault();
+        await handleModalSubmit(type);
+    };
+    
+    // Focus en primer campo
+    setTimeout(() => {
+        document.getElementById('modal-description').focus();
+    }, 100);
+}
+
+/**
+ * 🔄 Toggle opciones de recurrencia
+ */
+function toggleRecurringOptions() {
+    const checkbox = document.getElementById('modal-is-recurring');
+    const options = document.getElementById('recurring-options');
+    const frequencySelect = document.getElementById('modal-frequency');
+    
+    if (checkbox.checked) {
+        options.style.display = 'block';
+        updateRecurringPreview();
+        
+        // Animar entrada
+        options.style.opacity = '0';
+        options.style.transform = 'translateY(-10px)';
+        setTimeout(() => {
+            options.style.transition = 'all 0.3s ease';
+            options.style.opacity = '1';
+            options.style.transform = 'translateY(0)';
+        }, 10);
+    } else {
+        options.style.display = 'none';
+    }
+}
+
+/**
+ * 📅 Actualizar vista previa de recurrencia
+ */
+function updateRecurringPreview() {
+    const frequency = document.getElementById('modal-frequency')?.value;
+    const dayOfMonth = document.getElementById('modal-day-of-month')?.value;
+    const dayOfWeek = document.getElementById('modal-day-of-week')?.value;
+    const amount = document.getElementById('modal-amount')?.value || 0;
+    
+    const previewText = document.getElementById('recurring-preview-text');
+    
+    // Mostrar/ocultar campos según frecuencia
+    const dayOfMonthGroup = document.getElementById('day-of-month-group');
+    const dayOfWeekGroup = document.getElementById('day-of-week-group');
+    
+    if (frequency === 'weekly') {
+        dayOfMonthGroup.style.display = 'none';
+        dayOfWeekGroup.style.display = 'block';
+    } else if (frequency === 'monthly') {
+        dayOfMonthGroup.style.display = 'block';
+        dayOfWeekGroup.style.display = 'none';
+    } else {
+        dayOfMonthGroup.style.display = 'none';
+        dayOfWeekGroup.style.display = 'none';
     }
     
-    modal.classList.add('active');
+    // Generar texto de vista previa
+    let previewMsg = '';
+    let monthlyEstimate = 0;
+    
+    switch(frequency) {
+        case 'daily':
+            previewMsg = `Este gasto se repetirá <strong>todos los días</strong>`;
+            monthlyEstimate = parseFloat(amount) * 30;
+            break;
+        case 'weekly':
+            const days = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+            previewMsg = `Este gasto se repetirá <strong>cada ${days[dayOfWeek]}</strong>`;
+            monthlyEstimate = parseFloat(amount) * 4;
+            break;
+        case 'monthly':
+            previewMsg = `Este gasto se repetirá <strong>el día ${dayOfMonth} de cada mes</strong>`;
+            monthlyEstimate = parseFloat(amount);
+            break;
+        case 'yearly':
+            previewMsg = `Este gasto se repetirá <strong>una vez al año</strong>`;
+            monthlyEstimate = parseFloat(amount) / 12;
+            break;
+    }
+    
+    previewMsg += `<br><span style="color: var(--color-primary); font-weight: 600;">Impacto mensual aproximado: $${monthlyEstimate.toFixed(2)}</span>`;
+    
+    if (previewText) {
+        previewText.innerHTML = previewMsg;
+    }
 }
+
+/**
+ * 💾 Manejar submit del modal (gastos e ingresos)
+ */
+async function handleModalSubmit(type) {
+    const description = document.getElementById('modal-description').value.trim();
+    const amount = parseFloat(document.getElementById('modal-amount').value);
+    const category = document.getElementById('modal-category').value;
+    const date = document.getElementById('modal-date').value;
+    
+    // Validaciones
+    if (!description || !amount || !category || !date) {
+        showNotification('⚠️ Por favor completa todos los campos', 'warning');
+        return;
+    }
+    
+    if (amount <= 0) {
+        showNotification('⚠️ El monto debe ser mayor a 0', 'warning');
+        return;
+    }
+    
+    const isExpense = type === 'expense';
+    const isRecurring = isExpense && document.getElementById('modal-is-recurring')?.checked;
+    
+    if (isRecurring) {
+        // ✨ CREAR GASTO RECURRENTE
+        const frequency = document.getElementById('modal-frequency').value;
+        const dayOfMonth = parseInt(document.getElementById('modal-day-of-month')?.value || 1);
+        const dayOfWeek = parseInt(document.getElementById('modal-day-of-week')?.value || 0);
+        const startDate = document.getElementById('modal-start-date').value;
+        
+        const recurringData = {
+            description,
+            amount,
+            category,
+            frequency,
+            dayOfMonth: frequency === 'monthly' ? dayOfMonth : null,
+            dayOfWeek: frequency === 'weekly' ? dayOfWeek : null,
+            startDate,
+            active: true,
+            createdAt: new Date().toISOString()
+        };
+        
+        try {
+            // Crear gasto recurrente
+            await recurringModule.addRecurringExpense(recurringData);
+            
+            // Generar el primer gasto
+            await recurringModule.generateExpensesForToday();
+            
+            showNotification('✅ Gasto recurrente creado exitosamente', 'success');
+            closeModal();
+            await loadUserData();
+            render();
+        } catch (error) {
+            console.error('Error al crear gasto recurrente:', error);
+            showNotification('❌ Error al crear gasto recurrente', 'error');
+        }
+    } else if (isExpense) {
+        // GASTO NORMAL
+        await addExpense(description, amount, category, date);
+    } else {
+        // INGRESO
+        await addIncome(description, amount, category, date);
+    }
+}
+
+// Exportar funciones
+window.toggleRecurringOptions = toggleRecurringOptions;
+window.updateRecurringPreview = updateRecurringPreview;
+window.handleModalSubmit = handleModalSubmit;
+
 
 function closeModal() {
     document.getElementById('modal').classList.remove('active');
@@ -6209,91 +6434,85 @@ function renderUpcomingExpenses(upcoming) {
                         
                         return `
                             <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: rgba(255,255,255,0.05); border-radius: 0.5rem; ${isToday ? 'border: 2px solid var(--color-warning);' : ''}">
-                                <div style="display: flex; align-items: center; gap: 0.75rem;">
-                                    <div style="font-size: 1.5rem;">${category ? category.emoji : '📌'}</div>
-                                    <div>
-                                        <div style="font-weight: 600;">${item.description}</div>
-                                        <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6);">
-                                            ${item.dueDate.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'short' })}
-                                            ${isToday ? '<span style="color: var(--color-warning); font-weight: 600;"> · HOY</span>' : ''}
-                                            ${isTomorrow ? '<span style="color: var(--color-info); font-weight: 600;"> · MAÑANA</span>' : ''}
-                                        </div>
-                                    </div>
-                                </div>
-                                <div style="font-weight: 600; color: var(--color-danger);">
-                                    $${item.amount.toFixed(2)}
-                                </div>
-                            </div>
-                        `;
-                    }).join('')}
-                </div>
-            </div>
-        `;
-    }).join('');
-}
+// ========================================
+// 🔄 FUNCIÓN ACTUALIZADA: switchTransactionTab
+// ========================================
+// REEMPLAZAR la función switchTransactionTab existente con esta versión
 
-/**
- * 📊 Renderizar gráficas
- */
-function renderRecurringCharts(stats) {
-    return `
-        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
-            <!-- Gráfica: Distribución por categoría -->
-            <div class="card">
-                <h3 style="margin-bottom: 1rem;">📊 Distribución por Categoría</h3>
-                <canvas id="recurring-category-chart" style="max-height: 300px;"></canvas>
-            </div>
-            
-            <!-- Gráfica: Distribución por frecuencia -->
-            <div class="card">
-                <h3 style="margin-bottom: 1rem;">🔄 Distribución por Frecuencia</h3>
-                <canvas id="recurring-frequency-chart" style="max-height: 300px;"></canvas>
-            </div>
-            
-            <!-- Comparativo: Gastos totales vs recurrentes -->
-            <div class="card">
-                <h3 style="margin-bottom: 1rem;">💰 Impacto en el Presupuesto</h3>
-                <div style="padding: 1rem; background: rgba(5, 191, 219, 0.1); border-radius: 0.5rem; margin-bottom: 1rem;">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                        <span style="color: rgba(255,255,255,0.7);">Gastos totales este mes:</span>
-                        <span style="font-weight: 600;">$${calculateMonthlyTotal().toFixed(2)}</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                        <span style="color: rgba(255,255,255,0.7);">Recurrentes estimados:</span>
-                        <span style="font-weight: 600; color: var(--color-primary);">$${stats.monthlyEstimate.toFixed(2)}</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; padding-top: 0.5rem; border-top: 1px solid rgba(255,255,255,0.2);">
-                        <span style="color: rgba(255,255,255,0.9); font-weight: 600;">% del presupuesto:</span>
-                        <span style="font-weight: 700; color: var(--color-warning);">
-                            ${calculateMonthlyTotal() > 0 ? ((stats.monthlyEstimate / calculateMonthlyTotal()) * 100).toFixed(1) : 0}%
-                        </span>
-                    </div>
-                </div>
-                <canvas id="recurring-impact-chart" style="max-height: 250px;"></canvas>
-            </div>
-            
-            <!-- Timeline de generación -->
-            <div class="card">
-                <h3 style="margin-bottom: 1rem;">📈 Historial de Generación (últimos 30 días)</h3>
-                ${renderGenerationTimeline()}
-            </div>
-        </div>
-    `;
-}
-
-/**
- * 📈 Renderizar timeline de generación
- */
-function renderGenerationTimeline() {
-    const history = recurringModule.generatedHistory;
+function switchTransactionTab(tab) {
+    window.activeExpensesTab = tab;
     
-    if (history.length === 0) {
-        return `
-            <div style="text-align: center; padding: 2rem; color: rgba(255,255,255,0.6);">
-                <div style="font-size: 2rem; margin-bottom: 0.5rem;">📋</div>
-                <div>No hay gastos generados en los últimos 30 días</div>
-            </div>
-        `;
+    const expensesContent = document.getElementById('expenses-content');
+    const incomesContent = document.getElementById('incomes-content');
+    const recurringContent = document.getElementById('recurring-content');
+    const expensesTab = document.getElementById('tab-expenses');
+    const incomesTab = document.getElementById('tab-incomes');
+    const recurringTab = document.getElementById('tab-recurring');
+    
+    // Ocultar todos
+    if (expensesContent) expensesContent.style.display = 'none';
+    if (incomesContent) incomesContent.style.display = 'none';
+    if (recurringContent) recurringContent.style.display = 'none';
+    
+    // Resetear estilos de todos los tabs
+    if (expensesTab) {
+        expensesTab.style.background = 'rgba(255,255,255,0.1)';
+        expensesTab.style.borderColor = 'rgba(255,255,255,0.2)';
+        expensesTab.style.color = 'rgba(255,255,255,0.7)';
+        expensesTab.style.fontWeight = 'normal';
+    }
+    if (incomesTab) {
+        incomesTab.style.background = 'rgba(255,255,255,0.1)';
+        incomesTab.style.borderColor = 'rgba(255,255,255,0.2)';
+        incomesTab.style.color = 'rgba(255,255,255,0.7)';
+        incomesTab.style.fontWeight = 'normal';
+    }
+    if (recurringTab) {
+        recurringTab.style.background = 'rgba(255,255,255,0.1)';
+        recurringTab.style.borderColor = 'rgba(255,255,255,0.2)';
+        recurringTab.style.color = 'rgba(255,255,255,0.7)';
+        recurringTab.style.fontWeight = 'normal';
+    }
+    
+    // Mostrar y estilizar el tab seleccionado
+    if (tab === 'expenses') {
+        if (expensesContent) expensesContent.style.display = 'block';
+        if (expensesTab) {
+            expensesTab.style.background = 'rgba(5, 191, 219, 0.2)';
+            expensesTab.style.borderColor = 'var(--color-primary)';
+            expensesTab.style.color = 'white';
+            expensesTab.style.fontWeight = 'bold';
+        }
+    } else if (tab === 'incomes') {
+        if (incomesContent) incomesContent.style.display = 'block';
+        if (incomesTab) {
+            incomesTab.style.background = 'rgba(34, 197, 94, 0.2)';
+            incomesTab.style.borderColor = 'var(--color-success)';
+            incomesTab.style.color = 'white';
+            incomesTab.style.fontWeight = 'bold';
+        }
+    } else if (tab === 'recurring') {
+        if (recurringContent) recurringContent.style.display = 'block';
+        if (recurringTab) {
+            recurringTab.style.background = 'rgba(168, 85, 247, 0.2)';
+            recurringTab.style.borderColor = 'var(--color-secondary)';
+            recurringTab.style.color = 'white';
+            recurringTab.style.fontWeight = 'bold';
+        }
+        
+        // ✨ NUEVO: Renderizar gráficos cuando se muestra el tab de recurrentes
+        setTimeout(() => {
+            if (typeof renderRecurringCharts === 'function') {
+                renderRecurringCharts();
+            }
+        }, 100);
+    }
+}
+
+// Exportar
+window.switchTransactionTab = switchTransactionTab;
+
+
     }
 
     // Agrupar por día
@@ -7257,98 +7476,372 @@ async function editRecurringExpense(id) {
                 <input type="number" id="edit-recurring-amount" value="${recurring.amount}" step="0.01" required>
             </div>
             
-            <div class="input-group">
-                <label>📂 Categoría</label>
-                <select id="edit-recurring-category" required>
-                    <option value="Gastos Esenciales" ${recurring.category === 'Gastos Esenciales' ? 'selected' : ''}>Gastos Esenciales</option>
-                    <option value="Gastos Discrecionales" ${recurring.category === 'Gastos Discrecionales' ? 'selected' : ''}>Gastos Discrecionales</option>
-                    <option value="Pago Deudas" ${recurring.category === 'Pago Deudas' ? 'selected' : ''}>Pago Deudas</option>
-                    <option value="Ahorros" ${recurring.category === 'Ahorros' ? 'selected' : ''}>Ahorros</option>
-                    <option value="Inversiones" ${recurring.category === 'Inversiones' ? 'selected' : ''}>Inversiones</option>
-                </select>
+// ========================================
+// 🔄 VISTA COMPLETA DE RECURRENTES (Una sola página)
+// ========================================
+// Esta función REEMPLAZA renderRecurringExpensesViewIntegrated()
+
+/**
+ * 🔄 Renderizar vista COMPLETA de gastos recurrentes
+ * TODO EN UNA SOLA PÁGINA - Sin sub-tabs
+ */
+function renderRecurringExpensesViewIntegrated() {
+    if (!recurringModule || !recurringModule.isInitialized) {
+        return `
+            <div style="text-align: center; padding: 2rem;">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
+                <h3>Módulo de Gastos Recurrentes no disponible</h3>
+                <p style="color: rgba(255,255,255,0.7); margin-top: 0.5rem;">
+                    Por favor, recarga la página
+                </p>
+            </div>
+        `;
+    }
+
+    const stats = recurringModule.getStatistics();
+    const upcoming = recurringModule.getUpcomingExpenses(30);
+    const activeRecurring = recurringModule.recurringExpenses.filter(r => r.active);
+    const pausedRecurring = recurringModule.recurringExpenses.filter(r => !r.active);
+    const allRecurring = [...activeRecurring, ...pausedRecurring];
+
+    return `
+        <div style="padding: 0;">
+            <!-- 📊 ESTADÍSTICAS -->
+            <div style="margin-bottom: 2rem;">
+                <h3 style="margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; font-size: 1.2rem;">
+                    <span style="font-size: 1.5rem;">📊</span>
+                    <span>Resumen General</span>
+                </h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem;">
+                    <div style="text-align: center; padding: 1rem; background: rgba(34, 197, 94, 0.1); border-radius: 0.75rem; border: 2px solid var(--color-success);">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">✅</div>
+                        <div style="font-size: 1.8rem; font-weight: bold; color: var(--color-success);">${stats.active}</div>
+                        <div style="font-size: 0.85rem; color: rgba(255,255,255,0.7); margin-top: 0.25rem;">Activos</div>
+                    </div>
+                    <div style="text-align: center; padding: 1rem; background: rgba(251, 191, 36, 0.1); border-radius: 0.75rem; border: 2px solid var(--color-warning);">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">⏸️</div>
+                        <div style="font-size: 1.8rem; font-weight: bold; color: var(--color-warning);">${stats.paused}</div>
+                        <div style="font-size: 0.85rem; color: rgba(255,255,255,0.7); margin-top: 0.25rem;">Pausados</div>
+                    </div>
+                    <div style="text-align: center; padding: 1rem; background: rgba(5, 191, 219, 0.1); border-radius: 0.75rem; border: 2px solid var(--color-primary);">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">💰</div>
+                        <div style="font-size: 1.8rem; font-weight: bold; color: var(--color-primary);">$${stats.monthlyEstimate.toFixed(0)}</div>
+                        <div style="font-size: 0.85rem; color: rgba(255,255,255,0.7); margin-top: 0.25rem;">Mensual</div>
+                    </div>
+                    <div style="text-align: center; padding: 1rem; background: rgba(168, 85, 247, 0.1); border-radius: 0.75rem; border: 2px solid var(--color-secondary);">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">📋</div>
+                        <div style="font-size: 1.8rem; font-weight: bold; color: var(--color-secondary);">${stats.totalGenerated}</div>
+                        <div style="font-size: 0.85rem; color: rgba(255,255,255,0.7); margin-top: 0.25rem;">Generados</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 📈 GRÁFICOS COMPARATIVOS -->
+            ${allRecurring.length > 0 ? `
+                <div style="margin-bottom: 2rem;">
+                    <h3 style="margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; font-size: 1.2rem;">
+                        <span style="font-size: 1.5rem;">📈</span>
+                        <span>Análisis Comparativo</span>
+                    </h3>
+                    <div style="display: grid; grid-template-columns: 1fr; gap: 1.5rem;">
+                        <!-- Gráfico de barras: Recurrentes vs Únicos -->
+                        <div style="background: rgba(255,255,255,0.05); padding: 1.5rem; border-radius: 0.75rem;">
+                            <h4 style="margin-bottom: 1rem; font-size: 1rem; color: rgba(255,255,255,0.9);">
+                                📊 Gastos Recurrentes vs Únicos
+                            </h4>
+                            <canvas id="recurring-vs-unique-chart" style="max-height: 250px;"></canvas>
+                        </div>
+                        
+                        <!-- Gráfico circular: Distribución por categoría -->
+                        <div style="background: rgba(255,255,255,0.05); padding: 1.5rem; border-radius: 0.75rem;">
+                            <h4 style="margin-bottom: 1rem; font-size: 1rem; color: rgba(255,255,255,0.9);">
+                                🎯 Distribución por Categoría
+                            </h4>
+                            <canvas id="recurring-categories-chart" style="max-height: 250px;"></canvas>
+                        </div>
+                    </div>
+                </div>
+            ` : ''}
+
+            <!-- 📋 LISTA DE GASTOS RECURRENTES -->
+            <div style="margin-bottom: 2rem;">
+                <h3 style="margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; font-size: 1.2rem;">
+                    <span style="font-size: 1.5rem;">📋</span>
+                    <span>Mis Gastos Recurrentes</span>
+                </h3>
+                
+                ${activeRecurring.length > 0 ? `
+                    <div style="margin-bottom: 1.5rem;">
+                        <div style="font-size: 0.95rem; font-weight: 600; color: var(--color-success); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
+                            <span style="font-size: 1.2rem;">✅</span>
+                            <span>ACTIVOS (${activeRecurring.length})</span>
+                        </div>
+                        ${activeRecurring.map(recurring => {
+                            const nextDate = recurringModule.calculateNextOccurrence(recurring);
+                            const daysUntil = Math.ceil((new Date(nextDate) - new Date()) / (1000 * 60 * 60 * 24));
+                            
+                            return `
+                                <div style="margin-bottom: 1rem; padding: 1rem; background: rgba(34, 197, 94, 0.1); border-radius: 0.75rem; border-left: 4px solid var(--color-success);">
+                                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.75rem;">
+                                        <div style="flex: 1;">
+                                            <div style="font-size: 1.1rem; font-weight: bold; margin-bottom: 0.25rem;">
+                                                ${getFrequencyEmoji(recurring.frequency)} ${recurring.description}
+                                            </div>
+                                            <div style="font-size: 0.9rem; color: rgba(255,255,255,0.7);">
+                                                ${recurring.category} • ${getFrequencyText(recurring)}
+                                            </div>
+                                        </div>
+                                        <div style="text-align: right;">
+                                            <div style="font-size: 1.3rem; font-weight: bold; color: var(--color-primary);">
+                                                $${recurring.amount.toFixed(2)}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div style="padding: 0.5rem; background: rgba(5, 191, 219, 0.15); border-radius: 0.5rem; margin-bottom: 0.75rem;">
+                                        <div style="font-size: 0.85rem; color: rgba(255,255,255,0.9);">
+                                            📅 Próximo: <strong>${formatDate(nextDate)}</strong>
+                                            ${daysUntil === 0 ? '<span style="color: var(--color-warning); font-weight: bold;"> (¡HOY!)</span>' : 
+                                              daysUntil === 1 ? '<span style="color: var(--color-warning);"> (Mañana)</span>' :
+                                              ` (en ${daysUntil} días)`}
+                                        </div>
+                                    </div>
+                                    
+                                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                        <button onclick="pauseRecurring('${recurring.id}')" class="btn-secondary" style="flex: 1; min-width: 100px; padding: 0.5rem; font-size: 0.85rem;">
+                                            ⏸️ Pausar
+                                        </button>
+                                        <button onclick="editRecurring('${recurring.id}')" class="btn-secondary" style="flex: 1; min-width: 100px; padding: 0.5rem; font-size: 0.85rem;">
+                                            ✏️ Editar
+                                        </button>
+                                        <button onclick="deleteRecurring('${recurring.id}')" class="btn-danger" style="flex: 1; min-width: 100px; padding: 0.5rem; font-size: 0.85rem;">
+                                            🗑️ Eliminar
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                ` : ''}
+                
+                ${pausedRecurring.length > 0 ? `
+                    <div style="margin-bottom: 1.5rem;">
+                        <div style="font-size: 0.95rem; font-weight: 600; color: var(--color-warning); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
+                            <span style="font-size: 1.2rem;">⏸️</span>
+                            <span>PAUSADOS (${pausedRecurring.length})</span>
+                        </div>
+                        ${pausedRecurring.map(recurring => `
+                            <div style="margin-bottom: 1rem; padding: 1rem; background: rgba(251, 191, 36, 0.1); border-radius: 0.75rem; border-left: 4px solid var(--color-warning); opacity: 0.7;">
+                                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.75rem;">
+                                    <div style="flex: 1;">
+                                        <div style="font-size: 1.1rem; font-weight: bold; margin-bottom: 0.25rem;">
+                                            ${getFrequencyEmoji(recurring.frequency)} ${recurring.description}
+                                        </div>
+                                        <div style="font-size: 0.9rem; color: rgba(255,255,255,0.7);">
+                                            ${recurring.category} • ${getFrequencyText(recurring)}
+                                        </div>
+                                    </div>
+                                    <div style="text-align: right;">
+                                        <div style="font-size: 1.3rem; font-weight: bold; color: var(--color-warning);">
+                                            $${recurring.amount.toFixed(2)}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div style="padding: 0.5rem; background: rgba(251, 191, 36, 0.2); border-radius: 0.5rem; margin-bottom: 0.75rem;">
+                                    <div style="font-size: 0.85rem; color: rgba(255,255,255,0.9);">
+                                        ⏸️ Este gasto está pausado y no se generará automáticamente
+                                    </div>
+                                </div>
+                                
+                                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                    <button onclick="activateRecurring('${recurring.id}')" class="btn-primary" style="flex: 1; min-width: 100px; padding: 0.5rem; font-size: 0.85rem;">
+                                        ▶️ Reactivar
+                                    </button>
+                                    <button onclick="editRecurring('${recurring.id}')" class="btn-secondary" style="flex: 1; min-width: 100px; padding: 0.5rem; font-size: 0.85rem;">
+                                        ✏️ Editar
+                                    </button>
+                                    <button onclick="deleteRecurring('${recurring.id}')" class="btn-danger" style="flex: 1; min-width: 100px; padding: 0.5rem; font-size: 0.85rem;">
+                                        🗑️ Eliminar
+                                    </button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                ` : ''}
+                
+                ${allRecurring.length === 0 ? `
+                    <div style="text-align: center; padding: 3rem 1rem; background: rgba(255,255,255,0.05); border-radius: 0.75rem; border: 2px dashed rgba(255,255,255,0.2);">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">🔄</div>
+                        <div style="font-size: 1.2rem; font-weight: bold; margin-bottom: 0.5rem;">
+                            No tienes gastos recurrentes
+                        </div>
+                        <div style="font-size: 0.95rem; color: rgba(255,255,255,0.7); margin-bottom: 1.5rem;">
+                            Crea tu primer gasto recurrente usando el botón + abajo
+                        </div>
+                        <div style="padding: 1rem; background: rgba(5, 191, 219, 0.1); border-radius: 0.5rem; border-left: 3px solid var(--color-primary);">
+                            <div style="font-size: 0.9rem; color: rgba(255,255,255,0.9); text-align: left;">
+                                💡 <strong>Tip:</strong> Al agregar un gasto normal, marca la casilla "Este gasto es recurrente" para que se repita automáticamente cada mes.
+                            </div>
+                        </div>
+                    </div>
+                ` : ''}
+            </div>
+
+            <!-- 📅 CALENDARIO DE PRÓXIMOS 30 DÍAS -->
+            ${upcoming.length > 0 ? `
+                <div style="margin-bottom: 2rem;">
+                    <h3 style="margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; font-size: 1.2rem;">
+                        <span style="font-size: 1.5rem;">📅</span>
+                        <span>Próximos 30 Días</span>
+                    </h3>
+                    ${renderUpcomingTimeline(upcoming)}
+                </div>
+            ` : ''}
+
+            <!-- 📊 IMPACTO MENSUAL -->
+            ${allRecurring.length > 0 ? `
+                <div style="margin-bottom: 2rem;">
+                    <h3 style="margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; font-size: 1.2rem;">
+                        <span style="font-size: 1.5rem;">📊</span>
+                        <span>Proyección de Impacto</span>
+                    </h3>
+                    ${renderMonthlyImpact(stats)}
+                </div>
+            ` : ''}
+        </div>
+    `;
+}
+
+/**
+ * 📅 Renderizar timeline de próximos gastos
+ */
+function renderUpcomingTimeline(upcoming) {
+    const grouped = {};
+    
+    upcoming.forEach(item => {
+        const date = item.date.split('T')[0];
+        if (!grouped[date]) {
+            grouped[date] = [];
+        }
+        grouped[date].push(item);
+    });
+    
+    return `
+        <div style="background: rgba(255,255,255,0.05); padding: 1.5rem; border-radius: 0.75rem;">
+            ${Object.entries(grouped).map(([date, items], index) => {
+                const totalDay = items.reduce((sum, item) => sum + item.amount, 0);
+                const daysUntil = Math.ceil((new Date(date) - new Date()) / (1000 * 60 * 60 * 24));
+                
+                return `
+                    <div style="margin-bottom: ${index < Object.entries(grouped).length - 1 ? '1.5rem' : '0'}; padding-bottom: ${index < Object.entries(grouped).length - 1 ? '1.5rem' : '0'}; border-bottom: ${index < Object.entries(grouped).length - 1 ? '1px solid rgba(255,255,255,0.1)' : 'none'};">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                            <div>
+                                <div style="font-size: 1rem; font-weight: bold; color: var(--color-primary);">
+                                    📅 ${formatDate(date)}
+                                </div>
+                                <div style="font-size: 0.85rem; color: rgba(255,255,255,0.7);">
+                                    ${daysUntil === 0 ? '¡HOY!' : daysUntil === 1 ? 'Mañana' : `En ${daysUntil} días`}
+                                </div>
+                            </div>
+                            <div style="font-size: 1.3rem; font-weight: bold; color: var(--color-danger);">
+                                $${totalDay.toFixed(2)}
+                            </div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                            ${items.map(item => `
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: rgba(255,255,255,0.03); border-radius: 0.5rem;">
+                                    <div style="font-size: 0.9rem;">
+                                        ${getFrequencyEmoji(item.recurring.frequency)} ${item.recurring.description}
+                                    </div>
+                                    <div style="font-size: 0.9rem; font-weight: 600; color: var(--color-danger);">
+                                        $${item.amount.toFixed(2)}
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }).join('')}
+        </div>
+    `;
+}
+
+/**
+ * 📊 Renderizar proyección de impacto mensual
+ */
+function renderMonthlyImpact(stats) {
+    const monthlyTotal = stats.monthlyEstimate;
+    const yearlyTotal = monthlyTotal * 12;
+    
+    return `
+        <div style="background: rgba(255,255,255,0.05); padding: 1.5rem; border-radius: 0.75rem;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+                <div style="text-align: center; padding: 1rem; background: rgba(5, 191, 219, 0.15); border-radius: 0.75rem;">
+                    <div style="font-size: 0.9rem; color: rgba(255,255,255,0.7); margin-bottom: 0.5rem;">
+                        Impacto Mensual
+                    </div>
+                    <div style="font-size: 2rem; font-weight: bold; color: var(--color-primary);">
+                        $${monthlyTotal.toFixed(2)}
+                    </div>
+                </div>
+                <div style="text-align: center; padding: 1rem; background: rgba(168, 85, 247, 0.15); border-radius: 0.75rem;">
+                    <div style="font-size: 0.9rem; color: rgba(255,255,255,0.7); margin-bottom: 0.5rem;">
+                        Proyección Anual
+                    </div>
+                    <div style="font-size: 2rem; font-weight: bold; color: var(--color-secondary);">
+                        $${yearlyTotal.toFixed(2)}
+                    </div>
+                </div>
             </div>
             
-            <button type="submit" class="btn btn-primary">💾 Guardar Cambios</button>
-            <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
-        </form>
+            <div style="padding: 1rem; background: rgba(251, 191, 36, 0.1); border-radius: 0.5rem; border-left: 3px solid var(--color-warning);">
+                <div style="font-size: 0.9rem; color: rgba(255,255,255,0.9);">
+                    💡 <strong>Consejo:</strong> Tus gastos recurrentes representan aproximadamente 
+                    <strong>${((monthlyTotal / (income.salary + income.freelance + income.investments || 1)) * 100).toFixed(1)}%</strong> 
+                    de tus ingresos mensuales.
+                </div>
+            </div>
+        </div>
     `;
-    
-    modal.classList.add('active');
 }
 
-async function saveRecurringExpenseEdit(id) {
-    if (!recurringModule) return;
-    
-    const updates = {
-        description: document.getElementById('edit-recurring-description').value,
-        amount: parseFloat(document.getElementById('edit-recurring-amount').value),
-        category: document.getElementById('edit-recurring-category').value
+/**
+ * 🎨 Helper: Obtener emoji según frecuencia
+ */
+function getFrequencyEmoji(frequency) {
+    const emojis = {
+        'daily': '📅',
+        'weekly': '📆',
+        'monthly': '🗓️',
+        'yearly': '📋'
     };
-    
-    const result = await recurringModule.updateRecurringExpense(id, updates);
-    
-    if (result.success) {
-        closeModal();
-        render();
-    }
+    return emojis[frequency] || '🔄';
 }
 
-async function deleteRecurringExpense(id) {
-    if (!recurringModule) return;
-    
-    if (confirm('¿Eliminar este gasto recurrente permanentemente?')) {
-        await recurringModule.deleteRecurringExpense(id);
-        render();
-    }
+/**
+ * 📝 Helper: Obtener texto de frecuencia
+ */
+function getFrequencyText(recurring) {
+    const texts = {
+        'daily': 'Todos los días',
+        'weekly': `Cada ${['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'][recurring.dayOfWeek || 0]}`,
+        'monthly': `Día ${recurring.dayOfMonth || 1} de cada mes`,
+        'yearly': 'Una vez al año'
+    };
+    return texts[recurring.frequency] || 'Recurrente';
 }
 
-// ========================================
-// 📊 FUNCIONES DE REPORTES
-// ========================================
-
-function changeReportPeriod(period) {
-    if (!reportsModule) return;
-    
-    reportsModule.currentPeriod = period;
-    render();
-    
-    // Renderizar gráficos después de que se actualice el DOM
-    setTimeout(() => {
-        renderReportCharts();
-    }, 100);
+/**
+ * 📅 Helper: Formatear fecha
+ */
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    const options = { weekday: 'long', day: 'numeric', month: 'short' };
+    return date.toLocaleDateString('es-ES', options);
 }
 
-function renderReportCharts() {
-    if (!reportsModule) return;
-    
-    try {
-        // Destruir gráficos anteriores
-        reportsModule.destroyAllCharts();
-        
-        // Crear gráfico de tendencias
-        reportsModule.createMonthlyComparisonChart('trends-chart', 6);
-        
-        // Crear gráfico de categorías con click habilitado
-        reportsModule.createCategoryChart('categories-chart', true);
-        
-        console.log('✅ Gráficos de reportes renderizados');
-    } catch (error) {
-        console.error('Error renderizando gráficos:', error);
-    }
-}
 
-function showCategoryDetails(categoryName) {
-    if (!reportsModule) return;
-    
-    const details = reportsModule.getCategoryDetails(categoryName);
-    
-    const modal = document.getElementById('modal');
-    const modalTitle = document.getElementById('modal-title');
-    const modalBody = document.getElementById('modal-body');
-    
-    modalTitle.textContent = `📂 ${categoryName}`;
-    modalBody.innerHTML = `
-        <div class="category-details-modal">
             <div class="category-stats-grid">
                 <div class="stat-item">
                     <div style="font-size: 0.75rem; color: rgba(255, 255, 255, 0.6);">Total</div>
@@ -7715,6 +8208,289 @@ function renderNotificationStats() {
                     `).join('')}
                 </div>
             </div>
+
+// ========================================
+// 📊 GRÁFICOS COMPARATIVOS PARA RECURRENTES
+// ========================================
+// Funciones para renderizar gráficos con Chart.js
+
+/**
+ * 📊 Renderizar todos los gráficos de recurrentes
+ * Llamar después de que el DOM esté listo
+ */
+function renderRecurringCharts() {
+    // Esperar a que los canvas estén en el DOM
+    setTimeout(() => {
+        renderRecurringVsUniqueChart();
+        renderRecurringCategoriesChart();
+    }, 100);
+}
+
+/**
+ * 📊 Gráfico: Recurrentes vs Gastos Únicos
+ */
+function renderRecurringVsUniqueChart() {
+    const canvas = document.getElementById('recurring-vs-unique-chart');
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    
+    // Destruir gráfico anterior si existe
+    if (window.recurringVsUniqueChart) {
+        window.recurringVsUniqueChart.destroy();
+    }
+    
+    // Calcular datos
+    const recurringExpenses = expenses.filter(exp => exp.isRecurring);
+    const uniqueExpenses = expenses.filter(exp => !exp.isRecurring);
+    
+    const recurringTotal = recurringExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+    const uniqueTotal = uniqueExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+    
+    const recurringCount = recurringExpenses.length;
+    const uniqueCount = uniqueExpenses.length;
+    
+    // Crear gráfico
+    window.recurringVsUniqueChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Cantidad de Gastos', 'Monto Total'],
+            datasets: [
+                {
+                    label: '🔄 Recurrentes',
+                    data: [recurringCount, recurringTotal],
+                    backgroundColor: 'rgba(168, 85, 247, 0.7)',
+                    borderColor: 'rgba(168, 85, 247, 1)',
+                    borderWidth: 2
+                },
+                {
+                    label: '💸 Únicos',
+                    data: [uniqueCount, uniqueTotal],
+                    backgroundColor: 'rgba(5, 191, 219, 0.7)',
+                    borderColor: 'rgba(5, 191, 219, 1)',
+                    borderWidth: 2
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        color: 'rgba(255, 255, 255, 0.9)',
+                        font: {
+                            size: 12,
+                            weight: 'bold'
+                        },
+                        padding: 15
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 11, 46, 0.95)',
+                    titleColor: 'rgba(255, 255, 255, 1)',
+                    bodyColor: 'rgba(255, 255, 255, 0.9)',
+                    borderColor: 'rgba(5, 191, 219, 0.5)',
+                    borderWidth: 1,
+                    padding: 12,
+                    displayColors: true,
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.dataIndex === 1) {
+                                label += '$' + context.parsed.y.toFixed(2);
+                            } else {
+                                label += context.parsed.y;
+                            }
+                            return label;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        color: 'rgba(255, 255, 255, 0.7)',
+                        font: {
+                            size: 11
+                        },
+                        callback: function(value) {
+                            return value.toLocaleString();
+                        }
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)',
+                        drawBorder: false
+                    }
+                },
+                x: {
+                    ticks: {
+                        color: 'rgba(255, 255, 255, 0.7)',
+                        font: {
+                            size: 11
+                        }
+                    },
+                    grid: {
+                        display: false
+                    }
+                }
+            }
+        }
+    });
+}
+
+/**
+ * 🎯 Gráfico: Distribución por Categoría
+ */
+function renderRecurringCategoriesChart() {
+    const canvas = document.getElementById('recurring-categories-chart');
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    
+    // Destruir gráfico anterior si existe
+    if (window.recurringCategoriesChart) {
+        window.recurringCategoriesChart.destroy();
+    }
+    
+    if (!recurringModule || !recurringModule.recurringExpenses) {
+        return;
+    }
+    
+    // Agrupar por categoría
+    const categoryTotals = {};
+    const activeRecurring = recurringModule.recurringExpenses.filter(r => r.active);
+    
+    activeRecurring.forEach(recurring => {
+        const category = recurring.category;
+        if (!categoryTotals[category]) {
+            categoryTotals[category] = 0;
+        }
+        
+        // Calcular impacto mensual según frecuencia
+        let monthlyAmount = recurring.amount;
+        switch(recurring.frequency) {
+            case 'daily':
+                monthlyAmount = recurring.amount * 30;
+                break;
+            case 'weekly':
+                monthlyAmount = recurring.amount * 4;
+                break;
+            case 'yearly':
+                monthlyAmount = recurring.amount / 12;
+                break;
+        }
+        
+        categoryTotals[category] += monthlyAmount;
+    });
+    
+    // Preparar datos para el gráfico
+    const labels = Object.keys(categoryTotals);
+    const data = Object.values(categoryTotals);
+    
+    // Colores por categoría
+    const colors = labels.map(label => {
+        const cat = categorias.find(c => c.nombre === label);
+        return cat ? cat.color : '#64748b';
+    });
+    
+    if (labels.length === 0) {
+        ctx.font = '14px Arial';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        ctx.textAlign = 'center';
+        ctx.fillText('No hay datos suficientes', canvas.width / 2, canvas.height / 2);
+        return;
+    }
+    
+    // Crear gráfico
+    window.recurringCategoriesChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: data,
+                backgroundColor: colors.map(c => c + 'CC'),
+                borderColor: colors,
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'right',
+                    labels: {
+                        color: 'rgba(255, 255, 255, 0.9)',
+                        font: {
+                            size: 11
+                        },
+                        padding: 10,
+                        generateLabels: function(chart) {
+                            const data = chart.data;
+                            const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
+                            
+                            return data.labels.map((label, i) => {
+                                const value = data.datasets[0].data[i];
+                                const percentage = ((value / total) * 100).toFixed(1);
+                                
+                                return {
+                                    text: `${label}: $${value.toFixed(0)} (${percentage}%)`,
+                                    fillStyle: data.datasets[0].backgroundColor[i],
+                                    hidden: false,
+                                    index: i
+                                };
+                            });
+                        }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 11, 46, 0.95)',
+                    titleColor: 'rgba(255, 255, 255, 1)',
+                    bodyColor: 'rgba(255, 255, 255, 0.9)',
+                    borderColor: 'rgba(5, 191, 219, 0.5)',
+                    borderWidth: 1,
+                    padding: 12,
+                    displayColors: true,
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.parsed;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((value / total) * 100).toFixed(1);
+                            
+                            return `${label}: $${value.toFixed(2)} (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+/**
+ * 🔄 Actualizar gráficos cuando cambian los datos
+ */
+function updateRecurringChartsData() {
+    if (window.activeExpensesTab === 'recurring') {
+        renderRecurringCharts();
+    }
+}
+
+// Exportar funciones
+window.renderRecurringCharts = renderRecurringCharts;
+window.updateRecurringChartsData = updateRecurringChartsData;
+window.renderRecurringVsUniqueChart = renderRecurringVsUniqueChart;
+window.renderRecurringCategoriesChart = renderRecurringCategoriesChart;
+
+
         `;
     } catch (error) {
         console.error('Error en renderNotificationStats:', error);
