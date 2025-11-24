@@ -1,27 +1,18 @@
-// ========================================
-// INICIALIZACIÓN DE FIREBASE
-// ========================================
-// Este archivo debe cargarse ANTES de app.js
-
+// Firebase Configuration
+// IMPORTANTE: Reemplazar con tus propias credenciales de Firebase
 const firebaseConfig = {
-    apiKey: "AIzaSyBT3UJTHLuBQaB9kK0539-acw8ertf__vY",
-    authDomain: "smarter-investment.firebaseapp.com",
-    projectId: "smarter-investment",
-    storageBucket: "smarter-investment.firebasestorage.app",
-    messagingSenderId: "1037439323005",
-    appId: "1:1037439323005:web:43b7b89a9c4a0313c45a14",
-    measurementId: "G-DQKR8KNV2V"
+    apiKey: "AIzaSyBxOHfgTdRfOU4i-D7aMnJ2cAk6LrT6Tbk",
+    authDomain: "smarter-investment-777f5.firebaseapp.com",
+    projectId: "smarter-investment-777f5",
+    storageBucket: "smarter-investment-777f5.appspot.com",
+    messagingSenderId: "562663698989",
+    appId: "1:562663698989:web:a64e1e5a3f8e0c8e1f3e0c"
 };
 
-// Inicializar Firebase
+// Initialize Firebase
 try {
     firebase.initializeApp(firebaseConfig);
-    console.log('✅ Firebase inicializado correctamente');
+    console.log('✅ Firebase initialized successfully');
 } catch (error) {
-    // Si ya está inicializado, solo mostrar mensaje
-    if (error.code === 'app/duplicate-app') {
-        console.log('⚠️ Firebase ya estaba inicializado');
-    } else {
-        console.error('❌ Error al inicializar Firebase:', error);
-    }
+    console.error('❌ Error initializing Firebase:', error);
 }

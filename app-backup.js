@@ -3522,82 +3522,32 @@ function renderRecurringExpensesSection() {
 // 📊 REPORTES INTERACTIVOS - NUEVA SECCIÓN
 // ========================================
 function renderReportsSection() {
-    if (!reportsModule) {
+    try {
+        if (!reportsModule || !reportsModule.isInitialized) {
+            return `
+                <div class="reports-placeholder">
+                    <h2>📊 Reportes Financieros</h2>
+                    <p style="color: rgba(255, 255, 255, 0.7); text-align: center; padding: 2rem;">
+                        El módulo de reportes no está disponible en este momento.
+                    </p>
+                    <button class="btn btn-primary" onclick="location.reload()" style="display: block; margin: 1rem auto;">
+                        🔄 Recargar Página
+                    </button>
+                </div>
+            `;
+        }
+        
+        return reportsModule.renderReportsSection(expenses, incomeHistory);
+    } catch (error) {
+        console.error('Error en renderReportsSection:', error);
         return `
-            <div class="card">
-                <h2>📊 Reportes</h2>
-                <p style="text-align: center; padding: 2rem;">
-                    ⚠️ El módulo de reportes no está disponible
-                </p>
+            <div class="reports-error">
+                <h2>📊 Reportes Financieros</h2>
+                <p style="text-align: center; padding: 2rem;">Error al cargar los reportes</p>
             </div>
         `;
     }
-    
-    const report = reportsModule.generateReport('month');
-    
-    return `
-        <div class="reports-container">
-            <!-- Header y Filtros -->
-            <div class="card">
-                <h2 style="margin-bottom: 1rem;">📊 Reportes Interactivos</h2>
-                <div class="period-filters">
-                    <button class="period-btn" onclick="changeReportPeriod('week')">📅 Semana</button>
-                    <button class="period-btn active" onclick="changeReportPeriod('month')">📆 Mes</button>
-                    <button class="period-btn" onclick="changeReportPeriod('quarter')">🗓️ Trimestre</button>
-                    <button class="period-btn" onclick="changeReportPeriod('year')">📋 Año</button>
-                </div>
-            </div>
-            
-            <!-- Resumen Ejecutivo -->
-            <div class="executive-summary">
-                <h3 style="margin-bottom: 1.5rem;">📈 Resumen Ejecutivo</h3>
-                <div class="summary-grid">
-                    <div class="summary-card">
-                        <div class="summary-icon">💰</div>
-                        <div class="summary-value">$${report.summary.totalIncome.toFixed(0)}</div>
-                        <div class="summary-label">Ingresos</div>
-                        ${report.comparison ? `
-                            <div class="summary-change ${report.comparison.income.trend === 'up' ? 'positive' : report.comparison.income.trend === 'down' ? 'negative' : ''}">
-                                ${report.comparison.income.trend === 'up' ? '↗' : report.comparison.income.trend === 'down' ? '↘' : '→'} 
-                                ${Math.abs(report.comparison.income.percentageChange).toFixed(1)}%
-                            </div>
-                        ` : ''}
-                    </div>
-                    
-                    <div class="summary-card">
-                        <div class="summary-icon">💸</div>
-                        <div class="summary-value">$${report.summary.totalExpenses.toFixed(0)}</div>
-                        <div class="summary-label">Gastos</div>
-                        ${report.comparison ? `
-                            <div class="summary-change ${report.comparison.expenses.trend === 'down' ? 'positive' : report.comparison.expenses.trend === 'up' ? 'negative' : ''}">
-                                ${report.comparison.expenses.trend === 'up' ? '↗' : report.comparison.expenses.trend === 'down' ? '↘' : '→'} 
-                                ${Math.abs(report.comparison.expenses.percentageChange).toFixed(1)}%
-                            </div>
-                        ` : ''}
-                    </div>
-                    
-                    <div class="summary-card">
-                        <div class="summary-icon">💵</div>
-                        <div class="summary-value ${report.summary.balance >= 0 ? '' : 'negative'}">
-                            $${report.summary.balance.toFixed(0)}
-                        </div>
-                        <div class="summary-label">Balance</div>
-                    </div>
-                    
-                    <div class="summary-card">
-                        <div class="summary-icon">💎</div>
-                        <div class="summary-value">${report.summary.savingsRate.toFixed(0)}%</div>
-                        <div class="summary-label">Tasa de Ahorro</div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Gráficos -->
-            <div class="charts-container">
-                <!-- Gráfico de Tendencias -->
-                <div class="chart-card">
-                    <div class="chart-header">
-                        <div>
+}
                             <div class="chart-title">📈 Tendencias (6 meses)</div>
                             <div class="chart-subtitle">Evolución de ingresos y gastos</div>
                         </div>
@@ -8630,6 +8580,24 @@ window.toggleUnusualExpenses = toggleUnusualExpenses;
 
 console.log('✅ Todas las funciones exportadas correctamente');
 
+// Función para verificar módulos cargados
+function checkLoadedModules() {
+    const modules = {
+        'NotificationsModule': typeof NotificationsModule !== 'undefined',
+        'RecurringExpensesModule': typeof RecurringExpensesModule !== 'undefined',
+        'ComparisonModule': typeof ComparisonModule !== 'undefined',
+        'ReportsModule': typeof ReportsModule !== 'undefined',
+        'VirtualAssistantModule': typeof VirtualAssistantModule !== 'undefined'
+    };
+    
+    console.log('📋 Estado de módulos:');
+    Object.entries(modules).forEach(([name, loaded]) => {
+        console.log(`${loaded ? '✅' : '❌'} ${name}: ${loaded ? 'Cargado' : 'No encontrado'}`);
+    });
+    
+    return modules;
+}
+
 // ========================================
 // INICIALIZACIÓN DE MÓDULOS
 // ========================================
@@ -8697,15 +8665,15 @@ window.addEventListener('DOMContentLoaded', () => {
         }
         
         // Inicializar asistente AI
-        if (typeof AssistantModule !== 'undefined') {
+        if (typeof VirtualAssistantModule !== 'undefined') {
             try {
-                assistantModule = new AssistantModule();
+                assistantModule = new VirtualAssistantModule(db, currentUser ? currentUser.uid : null);
                 console.log('✅ Módulo de asistente AI inicializado');
             } catch (error) {
                 console.warn('⚠️ Error al inicializar asistente AI:', error);
             }
         } else {
-            console.warn('⚠️ AssistantModule no está disponible');
+            console.warn('⚠️ VirtualAssistantModule no está disponible');
         }
         
         console.log('🎉 Todos los módulos disponibles han sido inicializados');
