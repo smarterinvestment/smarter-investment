@@ -1,73 +1,53 @@
 // Firebase Configuration
-// IMPORTANTE: Reemplazar estos valores con los de tu proyecto real en Firebase Console
-
+// Configuración de tu proyecto Smarter Investment
 const firebaseConfig = {
-    // ⚠️ ESTOS SON VALORES DE EJEMPLO - NO FUNCIONARÁN
-    // Ve a https://console.firebase.google.com
-    // Selecciona tu proyecto y copia la configuración real
-    
     apiKey: "AIzaSyBxOHfgTdRfOU4i-D7aMnJ2cAk6LrT6Tbk",
-    authDomain: "smarter-investment.firebaseapp.com",
-    projectId: "smarter-investment",
-    storageBucket: "smarter-investment.firebasestorage.app",
-    messagingSenderId: "1037439323005",
-    appId: "1:1037439323005:web:43b7b89a9c4a0313c45a14"
+    authDomain: "smarter-investment-777f5.firebaseapp.com",
+    projectId: "smarter-investment-777f5",
+    storageBucket: "smarter-investment-777f5.appspot.com",
+    messagingSenderId: "562663698989",
+    appId: "1:562663698989:web:a64e1e5a3f8e0c8e1f3e0c",
+    measurementId: "G-YOUR_MEASUREMENT_ID"  // Opcional
 };
 
-// Verificar si la configuración está completa
-if (firebaseConfig.apiKey === "    apiKey: "AIzaSyBxOHfgTdRfOU4i-D7aMnJ2cAk6LrT6Tbk",
-") {
-    console.error('❌ FIREBASE NO CONFIGURADO: Debes agregar las credenciales reales de Firebase');
+// Initialize Firebase
+try {
+    // Verificar que Firebase está disponible
+    if (typeof firebase === 'undefined') {
+        console.error('❌ Firebase SDK no está cargado. Verifica que index.html incluye los scripts de Firebase.');
+        throw new Error('Firebase SDK not loaded');
+    }
+
+    // Inicializar Firebase
+    firebase.initializeApp(firebaseConfig);
     
-    // Mostrar mensaje de error en la página
+    // Verificar que se inicializó correctamente
+    const app = firebase.app();
+    console.log('✅ Firebase initialized successfully');
+    console.log('📌 Project ID:', firebaseConfig.projectId);
+    console.log('🔐 Auth Domain:', firebaseConfig.authDomain);
+    
+} catch (error) {
+    console.error('❌ Error initializing Firebase:', error);
+    
+    // Mostrar error en la página
     document.addEventListener('DOMContentLoaded', () => {
-        const app = document.getElementById('app');
-        if (app) {
-            app.innerHTML = `
+        const appElement = document.getElementById('app');
+        if (appElement) {
+            appElement.innerHTML = `
                 <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; text-align: center; padding: 20px;">
-                    <h1 style="color: #ff6b6b; margin-bottom: 20px;">⚠️ Configuración Pendiente</h1>
+                    <h1 style="color: #ff6b6b; margin-bottom: 20px;">❌ Error de Firebase</h1>
                     <div style="background: rgba(255, 255, 255, 0.1); padding: 30px; border-radius: 10px; max-width: 600px;">
-                        <h2 style="color: white; margin-bottom: 20px;">Firebase no está configurado</h2>
-                        <p style="color: rgba(255, 255, 255, 0.8); margin-bottom: 20px;">
-                            Para usar esta aplicación, necesitas configurar Firebase con tus credenciales.
+                        <p style="color: white; margin-bottom: 20px;">
+                            ${error.message}
                         </p>
-                        <ol style="text-align: left; color: rgba(255, 255, 255, 0.8); line-height: 1.8;">
-                            <li>Ve a <a href="https://console.firebase.google.com" target="_blank" style="color: #05BFDB;">Firebase Console</a></li>
-                            <li>Selecciona tu proyecto (o crea uno nuevo)</li>
-                            <li>Ve a Configuración del proyecto > General</li>
-                            <li>En "Tus aplicaciones", busca la configuración de tu app web</li>
-                            <li>Copia toda la configuración</li>
-                            <li>Reemplaza los valores en el archivo <code>firebase-init.js</code></li>
-                        </ol>
-                        <p style="color: #ffa500; margin-top: 20px;">
-                            <strong>Nota:</strong> Sin estas credenciales, la aplicación no puede funcionar.
-                        </p>
+                        <details style="text-align: left; margin-top: 20px;">
+                            <summary style="cursor: pointer; color: #05BFDB;">Ver detalles del error</summary>
+                            <pre style="color: rgba(255, 255, 255, 0.7); margin-top: 10px; overflow-x: auto;">${error.stack}</pre>
+                        </details>
                     </div>
                 </div>
             `;
         }
     });
-} else {
-    // Initialize Firebase
-    try {
-        firebase.initializeApp(firebaseConfig);
-        console.log('✅ Firebase initialized successfully');
-        console.log('📌 Project:', firebaseConfig.projectId);
-    } catch (error) {
-        console.error('❌ Error initializing Firebase:', error);
-        
-        // Si hay error, mostrar mensaje
-        document.addEventListener('DOMContentLoaded', () => {
-            const app = document.getElementById('app');
-            if (app && error.code === 'auth/api-key-not-valid') {
-                app.innerHTML = `
-                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; text-align: center; padding: 20px;">
-                        <h1 style="color: #ff6b6b;">❌ Error de Configuración</h1>
-                        <p style="color: white; margin: 20px;">La API Key de Firebase no es válida</p>
-                        <p style="color: rgba(255, 255, 255, 0.7);">Verifica que has copiado correctamente las credenciales de Firebase Console</p>
-                    </div>
-                `;
-            }
-        });
-    }
 }
