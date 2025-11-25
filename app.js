@@ -61,6 +61,7 @@ const db = firebase.firestore();
 // ESTADO GLOBAL
 // ========================================
 let currentUser = null;
+let isInitialized = false;  // Flag para evitar inicializaciones múltiples
 let currentView = 'login';
 let activeTab = 'dashboard';
 let expenses = [];
@@ -123,47 +124,98 @@ const categorias = [
 auth.onAuthStateChanged(async (user) => {
     if (user) {
         currentUser = user;
+        
+        // Cargar datos del usuario primero
         await loadUserData();
-        await loadTutorialStatus(); // ✨ NUEVO: Cargar estado del tutorial
+        await loadTutorialStatus();
         
-        // ✨✨✨ NUEVO: Inicializar notificaciones ✨✨✨
-        await initializeNotifications();
-        
-        // 🤖 NUEVO: Inicializar Asistente Virtual Mejorado
-        if (window.VirtualAssistantModule) {
-            assistantModule = new VirtualAssistantModule(db, currentUser.uid);
-            await assistantModule.initialize();
-            console.log('✅ Asistente Virtual AI inicializado');
+        // Inicializar módulos SOLO si no están inicializados
+        if (!isInitialized) {
+            isInitialized = true;
+            
+            // Inicializar notificaciones
+            try {
+                if (typeof initializeNotifications === 'function') {
+                    await initializeNotifications();
+                    console.log('✅ Notificaciones inicializadas');
+                }
+            } catch (error) {
+                console.warn('⚠️ Error inicializando notificaciones:', error);
+            }
+            
+            // Inicializar Asistente Virtual
+            try {
+                if (window.VirtualAssistantModule && !assistantModule) {
+                    assistantModule = new VirtualAssistantModule(db, user.uid);
+                    await assistantModule.initialize();
+                    console.log('✅ Asistente Virtual AI inicializado');
+                }
+            } catch (error) {
+                console.warn('⚠️ Error inicializando asistente:', error);
+                assistantModule = null;
+            }
+            
+            // Inicializar Gastos Recurrentes
+            try {
+                if (window.RecurringExpensesModule && !recurringModule) {
+                    recurringModule = new RecurringExpensesModule(db, user.uid);
+                    await recurringModule.initialize(user.uid);
+                    console.log('✅ Gastos Recurrentes inicializados');
+                }
+            } catch (error) {
+                console.warn('⚠️ Error inicializando gastos recurrentes:', error);
+                recurringModule = null;
+            }
+            
+            // Inicializar Reportes
+            try {
+                if (window.ReportsModule && !reportsModule) {
+                    reportsModule = new ReportsModule(db);
+                    await reportsModule.initialize(user.uid);
+                    console.log('✅ Reportes Interactivos inicializados');
+                }
+            } catch (error) {
+                console.warn('⚠️ Error inicializando reportes:', error);
+                reportsModule = null;
+            }
+            
+            // Inicializar Comparación
+            try {
+                if (window.ComparisonModule && !comparisonModule) {
+                    comparisonModule = new ComparisonModule(db, user.uid);
+                    await comparisonModule.initialize(user.uid);
+                    console.log('✅ Módulo de comparación inicializado');
+                }
+            } catch (error) {
+                console.warn('⚠️ Error inicializando comparación:', error);
+                comparisonModule = null;
+            }
         }
         
-        // 🔄 NUEVO: Inicializar Gastos Recurrentes
-        if (window.RecurringExpensesModule) {
-            recurringModule = new RecurringExpensesModule(db, currentUser.uid);
-            await recurringModule.initialize();
-            console.log('✅ Gastos Recurrentes inicializados');
-        }
-        
-        // 📊 NUEVO: Inicializar Reportes Interactivos
-        if (window.ReportsModule) {
-            reportsModule = new ReportsModule(db, currentUser.uid);
-            await reportsModule.initialize();
-            console.log('✅ Reportes Interactivos inicializados');
-        }
-        
-        // ✨ NUEVO: Iniciar tutorial automáticamente si es primera vez
+        // Iniciar tutorial si es necesario
         if (!tutorialCompleted && expenses.length === 0 && incomeHistory.length === 0) {
             setTimeout(() => {
                 tutorialActive = true;
                 tutorialStep = 0;
                 render();
-            }, 1000); // Esperar 1 segundo para que cargue todo
+            }, 1000);
         }
         
         currentView = 'app';
         activeTab = 'dashboard';
         render();
     } else {
+        // Usuario no autenticado
         currentUser = null;
+        isInitialized = false;  // Reset flag
+        
+        // Limpiar módulos
+        assistantModule = null;
+        recurringModule = null;
+        reportsModule = null;
+        comparisonModule = null;
+        notificationsModule = null;
+        
         currentView = 'login';
         render();
     }
@@ -3427,7 +3479,7 @@ function renderRecurringExpensesSection() {
             </div>
             
             <!-- Lista de Gastos Recurrentes -->
-            ${recurringModule.recurringExpenses.length === 0 ? `
+            ${recurringModule.recurringExpenses && recurringModule.recurringExpenses.length === 0 ? `
                 <div class="card">
                     <div class="empty-state">
                         <div class="empty-state-icon">🔄</div>
@@ -3522,32 +3574,82 @@ function renderRecurringExpensesSection() {
 // 📊 REPORTES INTERACTIVOS - NUEVA SECCIÓN
 // ========================================
 function renderReportsSection() {
-    try {
-        if (!reportsModule || !reportsModule.isInitialized) {
-            return `
-                <div class="reports-placeholder">
-                    <h2>📊 Reportes Financieros</h2>
-                    <p style="color: rgba(255, 255, 255, 0.7); text-align: center; padding: 2rem;">
-                        El módulo de reportes no está disponible en este momento.
-                    </p>
-                    <button class="btn btn-primary" onclick="location.reload()" style="display: block; margin: 1rem auto;">
-                        🔄 Recargar Página
-                    </button>
-                </div>
-            `;
-        }
-        
-        return reportsModule.renderReportsSection(expenses, incomeHistory);
-    } catch (error) {
-        console.error('Error en renderReportsSection:', error);
+    if (!reportsModule) {
         return `
-            <div class="reports-error">
-                <h2>📊 Reportes Financieros</h2>
-                <p style="text-align: center; padding: 2rem;">Error al cargar los reportes</p>
+            <div class="card">
+                <h2>📊 Reportes</h2>
+                <p style="text-align: center; padding: 2rem;">
+                    ⚠️ El módulo de reportes no está disponible
+                </p>
             </div>
         `;
     }
-}
+    
+    const report = reportsModule.generateReport('month');
+    
+    return `
+        <div class="reports-container">
+            <!-- Header y Filtros -->
+            <div class="card">
+                <h2 style="margin-bottom: 1rem;">📊 Reportes Interactivos</h2>
+                <div class="period-filters">
+                    <button class="period-btn" onclick="changeReportPeriod('week')">📅 Semana</button>
+                    <button class="period-btn active" onclick="changeReportPeriod('month')">📆 Mes</button>
+                    <button class="period-btn" onclick="changeReportPeriod('quarter')">🗓️ Trimestre</button>
+                    <button class="period-btn" onclick="changeReportPeriod('year')">📋 Año</button>
+                </div>
+            </div>
+            
+            <!-- Resumen Ejecutivo -->
+            <div class="executive-summary">
+                <h3 style="margin-bottom: 1.5rem;">📈 Resumen Ejecutivo</h3>
+                <div class="summary-grid">
+                    <div class="summary-card">
+                        <div class="summary-icon">💰</div>
+                        <div class="summary-value">$${report.summary.totalIncome.toFixed(0)}</div>
+                        <div class="summary-label">Ingresos</div>
+                        ${report.comparison ? `
+                            <div class="summary-change ${report.comparison.income.trend === 'up' ? 'positive' : report.comparison.income.trend === 'down' ? 'negative' : ''}">
+                                ${report.comparison.income.trend === 'up' ? '↗' : report.comparison.income.trend === 'down' ? '↘' : '→'} 
+                                ${Math.abs(report.comparison.income.percentageChange).toFixed(1)}%
+                            </div>
+                        ` : ''}
+                    </div>
+                    
+                    <div class="summary-card">
+                        <div class="summary-icon">💸</div>
+                        <div class="summary-value">$${report.summary.totalExpenses.toFixed(0)}</div>
+                        <div class="summary-label">Gastos</div>
+                        ${report.comparison ? `
+                            <div class="summary-change ${report.comparison.expenses.trend === 'down' ? 'positive' : report.comparison.expenses.trend === 'up' ? 'negative' : ''}">
+                                ${report.comparison.expenses.trend === 'up' ? '↗' : report.comparison.expenses.trend === 'down' ? '↘' : '→'} 
+                                ${Math.abs(report.comparison.expenses.percentageChange).toFixed(1)}%
+                            </div>
+                        ` : ''}
+                    </div>
+                    
+                    <div class="summary-card">
+                        <div class="summary-icon">💵</div>
+                        <div class="summary-value ${report.summary.balance >= 0 ? '' : 'negative'}">
+                            $${report.summary.balance.toFixed(0)}
+                        </div>
+                        <div class="summary-label">Balance</div>
+                    </div>
+                    
+                    <div class="summary-card">
+                        <div class="summary-icon">💎</div>
+                        <div class="summary-value">${report.summary.savingsRate.toFixed(0)}%</div>
+                        <div class="summary-label">Tasa de Ahorro</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Gráficos -->
+            <div class="charts-container">
+                <!-- Gráfico de Tendencias -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <div>
                             <div class="chart-title">📈 Tendencias (6 meses)</div>
                             <div class="chart-subtitle">Evolución de ingresos y gastos</div>
                         </div>
@@ -3812,7 +3914,13 @@ function quickAssistantAction(topic) {
 }
 
 function render() {
+    // Verificar que el DOM está listo
     const app = document.getElementById('app');
+    if (!app) {
+        console.warn('⚠️ DOM no está listo, esperando...');
+        setTimeout(render, 100);
+        return;
+    }
     
     if (currentView === 'login') {
         app.innerHTML = `<div class="container">${renderLogin()}</div>`;
@@ -8190,6 +8298,12 @@ function formatDate(date) {
  * 🔄 Cargar gastos recurrentes desde el módulo
  */
 async function loadRecurringExpenses() {
+    // Verificar que hay usuario autenticado
+    if (!currentUser || !currentUser.uid) {
+        console.warn('⚠️ No hay usuario autenticado para cargar gastos recurrentes');
+        return;
+    }
+    
     try {
         if (!recurringModule) {
             console.warn('⚠️ RecurringModule no está inicializado');
@@ -8208,12 +8322,13 @@ async function loadRecurringExpenses() {
  * 🔄 Verificar y generar gastos recurrentes pendientes
  */
 async function checkAndGenerateRecurringExpenses() {
+    // Verificar usuario y módulo
+    if (!currentUser || !currentUser.uid || !recurringModule) {
+        console.warn('⚠️ No se pueden generar gastos recurrentes sin usuario o módulo');
+        return;
+    }
+    
     try {
-        if (!recurringModule) {
-            console.warn('⚠️ RecurringModule no está inicializado');
-            return;
-        }
-        
         // El módulo ya hace esto en su initialize()
         await recurringModule.checkAndGenerateRecurring();
         console.log('✅ Verificación de gastos recurrentes completada');
@@ -8580,27 +8695,11 @@ window.toggleUnusualExpenses = toggleUnusualExpenses;
 
 console.log('✅ Todas las funciones exportadas correctamente');
 
-// Función para verificar módulos cargados
-function checkLoadedModules() {
-    const modules = {
-        'NotificationsModule': typeof NotificationsModule !== 'undefined',
-        'RecurringExpensesModule': typeof RecurringExpensesModule !== 'undefined',
-        'ComparisonModule': typeof ComparisonModule !== 'undefined',
-        'ReportsModule': typeof ReportsModule !== 'undefined',
-        'VirtualAssistantModule': typeof VirtualAssistantModule !== 'undefined'
-    };
-    
-    console.log('📋 Estado de módulos:');
-    Object.entries(modules).forEach(([name, loaded]) => {
-        console.log(`${loaded ? '✅' : '❌'} ${name}: ${loaded ? 'Cargado' : 'No encontrado'}`);
-    });
-    
-    return modules;
-}
-
 // ========================================
 // INICIALIZACIÓN DE MÓDULOS
 // ========================================
+// COMENTADO: Inicialización duplicada que causaba errores
+/*
 window.addEventListener('DOMContentLoaded', () => {
     console.log('🚀 Inicializando módulos...');
     
@@ -8665,15 +8764,15 @@ window.addEventListener('DOMContentLoaded', () => {
         }
         
         // Inicializar asistente AI
-        if (typeof VirtualAssistantModule !== 'undefined') {
+        if (typeof AssistantModule !== 'undefined') {
             try {
-                assistantModule = new VirtualAssistantModule(db, currentUser ? currentUser.uid : null);
+                assistantModule = new AssistantModule();
                 console.log('✅ Módulo de asistente AI inicializado');
             } catch (error) {
                 console.warn('⚠️ Error al inicializar asistente AI:', error);
             }
         } else {
-            console.warn('⚠️ VirtualAssistantModule no está disponible');
+            console.warn('⚠️ AssistantModule no está disponible');
         }
         
         console.log('🎉 Todos los módulos disponibles han sido inicializados');
@@ -8682,6 +8781,7 @@ window.addEventListener('DOMContentLoaded', () => {
     // Iniciar la aplicación
     initializeApp();
 });
+*/
 
 // ========================================
 // FUNCIÓN GLOBAL PARA RENDERIZAR COMPARACIÓN
