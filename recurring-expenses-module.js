@@ -1,7 +1,8 @@
 /**
- * 🔄 RECURRING EXPENSES MODULE - COMPLETO Y CORREGIDO
- * ==================================================
+ * 🔄 RECURRING EXPENSES MODULE - VERSIÓN COMPLETA Y FINAL
+ * ======================================================
  * Sistema completo de gestión de gastos recurrentes automáticos
+ * INCLUYE TODOS LOS MÉTODOS NECESARIOS
  */
 
 class RecurringExpensesModule {
@@ -46,8 +47,13 @@ class RecurringExpensesModule {
      */
     async initialize(userId) {
         try {
-            this.userId = userId;
+            this.userId = userId || this.userId;
             console.log('🔄 Inicializando módulo de gastos recurrentes...');
+            
+            // Inicializar array vacío si no existe
+            if (!Array.isArray(this.recurringExpenses)) {
+                this.recurringExpenses = [];
+            }
             
             // Cargar gastos recurrentes
             await this.loadRecurringExpenses();
@@ -62,6 +68,7 @@ class RecurringExpensesModule {
         } catch (error) {
             console.error('❌ Error inicializando gastos recurrentes:', error);
             this.isInitialized = false;
+            this.recurringExpenses = [];
             return false;
         }
     }
@@ -151,7 +158,9 @@ class RecurringExpensesModule {
             if (!recurring.active) continue;
             
             try {
-                const nextDate = recurring.nextDate ? recurring.nextDate.toDate() : new Date();
+                const nextDate = recurring.nextDate ? 
+                    (recurring.nextDate.toDate ? recurring.nextDate.toDate() : new Date(recurring.nextDate)) : 
+                    new Date();
                 
                 if (nextDate <= today) {
                     await this.generateExpense(recurring);
@@ -209,30 +218,56 @@ class RecurringExpensesModule {
     }
 
     /**
-     * Calcular próxima fecha
+     * NUEVO: Calcular próxima ocurrencia
      */
-    calculateNextDate(fromDate, frequency) {
-        const date = new Date(fromDate);
+    calculateNextOccurrence(lastDate, frequency, dayOfMonth = 1) {
+        const date = lastDate ? new Date(lastDate) : new Date();
         
         switch (frequency) {
             case 'daily':
                 date.setDate(date.getDate() + 1);
                 break;
+                
             case 'weekly':
                 date.setDate(date.getDate() + 7);
                 break;
+                
             case 'biweekly':
+            case 'quincenal':
                 date.setDate(date.getDate() + 15);
                 break;
+                
             case 'monthly':
-                date.setMonth(date.getMonth() + 1);
+            case 'mensual':
+                // Intentar mantener el mismo día del mes
+                const currentMonth = date.getMonth();
+                date.setMonth(currentMonth + 1);
+                
+                // Si el día no existe en el mes siguiente (ej: 31 de febrero)
+                // usar el último día del mes
+                if (date.getDate() !== dayOfMonth) {
+                    date.setDate(0); // Último día del mes anterior
+                }
                 break;
+                
             case 'yearly':
+            case 'anual':
                 date.setFullYear(date.getFullYear() + 1);
                 break;
+                
+            default:
+                // Si no se reconoce la frecuencia, agregar 30 días
+                date.setDate(date.getDate() + 30);
         }
         
         return date;
+    }
+
+    /**
+     * Calcular próxima fecha (método original mantenido por compatibilidad)
+     */
+    calculateNextDate(fromDate, frequency) {
+        return this.calculateNextOccurrence(fromDate, frequency);
     }
 
     /**
@@ -254,6 +289,10 @@ class RecurringExpensesModule {
             
             recurring.active = newStatus;
             
+            if (typeof showToast === 'function') {
+                showToast(newStatus ? '✅ Gasto recurrente activado' : '⏸️ Gasto recurrente pausado');
+            }
+            
             return { success: true, active: newStatus };
             
         } catch (error) {
@@ -267,6 +306,10 @@ class RecurringExpensesModule {
      */
     async deleteRecurring(id) {
         try {
+            if (!confirm('¿Estás seguro de que quieres eliminar este gasto recurrente?')) {
+                return { success: false };
+            }
+            
             await this.db
                 .collection('users')
                 .doc(this.userId)
@@ -275,6 +318,10 @@ class RecurringExpensesModule {
                 .delete();
             
             this.recurringExpenses = this.recurringExpenses.filter(r => r.id !== id);
+            
+            if (typeof showToast === 'function') {
+                showToast('🗑️ Gasto recurrente eliminado');
+            }
             
             return { success: true };
             
@@ -288,6 +335,10 @@ class RecurringExpensesModule {
      * Obtener estadísticas
      */
     getStatistics() {
+        if (!Array.isArray(this.recurringExpenses)) {
+            this.recurringExpenses = [];
+        }
+        
         const active = this.recurringExpenses.filter(r => r.active).length;
         const paused = this.recurringExpenses.filter(r => !r.active).length;
         const monthlyEstimate = this.calculateMonthlyTotal();
@@ -325,6 +376,10 @@ class RecurringExpensesModule {
      * Obtener próximos gastos
      */
     getUpcomingExpenses(days = 30) {
+        if (!Array.isArray(this.recurringExpenses)) {
+            return [];
+        }
+        
         const today = new Date();
         const endDate = new Date();
         endDate.setDate(endDate.getDate() + days);
@@ -357,6 +412,10 @@ class RecurringExpensesModule {
      * Calcular total mensual
      */
     calculateMonthlyTotal() {
+        if (!Array.isArray(this.recurringExpenses)) {
+            return 0;
+        }
+        
         return this.recurringExpenses
             .filter(r => r.active)
             .reduce((total, recurring) => {
@@ -370,9 +429,11 @@ class RecurringExpensesModule {
                         monthlyAmount = recurring.amount * 4;
                         break;
                     case 'biweekly':
+                    case 'quincenal':
                         monthlyAmount = recurring.amount * 2;
                         break;
                     case 'yearly':
+                    case 'anual':
                         monthlyAmount = recurring.amount / 12;
                         break;
                 }
@@ -386,7 +447,20 @@ class RecurringExpensesModule {
      */
     renderRecurringExpensesView() {
         if (!this.isInitialized) {
-            return '<div class="recurring-expenses">Módulo no inicializado</div>';
+            return `
+                <div class="recurring-expenses">
+                    <div class="empty-state">
+                        <p>Módulo de gastos recurrentes no inicializado</p>
+                        <button class="btn btn-primary" onclick="location.reload()">
+                            🔄 Recargar Página
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        if (!Array.isArray(this.recurringExpenses)) {
+            this.recurringExpenses = [];
         }
 
         const activeRecurring = this.recurringExpenses.filter(r => r.active);
@@ -428,7 +502,7 @@ class RecurringExpensesModule {
                 </div>
 
                 <button class="fab-option add-recurring" onclick="openRecurringModal()" 
-                        style="position: fixed; bottom: 100px; right: 20px;">
+                        style="position: fixed; bottom: 100px; right: 20px; background: linear-gradient(135deg, #667EEA, #764BA2);">
                     ➕
                 </button>
             </div>
@@ -439,15 +513,21 @@ class RecurringExpensesModule {
      * Renderizar item individual
      */
     renderRecurringItem(recurring) {
-        const nextDate = recurring.nextDate ? 
-            new Date(recurring.nextDate.toDate ? recurring.nextDate.toDate() : recurring.nextDate) : 
-            new Date();
+        let nextDate = new Date();
+        
+        try {
+            if (recurring.nextDate) {
+                nextDate = recurring.nextDate.toDate ? recurring.nextDate.toDate() : new Date(recurring.nextDate);
+            }
+        } catch (e) {
+            console.warn('Error procesando fecha:', e);
+        }
 
         return `
             <div class="recurring-item ${!recurring.active ? 'paused' : ''}">
                 <div class="recurring-info">
                     <h5>${recurring.name || 'Sin nombre'}</h5>
-                    <p>$${(recurring.amount || 0).toFixed(2)} - ${this.frequencies[recurring.frequency]?.label || 'Frecuencia desconocida'}</p>
+                    <p>$${(recurring.amount || 0).toFixed(2)} - ${this.frequencies[recurring.frequency]?.label || recurring.frequency}</p>
                     <small>Próximo: ${nextDate.toLocaleDateString()}</small>
                 </div>
                 <div class="recurring-actions">
@@ -468,5 +548,5 @@ class RecurringExpensesModule {
 // Exportar para uso global
 if (typeof window !== 'undefined') {
     window.RecurringExpensesModule = RecurringExpensesModule;
-    console.log('🔄 Módulo de gastos recurrentes cargado correctamente');
+    console.log('🔄 Módulo de gastos recurrentes cargado correctamente - v2.0 COMPLETO');
 }
