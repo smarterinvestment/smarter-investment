@@ -8799,3 +8799,101 @@ window.renderComparisonView = function(expenses, currentMonth, previousMonth) {
         `;
     }
 };
+/**
+ * 🚨 PARCHE DE INICIALIZACIÓN DE MÓDULOS
+ * =====================================
+ * Agregar este código AL FINAL de tu app.js
+ */
+
+// Función para reinicializar módulos manualmente
+window.initializeAllModules = async function() {
+    console.log('🔄 Reinicializando todos los módulos...');
+    
+    if (!currentUser || !currentUser.uid) {
+        console.error('❌ No hay usuario autenticado');
+        return;
+    }
+    
+    try {
+        // Inicializar Gastos Recurrentes
+        if (window.RecurringExpensesModule && !recurringModule) {
+            recurringModule = new RecurringExpensesModule(db, currentUser.uid);
+            await recurringModule.initialize(currentUser.uid);
+            console.log('✅ Gastos Recurrentes inicializado');
+        }
+        
+        // Inicializar Asistente Virtual
+        if (window.VirtualAssistantModule && !assistantModule) {
+            assistantModule = new VirtualAssistantModule(db, currentUser.uid);
+            await assistantModule.initialize();
+            console.log('✅ Asistente Virtual inicializado');
+        }
+        
+        // Inicializar Notificaciones
+        if (window.NotificationsModule && !notificationsModule) {
+            notificationsModule = new NotificationsModule(db, currentUser.uid);
+            await notificationsModule.initialize();
+            console.log('✅ Notificaciones inicializado');
+        }
+        
+        // Inicializar Reportes
+        if (window.ReportsModule && !reportsModule) {
+            reportsModule = new ReportsModule(db);
+            await reportsModule.initialize(currentUser.uid);
+            console.log('✅ Reportes inicializado');
+        }
+        
+        // Inicializar Comparación
+        if (window.ComparisonModule && !comparisonModule) {
+            comparisonModule = new ComparisonModule(db, currentUser.uid);
+            await comparisonModule.initialize(currentUser.uid);
+            console.log('✅ Comparación inicializado');
+        }
+        
+        console.log('🎉 Todos los módulos reinicializados');
+        
+        // Recargar la vista actual
+        render();
+        
+        showToast('✅ Módulos inicializados correctamente', 'success');
+        
+    } catch (error) {
+        console.error('❌ Error reinicializando módulos:', error);
+        showToast('❌ Error al inicializar módulos', 'error');
+    }
+};
+
+// Verificar estado de módulos
+window.checkModulesStatus = function() {
+    console.log('📋 Estado de Módulos:');
+    console.log('RecurringModule:', recurringModule ? '✅ Inicializado' : '❌ No inicializado');
+    console.log('AssistantModule:', assistantModule ? '✅ Inicializado' : '❌ No inicializado');
+    console.log('NotificationsModule:', notificationsModule ? '✅ Inicializado' : '❌ No inicializado');
+    console.log('ReportsModule:', reportsModule ? '✅ Inicializado' : '❌ No inicializado');
+    console.log('ComparisonModule:', comparisonModule ? '✅ Inicializado' : '❌ No inicializado');
+    console.log('CurrentUser:', currentUser ? currentUser.email : '❌ No autenticado');
+};
+
+// Auto-inicializar si hay usuario pero no módulos
+setTimeout(() => {
+    if (currentUser && (!recurringModule || !assistantModule)) {
+        console.log('⚠️ Detectado: Usuario autenticado pero módulos no inicializados');
+        initializeAllModules();
+    }
+}, 3000);
+
+// Agregar botón temporal de emergencia
+setTimeout(() => {
+    if (document.querySelector('.dashboard-header') && !document.getElementById('emergency-init-btn')) {
+        const btn = document.createElement('button');
+        btn.id = 'emergency-init-btn';
+        btn.className = 'btn btn-primary';
+        btn.style.cssText = 'position: fixed; bottom: 20px; right: 20px; z-index: 9999; background: #ff6b6b;';
+        btn.innerHTML = '🔧 Inicializar Módulos';
+        btn.onclick = initializeAllModules;
+        document.body.appendChild(btn);
+    }
+}, 2000);
+
+console.log('✅ Parche de inicialización cargado');
+console.log('💡 Usa initializeAllModules() en la consola si necesitas reinicializar');
