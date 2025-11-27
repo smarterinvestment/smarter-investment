@@ -7375,17 +7375,22 @@ function renderUpcomingTimeline(upcoming) {
     const grouped = {};
     
     upcoming.forEach(item => {
-        const date = item.date.split('T')[0];
-        if (!grouped[date]) {
-            grouped[date] = [];
+        // FIX: Usar nextDate en lugar de date
+        const dateObj = item.nextDate || item.date || new Date();
+        const dateStr = dateObj instanceof Date ? 
+            dateObj.toISOString().split('T')[0] : 
+            (typeof dateObj === 'string' ? dateObj.split('T')[0] : new Date().toISOString().split('T')[0]);
+        
+        if (!grouped[dateStr]) {
+            grouped[dateStr] = [];
         }
-        grouped[date].push(item);
+        grouped[dateStr].push(item);
     });
     
     return `
         <div style="background: rgba(255,255,255,0.05); padding: 1.5rem; border-radius: 0.75rem;">
             ${Object.entries(grouped).map(([date, items], index) => {
-                const totalDay = items.reduce((sum, item) => sum + item.amount, 0);
+                const totalDay = items.reduce((sum, item) => sum + (item.amount || 0), 0);
                 const daysUntil = Math.ceil((new Date(date) - new Date()) / (1000 * 60 * 60 * 24));
                 
                 return `
@@ -7407,10 +7412,10 @@ function renderUpcomingTimeline(upcoming) {
                             ${items.map(item => `
                                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: rgba(255,255,255,0.03); border-radius: 0.5rem;">
                                     <div style="font-size: 0.9rem;">
-                                        ${getFrequencyEmoji(item.recurring.frequency)} ${item.recurring.description}
+                                        ${getFrequencyEmoji(item.frequency || 'monthly')} ${item.name || item.description || 'Gasto recurrente'}
                                     </div>
                                     <div style="font-size: 0.9rem; font-weight: 600; color: var(--color-danger);">
-                                        $${item.amount.toFixed(2)}
+                                        $${(item.amount || 0).toFixed(2)}
                                     </div>
                                 </div>
                             `).join('')}
