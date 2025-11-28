@@ -4498,9 +4498,38 @@ function renderCategoryChart(category) {
  * 🆕 Abrir modal de gasto/ingreso con opción de recurrente
  */
 function openModal(type) {
-    const modal = document.getElementById('modal');
+    // Primero verificar si el modal existe, si no, crearlo
+    let modal = document.getElementById('modal');
+    
+    if (!modal) {
+        // Crear el modal completo desde cero
+        const modalHTML = `
+            <div id="modal" class="modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3 id="modal-title" class="modal-title"></h3>
+                        <button class="btn-close" onclick="closeModal()">×</button>
+                    </div>
+                    <div id="modal-form" class="modal-body"></div>
+                </div>
+            </div>
+        `;
+        
+        // Insertar el modal en el body o en el contenedor de modales
+        const modalContainer = document.getElementById('modal-container') || document.body;
+        modalContainer.insertAdjacentHTML('beforeend', modalHTML);
+        modal = document.getElementById('modal');
+    }
+    
+    // Ahora obtener los elementos del modal
     const modalTitle = document.getElementById('modal-title');
     const modalForm = document.getElementById('modal-form');
+    
+    // Verificar que los elementos existen
+    if (!modalTitle || !modalForm) {
+        console.error('Error: No se pudieron crear los elementos del modal');
+        return;
+    }
     
     // Determinar si es gasto o ingreso
     const isExpense = type === 'expense';
