@@ -173,14 +173,14 @@ if (typeof toggleRecurringOptions === 'undefined') {
 if (typeof handleModalSubmit === 'undefined') {
     window.handleModalSubmit = async function(type) {
         try {
-            const description = document.getElementById('modal-description').value.trim();
-            const amount = parseFloat(document.getElementById('modal-amount').value);
-            const category = document.getElementById('modal-category').value;
-            const date = document.getElementById('modal-date').value;
+            const description = document.getElementById('modal-description')?.value.trim();
+            const amount = parseFloat(document.getElementById('modal-amount')?.value);
+            const category = document.getElementById('modal-category')?.value;
+            const date = document.getElementById('modal-date')?.value;
             
-            // Validaciones
-            if (!description || !amount || !category || !date) {
-                showToast('❌ Por favor completa todos los campos', 'error');
+            // Validaciones extras
+            if (!description || isNaN(amount) || !category || !date) {
+                showToast('❌ Por favor completa todos los campos correctamente', 'error');
                 return;
             }
             
@@ -194,7 +194,11 @@ if (typeof handleModalSubmit === 'undefined') {
             
             if (isRecurring && recurringModule) {
                 // Crear gasto recurrente
-                const frequency = document.getElementById('modal-frequency').value;
+                const frequency = document.getElementById('modal-frequency')?.value;
+                if (!frequency) {
+                    showToast('❌ Selecciona una frecuencia', 'error');
+                    return;
+                }
                 const result = await recurringModule.createRecurringExpense({
                     name: description,
                     amount: amount,

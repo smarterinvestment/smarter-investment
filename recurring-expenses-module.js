@@ -239,65 +239,57 @@ class RecurringExpensesModule {
                 
             case 'monthly':
             case 'mensual':
-                // Intentar mantener el mismo día del mes
-                const currentMonth = date.getMonth();
-                date.setMonth(currentMonth + 1);
-                
-                // Si el día no existe en el mes siguiente (ej: 31 de febrero)
-                // usar el último día del mes
-                if (date.getDate() !== dayOfMonth) {
-                    date.setDate(0); // Último día del mes anterior
-                }
+                date.setMonth(date.getMonth() + 1);
+                date.setDate(Math.min(dayOfMonth, new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()));
                 break;
                 
             case 'yearly':
             case 'anual':
                 date.setFullYear(date.getFullYear() + 1);
                 break;
-                
-            default:
-                // Si no se reconoce la frecuencia, agregar 30 días
-                date.setDate(date.getDate() + 30);
         }
         
         return date;
     }
 
     /**
-     * Calcular próxima fecha (método original mantenido por compatibilidad)
+     * NUEVO: Calcular próxima fecha
      */
-    calculateNextDate(fromDate, frequency) {
-        return this.calculateNextOccurrence(fromDate, frequency);
+    calculateNextDate(currentDate, frequency) {
+        const date = new Date(currentDate);
+        date.setHours(0, 0, 0, 0);
+        
+        const freq = this.frequencies[frequency] || this.frequencies.monthly;
+        return new Date(date.getTime() + freq.days * 24 * 60 * 60 * 1000);
     }
 
     /**
-     * Pausar/reactivar gasto recurrente
+     * Pausar o activar gasto recurrente
      */
     async toggleRecurring(id) {
         try {
             const recurring = this.recurringExpenses.find(r => r.id === id);
-            if (!recurring) return { success: false, error: 'Gasto no encontrado' };
-            
-            const newStatus = !recurring.active;
+            if (!recurring) return;
             
             await this.db
                 .collection('users')
                 .doc(this.userId)
                 .collection('recurringExpenses')
                 .doc(id)
-                .update({ active: newStatus });
+                .update({
+                    active: !recurring.active
+                });
             
-            recurring.active = newStatus;
+            recurring.active = !recurring.active;
+            console.log(`✅ Gasto recurrente ${recurring.active ? 'activado' : 'pausado'}`);
             
-            if (typeof showToast === 'function') {
-                showToast(newStatus ? '✅ Gasto recurrente activado' : '⏸️ Gasto recurrente pausado');
+            // Recargar vista
+            const recurringContainer = document.querySelector('.recurring-expenses-container');
+            if (recurringContainer) {
+                recurringContainer.innerHTML = this.renderRecurringExpensesView();
             }
-            
-            return { success: true, active: newStatus };
-            
         } catch (error) {
-            console.error('Error actualizando gasto recurrente:', error);
-            return { success: false, error: error.message };
+            console.error('Error toggling recurrente:', error);
         }
     }
 
@@ -305,11 +297,9 @@ class RecurringExpensesModule {
      * Eliminar gasto recurrente
      */
     async deleteRecurring(id) {
+        if (!confirm('¿Eliminar este gasto recurrente?')) return;
+        
         try {
-            if (!confirm('¿Estás seguro de que quieres eliminar este gasto recurrente?')) {
-                return { success: false };
-            }
-            
             await this.db
                 .collection('users')
                 .doc(this.userId)
@@ -318,32 +308,30 @@ class RecurringExpensesModule {
                 .delete();
             
             this.recurringExpenses = this.recurringExpenses.filter(r => r.id !== id);
+            console.log('✅ Gasto recurrente eliminado');
             
-            if (typeof showToast === 'function') {
-                showToast('🗑️ Gasto recurrente eliminado');
+            // Recargar vista
+            const recurringContainer = document.querySelector('.recurring-expenses-container');
+            if (recurringContainer) {
+                recurringContainer.innerHTML = this.renderRecurringExpensesView();
             }
-            
-            return { success: true };
-            
         } catch (error) {
-            console.error('Error eliminando gasto recurrente:', error);
-            return { success: false, error: error.message };
+            console.error('Error eliminando recurrente:', error);
         }
     }
 
     /**
-     * Obtener estadísticas
+     * Obtener estadísticas de recurrentes
      */
-    getStatistics() {
+    getStats() {
         if (!Array.isArray(this.recurringExpenses)) {
-            this.recurringExpenses = [];
+            return { active: 0, paused: 0, monthlyEstimate: 0, totalGenerated: 0 };
         }
         
         const active = this.recurringExpenses.filter(r => r.active).length;
-        const paused = this.recurringExpenses.filter(r => !r.active).length;
+        const paused = this.recurringExpenses.length - active;
         const monthlyEstimate = this.calculateMonthlyTotal();
         
-        // Contar gastos generados en los últimos 30 días
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
         

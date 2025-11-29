@@ -129,6 +129,15 @@ class ReportsModule {
         }
     }
 
+    // NUEVO: Inicializar charts con checks
+    initCharts() {
+        const expenseTrendCtx = document.getElementById('expense-trend-chart');
+        if (expenseTrendCtx) {
+            new Chart(expenseTrendCtx, { /* config */ });
+        }
+        // Similar para otros canvas
+    }
+
     /**
      * Calcular estadísticas
      */
