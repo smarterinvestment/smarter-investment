@@ -52,8 +52,17 @@ IMPORTANTE: Agregar estos estilos CSS al archivo styles.css:
 }
 */
 
-// Firebase ya está inicializado en index.html
-// Solo obtenemos las referencias
+const firebaseConfig = {
+    apiKey: "AIzaSyCuZAk-ZJiaxCtIKQqzz8Qp3SSIDrBLtQw",
+    authDomain: "smarter-investment.firebaseapp.com",
+    projectId: "smarter-investment",
+    storageBucket: "smarter-investment.firebasestorage.app",
+    messagingSenderId: "655346043393",
+    appId: "1:655346043393:web:9976b1c84d42db4aa96c38"
+};
+
+// Inicializar Firebase
+firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
@@ -95,9 +104,6 @@ let recurringModule = null;
 
 // 📊 NUEVO: Módulo de Reportes
 let reportsModule = null;
-
-// 📈 NUEVO: Módulo de Comparación
-let comparisonModule = null;
 
 // ========================================
 // LISTENER DE AUTENTICACIÓN
@@ -3029,29 +3035,10 @@ function render() {
 // GRÁFICOS
 // ========================================
 function renderAllDashboardCharts() {
-    // Verificar si Chart.js está cargado
-    if (typeof Chart === 'undefined') {
-        // Cargar Chart.js dinámicamente
-        const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
-        script.onload = () => {
-            console.log('✅ Chart.js cargado exitosamente');
-            renderChart();
-            renderDescriptionChart();
-            renderIncomeChart();
-            renderSavingsRateChart();
-        };
-        script.onerror = () => {
-            console.error('❌ Error al cargar Chart.js');
-        };
-        document.head.appendChild(script);
-    } else {
-        // Chart.js ya está cargado
-        renderChart();
-        renderDescriptionChart();
-        renderIncomeChart();
-        renderSavingsRateChart();
-    }
+    renderChart();
+    renderDescriptionChart();
+    renderIncomeChart();
+    renderSavingsRateChart();
 }
 
 function renderChart() {
@@ -5742,105 +5729,3 @@ window.toggleWeeklyReport = toggleWeeklyReport;
 window.toggleUnusualExpenses = toggleUnusualExpenses;
 
 console.log('✅ Todas las funciones exportadas correctamente');
-
-// ========================================
-// INICIALIZACIÓN DE MÓDULOS
-// ========================================
-window.addEventListener('DOMContentLoaded', () => {
-    console.log('🚀 Inicializando módulos...');
-    
-    // Esperar a que Chart.js esté disponible
-    const initializeApp = () => {
-        if (typeof Chart === 'undefined') {
-            console.log('⏳ Esperando a que Chart.js se cargue...');
-            setTimeout(initializeApp, 100);
-            return;
-        }
-        
-        console.log('✅ Chart.js está disponible');
-        
-        // Inicializar módulo de notificaciones
-        if (typeof NotificationsModule !== 'undefined') {
-            try {
-                notificationsModule = new NotificationsModule(db);
-                console.log('✅ Módulo de notificaciones inicializado');
-            } catch (error) {
-                console.warn('⚠️ Error al inicializar notificaciones:', error);
-            }
-        } else {
-            console.warn('⚠️ NotificationsModule no está disponible');
-        }
-        
-        // Inicializar módulo de gastos recurrentes
-        if (typeof RecurringExpensesModule !== 'undefined') {
-            try {
-                recurringModule = new RecurringExpensesModule(db, null);
-                recurringModule.isInitialized = true;
-                console.log('✅ Módulo de gastos recurrentes inicializado');
-            } catch (error) {
-                console.warn('⚠️ Error al inicializar gastos recurrentes:', error);
-            }
-        } else {
-            console.warn('⚠️ RecurringExpensesModule no está disponible');
-        }
-        
-        // Inicializar módulo de comparación
-        if (typeof ComparisonModule !== 'undefined') {
-            try {
-                comparisonModule = new ComparisonModule(db, null);
-                comparisonModule.isInitialized = true;
-                console.log('✅ Módulo de comparación inicializado');
-            } catch (error) {
-                console.warn('⚠️ Error al inicializar comparación:', error);
-            }
-        } else {
-            console.warn('⚠️ ComparisonModule no está disponible');
-        }
-        
-        // Inicializar módulo de reportes
-        if (typeof ReportsModule !== 'undefined') {
-            try {
-                reportsModule = new ReportsModule(db);
-                console.log('✅ Módulo de reportes inicializado');
-            } catch (error) {
-                console.warn('⚠️ Error al inicializar reportes:', error);
-            }
-        } else {
-            console.warn('⚠️ ReportsModule no está disponible');
-        }
-        
-        // Inicializar asistente AI
-        if (typeof AssistantModule !== 'undefined') {
-            try {
-                assistantModule = new AssistantModule();
-                console.log('✅ Módulo de asistente AI inicializado');
-            } catch (error) {
-                console.warn('⚠️ Error al inicializar asistente AI:', error);
-            }
-        } else {
-            console.warn('⚠️ AssistantModule no está disponible');
-        }
-        
-        console.log('🎉 Todos los módulos disponibles han sido inicializados');
-    };
-    
-    // Iniciar la aplicación
-    initializeApp();
-});
-
-// ========================================
-// FUNCIÓN GLOBAL PARA RENDERIZAR COMPARACIÓN
-// ========================================
-window.renderComparisonView = function(expenses, currentMonth, previousMonth) {
-    if (comparisonModule && comparisonModule.isInitialized) {
-        return comparisonModule.renderComparisonView(expenses, currentMonth, previousMonth);
-    } else {
-        console.warn('⚠️ ComparisonModule no está inicializado');
-        return `
-            <div class="comparison-placeholder">
-                <p>📊 Módulo de comparación no disponible</p>
-                <p style="font-size: 0.9em; opacity: 0.7;">Recarga la página para intentar de nuevo</p>
-            </div>
-        `;
-    }
-};
