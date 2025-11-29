@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smarter Investment - Gestión Financiera Personal</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Aplicación web para gestión financiera personal con IA integrada">
+    <meta name="keywords" content="finanzas personales, gestión dinero, presupuesto, gastos">
+    <meta name="author" content="Mauricio">
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#1a1a2e">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <!-- Manifest -->
+    <link rel="manifest" href="./manifest.json">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="./assets/logo-smarter.jpg" type="image/jpeg">
+    
+    <!-- Preload Critical Resources -->
+    <link rel="preload" href="./css/styles.css" as="style">
+    <link rel="preload" href="./js/app.js" as="script">
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="./css/styles.css">
+    
+    <!-- Critical CSS Inline para mejorar performance -->
+    <style>
+        /* Loading Screen */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            color: white;
+        }
+        
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top: 3px solid #4CAF50;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .loading-text {
+            font-size: 1.2rem;
+            font-weight: 500;
+        }
+        
+        /* Error States */
+        .error-state {
+            text-align: center;
+            padding: 2rem;
+            color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.1);
+            border-radius: 12px;
+            margin: 1rem;
+        }
+        
+        .dashboard-error {
+            text-align: center;
+            padding: 3rem 2rem;
+            background: rgba(255, 107, 107, 0.1);
+            border-radius: 12px;
+            color: #ff6b6b;
+        }
+        
+        .btn-primary {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-top: 1rem;
+        }
+        
+        .btn-primary:hover {
+            background: #45a049;
+        }
+        
+        /* Ensure critical containers exist */
+        .main-content {
+            min-height: calc(100vh - 80px);
+            padding-bottom: 80px;
+        }
+        
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 80px;
+            background: rgba(26, 26, 46, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+        }
+
+        /* NUEVO: Esconder botón flotante del asistente */
+        .assistant-floating-button, #assistant-btn, .assistant-container-floating {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- ========================================
+         LOADING SCREEN
+         ======================================== -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Cargando Smarter Investment...</div>
+        <div style="font-size: 0.9rem; opacity: 0.7; margin-top: 0.5rem;">
+            Inicializando módulos financieros
+        </div>
+    </div>
+
+    <!-- ========================================
+         MAIN APPLICATION CONTAINER
+         ======================================== -->
+    <div id="app" class="app-container" style="display: none;">
+        
+        <!-- AUTH CONTAINER -->
+        <div id="auth-container" style="display: none;">
+            <!-- El contenido de auth se carga dinámicamente -->
+        </div>
+
+        <!-- MAIN APP CONTAINER -->
+        <div id="main-app" style="display: none;">
+            
+            <!-- MAIN CONTENT AREA -->
+            <main id="main-content" class="main-content">
+                <!-- El contenido principal se carga dinámicamente aquí -->
+                <div id="dashboard-container" style="display: none;"></div>
+                <div id="expenses-container" style="display: none;"></div>
+                <div id="incomes-container" style="display: none;"></div>
+                <div id="budget-container" style="display: none;"></div>
+                <div id="reports-container" style="display: none;"></div>
+                <div id="settings-container" style="display: none;"></div>
+            </main>
+
+            <!-- BOTTOM NAVIGATION -->
+            <nav id="bottom-nav" class="bottom-nav">
+                <!-- La navegación se carga dinámicamente -->
+            </nav>
+        </div>
+    </div>
+
+    <!-- ========================================
+         MODALS CONTAINER
+         ======================================== -->
+    <div id="modal-container" class="modal-container">
+        <!-- Los modales se crean dinámicamente aquí -->
+    </div>
+
+    <!-- ========================================
+         NOTIFICATIONS CONTAINER
+         ======================================== -->
+    <div id="notifications-container" class="notifications-container">
+        <!-- Las notificaciones se muestran aquí -->
+    </div>
+
+    <!-- ========================================
+         CHAT ASSISTANT CONTAINER
+         ======================================== -->
+    <div id="chat-container" style="display: none;">
+        <div id="chat-messages" class="chat-messages">
+            <!-- Los mensajes del chat se cargan aquí -->
+        </div>
+        <div id="chat-input-container" class="chat-input-container">
+            <!-- El input del chat se carga aquí -->
+        </div>
+    </div>
+
+    <!-- ========================================
+         OFFLINE INDICATOR
+         ======================================== -->
+    <div id="offline-indicator" class="offline-indicator" style="display: none;">
+        <span>📶 Sin conexión - Modo offline</span>
+    </div>
+
+    <!-- ========================================
+         SCRIPTS - ORDEN IMPORTANTE
+         ======================================== -->
+    
+    <!-- 1. Utilities y Patches (PRIMERO) -->
+    <script src="./dom-utils.js"></script>
+    <script src="./app-patches.js"></script>
+    
+    <!-- 2. Firebase (SEGUNDO) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    
+    <!-- 3. Chart.js para gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- 4. Firebase Configuration -->
+    <script src="./firebase-init.js"></script>
+    
+    <!-- 5. Módulos de la aplicación (EN ORDEN) -->
+    <script src="./state-manager.js"></script>
+    <script src="./notifications-module.js"></script>
+    <script src="./assistant-module.js"></script>
+    <script src="./recurring-expenses-module.js"></script>
+    <script src="./comparison-module.js"></script>
+    <script src="./reports-module.js"></script>
+    
+    <!-- 6. Aplicación principal (ÚLTIMO) -->
+    <script src="./app.js"></script>
+    
+    <!-- 7. Service Worker Registration -->
+    <script>
+        // Service Worker Registration con manejo de errores
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', async () => {
+                try {
+                    const registration = await navigator.serviceWorker.register('./service-worker.js');
+                    console.log('✅ Service Worker registrado:', registration.scope);
+                    
+                    // Manejar actualizaciones
+                    registration.addEventListener('updatefound', () => {
+                        console.log('🔄 Nueva versión disponible');
+                        const newWorker = registration.installing;
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed') {
+                                if (navigator.serviceWorker.controller) {
+                                    // Mostrar notificación de actualización
+                                    if (window.NotificationsModule) {
+                                        window.NotificationsModule.show('Nueva versión disponible. Recarga para actualizar.', 'info');
+                                    }
+                                }
+                            }
+                        });
+                    });
+                } catch (error) {
+                    console.log('⚠️ Service Worker no pudo registrarse:', error);
+                }
+            });
+        }
+
+        // Manejo de conexión offline/online
+        window.addEventListener('online', () => {
+            console.log('🌐 Conexión restaurada');
+            document.getElementById('offline-indicator').style.display = 'none';
+            if (window.NotificationsModule) {
+                window.NotificationsModule.show('Conexión restaurada', 'success');
+            }
+        });
+
+        window.addEventListener('offline', () => {
+            console.log('📶 Sin conexión - Modo offline');
+            document.getElementById('offline-indicator').style.display = 'block';
+            if (window.NotificationsModule) {
+                window.NotificationsModule.show('Sin conexión a internet', 'warning');
+            }
+        });
+
+        // Ocultar loading screen cuando todo esté listo
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                const loadingScreen = document.getElementById('loading-screen');
+                const app = document.getElementById('app');
+                
+                if (loadingScreen) {
+                    loadingScreen.style.opacity = '0';
+                    setTimeout(() => {
+                        loadingScreen.style.display = 'none';
+                        if (app) app.style.display = 'block';
+                    }, 300);
+                }
+            }, 1500); // Mínimo 1.5 segundos de loading para mejor UX
+        });
+
+        // Error handling global
+        window.addEventListener('error', (event) => {
+            console.error('💥 Error global capturado:', event.error);
+            
+            // No mostrar errores de innerHTML ya corregidos
+            if (event.message && event.message.includes('innerHTML')) {
+                event.preventDefault();
+                return;
+            }
+            
+            // Mostrar notificación de error solo para errores críticos
+            if (window.NotificationsModule && !event.message.includes('Script error')) {
+                window.NotificationsModule.show('Error en la aplicación', 'error');
+            }
+        });
+
+        // Manejo de promesas rechazadas
+        window.addEventListener('unhandledrejection', (event) => {
+            console.error('💥 Promesa rechazada:', event.reason);
+            event.preventDefault(); // Evitar error en consola
+        });
+    </script>
+</body>
+</html>
