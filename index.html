@@ -33,15 +33,12 @@
     <!-- CSS Principal -->
     <link rel="stylesheet" href="styles.css">
     
-    <!-- 🔧 CSS Parche - Ocultar botón flotante del asistente -->
-    <link rel="stylesheet" href="hide-floating-assistant.css">
-    
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     
-    <!-- Firebase Configuration (IMPORTANTE: Cargar DESPUÉS del SDK pero ANTES de app.js) -->
+    <!-- Firebase Configuration -->
     <script src="firebase-init.js"></script>
     
     <!-- Chart.js -->
@@ -50,8 +47,9 @@
     <!-- Toastify JS -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
     
-    <!-- Prevenir zoom en iOS -->
+    <!-- 🔧 CSS para ocultar botón flotante del asistente -->
     <style>
+        /* Prevenir zoom en iOS */
         input[type="number"],
         input[type="text"],
         input[type="email"],
@@ -64,7 +62,7 @@
             overscroll-behavior-y: contain;
         }
         
-        /* 🔧 Ocultar botón flotante del asistente (backup inline) */
+        /* 🔧 OCULTAR BOTÓN FLOTANTE DEL ASISTENTE */
         .assistant-float-btn,
         .floating-assistant-button,
         .assistant-floating-btn,
@@ -72,10 +70,15 @@
         #floating-assistant,
         .ai-assistant-float,
         .assistant-fab,
+        .virtual-assistant-floating,
         [class*="float"][class*="assistant"],
         [id*="float"][id*="assistant"] {
             display: none !important;
             visibility: hidden !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+            width: 0 !important;
+            height: 0 !important;
         }
     </style>
 </head>
@@ -102,7 +105,7 @@
     <!-- Comparación de Gastos -->
     <script src="comparison-module.js"></script>
     
-    <!-- Asistente Virtual AI (sin botón flotante) -->
+    <!-- Asistente Virtual AI -->
     <script src="assistant-module.js"></script>
     
     <!-- 📊 Reportes Interactivos -->
@@ -111,44 +114,8 @@
     <!-- Script principal -->
     <script src="app.js"></script>
     
-    <!-- 🔧🔧🔧 PARCHE DE CORRECCIÓN DEL MODAL 🔧🔧🔧 -->
-    <!-- IMPORTANTE: Este script DEBE ir DESPUÉS de app.js -->
+    <!-- 🔧🔧🔧 PARCHE DE CORRECCIÓN - DEBE IR DESPUÉS DE APP.JS 🔧🔧🔧 -->
     <script src="modal-fix.js"></script>
-    
-    <!-- 🔧 Script para eliminar botón flotante (backup) -->
-    <script>
-        // Función para eliminar el botón flotante del asistente
-        function removeFloatingAssistant() {
-            const selectors = [
-                '.assistant-float-btn',
-                '.floating-assistant-button',
-                '.assistant-floating-btn',
-                '#assistantFloatBtn',
-                '#floating-assistant',
-                '.ai-assistant-float',
-                '.assistant-fab'
-            ];
-            
-            selectors.forEach(selector => {
-                document.querySelectorAll(selector).forEach(el => {
-                    console.log('🗑️ Eliminando botón flotante:', selector);
-                    el.remove();
-                });
-            });
-        }
-        
-        // Ejecutar múltiples veces para asegurar
-        removeFloatingAssistant();
-        document.addEventListener('DOMContentLoaded', removeFloatingAssistant);
-        setTimeout(removeFloatingAssistant, 500);
-        setTimeout(removeFloatingAssistant, 1000);
-        setTimeout(removeFloatingAssistant, 2000);
-        setTimeout(removeFloatingAssistant, 5000);
-        
-        // Observer para detectar si se añade después
-        const floatObserver = new MutationObserver(removeFloatingAssistant);
-        floatObserver.observe(document.body, { childList: true, subtree: true });
-    </script>
     
     <!-- Service Worker -->
     <script>
@@ -163,6 +130,30 @@
                     });
             });
         }
+        
+        // 🔧 Backup: Eliminar botón flotante del asistente
+        function removeFloatingAssistant() {
+            const selectors = [
+                '.assistant-float-btn',
+                '.floating-assistant-button',
+                '#assistantFloatBtn',
+                '#floating-assistant',
+                '.ai-assistant-float'
+            ];
+            selectors.forEach(s => {
+                document.querySelectorAll(s).forEach(el => el.remove());
+            });
+        }
+        
+        // Ejecutar múltiples veces
+        removeFloatingAssistant();
+        setTimeout(removeFloatingAssistant, 1000);
+        setTimeout(removeFloatingAssistant, 3000);
+        setTimeout(removeFloatingAssistant, 5000);
+        
+        // Observer para detectar si aparece después
+        const assistantObserver = new MutationObserver(removeFloatingAssistant);
+        assistantObserver.observe(document.body, { childList: true, subtree: true });
     </script>
 </body>
 </html>
