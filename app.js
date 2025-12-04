@@ -1,7 +1,3 @@
-// ========================================
-// CONFIGURACIÓN DE FIREBASE
-// ========================================
-/* 
 IMPORTANTE: Agregar estos estilos CSS al archivo styles.css:
 
 .fab-menu {
@@ -51,11 +47,45 @@ IMPORTANTE: Agregar estos estilos CSS al archivo styles.css:
     }
 }
 */
+// // ---------- Firebase guard (NO redeclarar firebaseConfig) ----------
+// Este bloque evita que app.js redeclare firebaseConfig o inicialice Firebase
+// si ya fue inicializado por firebase-init.js cargado desde index.html
 
-// Firebase ya está inicializado en index.html
-// Solo obtenemos las referencias
-const auth = firebase.auth();
-const db = firebase.firestore();
+(function () {
+    'use strict';
+
+    // Si firebase no está cargado aún, avisar (index.html debería cargar firebase SDK + firebase-init.js antes)
+    if (typeof firebase === 'undefined') {
+        console.error('Firebase SDK no está disponible. Asegúrate de cargar los scripts de Firebase en index.html antes de app.js.');
+        return;
+    }
+
+    // Si firebase ya fue inicializado por firebase-init.js, reutilizar la app existente
+    if (window.__firebaseInitialized || (firebase.apps && firebase.apps.length > 0)) {
+        // Reutilizamos las referencias globales si existen, o las creamos apuntando a la app ya inicializada
+        window.firebaseApp = window.firebaseApp || (firebase.apps[0] ? firebase.apps[0] : null);
+        window.firebaseAuth = window.firebaseAuth || (firebase.auth ? firebase.auth() : null);
+        window.db = window.db || (firebase.firestore ? firebase.firestore() : null);
+
+        console.log('🔁 Usando Firebase ya inicializado.');
+    } else {
+        // Si por alguna razón firebase-init.js no se cargó, puedes inicializar aquí usando window.firebaseConfig
+        if (window.firebaseConfig) {
+            try {
+                firebase.initializeApp(window.firebaseConfig);
+                window.firebaseApp = firebase.apps[0];
+                window.firebaseAuth = firebase.auth();
+                window.db = firebase.firestore();
+                window.__firebaseInitialized = true;
+                console.log('✅ Firebase inicializado desde app.js usando window.firebaseConfig');
+            } catch (err) {
+                console.error('❌ Error inicializando Firebase en app.js:', err);
+            }
+        } else {
+            console.warn('⚠️ No existe window.firebaseConfig ni inicialización previa. Revisa firebase-init.js.');
+        }
+    }
+})();
 
 // ========================================
 // ESTADO GLOBAL
