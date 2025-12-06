@@ -1,4 +1,3 @@
-
 IMPORTANTE: Agregar estos estilos CSS al archivo styles.css:
 
 .fab-menu {
@@ -785,6 +784,7 @@ async function handlePasswordReset(email) {
 
 // 🔐 NUEVA FUNCIÓN: Mostrar modal de recuperación de contraseña
 function showPasswordResetModal() {
+    createModalStructure();
     const modal = document.getElementById('modal');
     const modalTitle = document.getElementById('modal-title');
     const modalBody = document.getElementById('modal-body');
@@ -1026,6 +1026,7 @@ function generateBudgetFromExpenses() {
 
 // 💰 NUEVA: Modal indicando que se necesitan ingresos primero
 function showNeedIncomesModal() {
+    createModalStructure();
     const modal = document.getElementById('modal');
     const modalTitle = document.getElementById('modal-title');
     const modalBody = document.getElementById('modal-body');
@@ -1063,6 +1064,7 @@ function showNeedIncomesModal() {
 
 // 💸 NUEVA: Modal indicando que se necesitan gastos
 function showNeedExpensesModal() {
+    createModalStructure();
     const modal = document.getElementById('modal');
     const modalTitle = document.getElementById('modal-title');
     const modalBody = document.getElementById('modal-body');
@@ -1100,6 +1102,7 @@ function showNeedExpensesModal() {
 
 // ✨ NUEVA: Modal con análisis completo de gastos y confirmación de presupuesto
 function showExpenseAnalysisModal(totalIncome, totalExpenses, remainder, categoryAnalysis, expensesByCategory) {
+    createModalStructure();
     const modal = document.getElementById('modal');
     const modalTitle = document.getElementById('modal-title');
     const modalBody = document.getElementById('modal-body');
@@ -1299,6 +1302,7 @@ function generateAutoBudget() {
 
 // ✨ NUEVA: Modal con opciones de generación
 function showBudgetGenerationOptions(hasHistoricalData) {
+    createModalStructure();
     const modal = document.getElementById('modal');
     const modalTitle = document.getElementById('modal-title');
     const modalBody = document.getElementById('modal-body');
