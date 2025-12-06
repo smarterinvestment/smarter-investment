@@ -1,7 +1,4 @@
-// ========================================
-// CONFIGURACIÓN DE FIREBASE
-// ========================================
-/* 
+
 IMPORTANTE: Agregar estos estilos CSS al archivo styles.css:
 
 .fab-menu {
@@ -52,10 +49,27 @@ IMPORTANTE: Agregar estos estilos CSS al archivo styles.css:
 }
 */
 
-// Firebase ya está inicializado en index.html
-// Solo obtenemos las referencias
-const auth = firebase.auth();
-const db = firebase.firestore();
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyBT3UJTHLuBQaB9kK0539-acw8ertf__vY",
+  authDomain: "smarter-investment.firebaseapp.com",
+  projectId: "smarter-investment",
+  storageBucket: "smarter-investment.firebasestorage.app",
+  messagingSenderId: "1037439323005",
+  appId: "1:1037439323005:web:43b7b89a9c4a0313c45a14",
+  measurementId: "G-DQKR8KNV2V"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
 
 // ========================================
 // 🔧 MODAL FIX - SOLUCIÓN INTEGRADA
