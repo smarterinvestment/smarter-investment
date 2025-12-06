@@ -33,12 +33,12 @@
     <!-- CSS Principal -->
     <link rel="stylesheet" href="styles.css">
     
-    <!-- Firebase SDK (PRIMERO) -->
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     
-    <!-- Firebase Configuration (DESPUÉS del SDK) -->
+    <!-- Firebase Configuration -->
     <script src="firebase-init.js"></script>
     
     <!-- Chart.js -->
@@ -47,7 +47,6 @@
     <!-- Toastify JS -->
     <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
     
-    <!-- Estilos para ocultar botón flotante del asistente -->
     <style>
         input[type="number"],
         input[type="text"],
@@ -58,22 +57,6 @@
         }
         body {
             overscroll-behavior-y: contain;
-        }
-        
-        /* Ocultar botón flotante del asistente */
-        .assistant-float-btn,
-        .floating-assistant-button,
-        .assistant-floating-btn,
-        #assistantFloatBtn,
-        #floating-assistant,
-        .ai-assistant-float,
-        .assistant-fab,
-        [class*="float"][class*="assistant"],
-        [id*="float"][id*="assistant"] {
-            display: none !important;
-            visibility: hidden !important;
-            opacity: 0 !important;
-            pointer-events: none !important;
         }
     </style>
 </head>
@@ -89,18 +72,15 @@
         </div>
     </div>
     
-    <!-- ========== MÓDULOS ========== -->
+    <!-- MÓDULOS -->
     <script src="notifications-module.js"></script>
     <script src="recurring-expenses-module.js"></script>
     <script src="comparison-module.js"></script>
     <script src="assistant-module.js"></script>
     <script src="reports-module.js"></script>
     
-    <!-- ========== APP PRINCIPAL ========== -->
+    <!-- APP PRINCIPAL (YA INCLUYE EL MODAL FIX) -->
     <script src="app.js"></script>
-    
-    <!-- ========== PARCHE DE CORRECCIÓN (DESPUÉS DE APP.JS) ========== -->
-    <script src="modal-fix.js"></script>
     
     <!-- Service Worker -->
     <script>
@@ -111,16 +91,6 @@
                     .catch(err => console.log('⚠️ Service Worker error:', err));
             });
         }
-        
-        // Eliminar botón flotante del asistente
-        function removeFloatingAssistant() {
-            ['.assistant-float-btn', '.floating-assistant-button', '#assistantFloatBtn', '#floating-assistant', '.ai-assistant-float']
-                .forEach(s => document.querySelectorAll(s).forEach(el => el.remove()));
-        }
-        removeFloatingAssistant();
-        setTimeout(removeFloatingAssistant, 1000);
-        setTimeout(removeFloatingAssistant, 3000);
-        new MutationObserver(removeFloatingAssistant).observe(document.body, { childList: true, subtree: true });
     </script>
 </body>
 </html>

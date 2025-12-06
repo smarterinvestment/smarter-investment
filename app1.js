@@ -1,7 +1,3 @@
-// ========================================
-// CONFIGURACIÓN DE FIREBASE
-// ========================================
-/* 
 IMPORTANTE: Agregar estos estilos CSS al archivo styles.css:
 
 .fab-menu {
@@ -50,375 +46,62 @@ IMPORTANTE: Agregar estos estilos CSS al archivo styles.css:
         transform: translateY(0);
     }
 }
-*/
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
 
-// Firebase ya está inicializado en index.html
-// Solo obtenemos las referencias
-const auth = firebase.auth();
-const db = firebase.firestore();
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyBT3UJTHLuBQaB9kK0539-acw8ertf__vY",
+  authDomain: "smarter-investment.firebaseapp.com",
+  projectId: "smarter-investment",
+  storageBucket: "smarter-investment.firebasestorage.app",
+  messagingSenderId: "1037439323005",
+  appId: "1:1037439323005:web:43b7b89a9c4a0313c45a14",
+  measurementId: "G-DQKR8KNV2V"
+};
 
-// ========================================
-// 🔧 MODAL FIX - SOLUCIÓN INTEGRADA
-// ========================================
-// Este código crea la estructura del modal y las funciones necesarias
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+(function () {
+    'use strict';
 
-// Crear estructura del modal cuando el DOM esté listo
-document.addEventListener('DOMContentLoaded', function() {
-    createModalStructure();
-    hideFloatingAssistant();
-    
-    // Observer para ocultar botón flotante si aparece después
-    const observer = new MutationObserver(hideFloatingAssistant);
-    observer.observe(document.body, { childList: true, subtree: true });
-});
-
-// Función para crear la estructura del modal
-function createModalStructure() {
-    if (document.getElementById('modal')) return;
-    
-    const modalHTML = `
-        <div id="modal" class="modal" style="
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.9);
-            z-index: 99999;
-            align-items: center;
-            justify-content: center;
-        ">
-            <div class="modal-content" style="
-                background: linear-gradient(135deg, #1a2332 0%, #0d1520 100%);
-                padding: 0;
-                border-radius: 16px;
-                width: 90%;
-                max-width: 500px;
-                max-height: 90vh;
-                overflow-y: auto;
-                box-shadow: 0 25px 80px rgba(0,0,0,0.8);
-                border: 1px solid #05BFDB;
-            ">
-                <div class="modal-header" style="
-                    padding: 1.25rem 1.5rem;
-                    border-bottom: 1px solid rgba(255,255,255,0.1);
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    background: rgba(5,191,219,0.1);
-                ">
-                    <h3 id="modal-title" style="margin: 0; color: white; font-size: 1.3rem;"></h3>
-                    <button onclick="closeModal()" style="
-                        background: rgba(255,255,255,0.1);
-                        border: none;
-                        color: white;
-                        font-size: 1.5rem;
-                        cursor: pointer;
-                        width: 36px;
-                        height: 36px;
-                        border-radius: 50%;
-                    ">×</button>
-                </div>
-                <div id="modal-body" style="padding: 1.5rem;"></div>
-            </div>
-        </div>
-    `;
-    document.body.insertAdjacentHTML('beforeend', modalHTML);
-    
-    // Añadir estilos del modal
-    const style = document.createElement('style');
-    style.textContent = `
-        #modal.active { display: flex !important; }
-        #modal input, #modal select {
-            width: 100%;
-            padding: 12px;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 8px;
-            color: white;
-            font-size: 16px;
-            box-sizing: border-box;
-            margin-bottom: 0.5rem;
-        }
-        #modal input:focus, #modal select:focus {
-            outline: none;
-            border-color: #05BFDB;
-        }
-        #modal select option { background: #1a2332; color: white; }
-        #modal label {
-            display: block;
-            margin-bottom: 0.5rem;
-            color: rgba(255,255,255,0.8);
-            font-size: 0.9rem;
-        }
-        #modal .input-group { margin-bottom: 1rem; }
-        .assistant-float-btn, .floating-assistant-button, .assistant-floating-btn,
-        #assistantFloatBtn, #floating-assistant, .ai-assistant-float, .assistant-fab {
-            display: none !important;
-            visibility: hidden !important;
-        }
-    `;
-    document.head.appendChild(style);
-}
-
-// Función para cerrar el modal
-function closeModal() {
-    const modal = document.getElementById('modal');
-    if (modal) {
-        modal.classList.remove('active');
-        modal.style.display = 'none';
-    }
-}
-
-// Función para abrir el modal de transacciones (gastos/ingresos)
-function openModal(type) {
-    createModalStructure();
-    
-    const modal = document.getElementById('modal');
-    const modalTitle = document.getElementById('modal-title');
-    const modalBody = document.getElementById('modal-body');
-    
-    if (!modal || !modalTitle || !modalBody) {
-        alert('Error al abrir el formulario. Recarga la página.');
+    // Si firebase no está cargado aún, avisar (index.html debería cargar firebase SDK + firebase-init.js antes)
+    if (typeof firebase === 'undefined') {
+        console.error('Firebase SDK no está disponible. Asegúrate de cargar los scripts de Firebase en index.html antes de app.js.');
         return;
     }
 
-    const isExpense = type === 'expense';
-    const isIncome = type === 'income';
-    
-    if (isExpense || isIncome) {
-        modalTitle.textContent = isExpense ? '💸 Agregar Gasto' : '💰 Agregar Ingreso';
-        modalBody.innerHTML = generateTransactionFormHTML(isExpense);
-    }
-    
-    modal.classList.add('active');
-    modal.style.display = 'flex';
-    
-    modal.onclick = (e) => { if (e.target === modal) closeModal(); };
-    
-    setTimeout(() => {
-        const firstInput = modal.querySelector('input');
-        if (firstInput) firstInput.focus();
-    }, 100);
-}
+    // Si firebase ya fue inicializado por firebase-init.js, reutilizar la app existente
+    if (window.__firebaseInitialized || (firebase.apps && firebase.apps.length > 0)) {
+        // Reutilizamos las referencias globales si existen, o las creamos apuntando a la app ya inicializada
+        window.firebaseApp = window.firebaseApp || (firebase.apps[0] ? firebase.apps[0] : null);
+        window.firebaseAuth = window.firebaseAuth || (firebase.auth ? firebase.auth() : null);
+        window.db = window.db || (firebase.firestore ? firebase.firestore() : null);
 
-// Generar HTML del formulario de transacción
-function generateTransactionFormHTML(isExpense) {
-    const categories = isExpense ? `
-        <option value="">Selecciona categoría...</option>
-        <option value="Alimentación">🍔 Alimentación</option>
-        <option value="Transporte">🚗 Transporte</option>
-        <option value="Entretenimiento">🎬 Entretenimiento</option>
-        <option value="Salud">💊 Salud</option>
-        <option value="Educación">📚 Educación</option>
-        <option value="Vivienda">🏠 Vivienda</option>
-        <option value="Servicios">💡 Servicios</option>
-        <option value="Ropa">👕 Ropa</option>
-        <option value="Tecnología">💻 Tecnología</option>
-        <option value="Mascotas">🐕 Mascotas</option>
-        <option value="Gastos Esenciales">🏠 Gastos Esenciales</option>
-        <option value="Gastos Discrecionales">🎭 Gastos Discrecionales</option>
-        <option value="Pago Deudas">💳 Pago Deudas</option>
-        <option value="Otros">📌 Otros</option>
-    ` : `
-        <option value="">Selecciona tipo...</option>
-        <option value="salary">💼 Salario</option>
-        <option value="freelance">💻 Freelance</option>
-        <option value="investments">📈 Inversiones</option>
-        <option value="bonus">🎁 Bonos</option>
-        <option value="other">📌 Otros</option>
-    `;
-    
-    return `
-        <form onsubmit="return handleTransactionSubmit(event, '${isExpense ? 'expense' : 'income'}')">
-            <div class="input-group">
-                <label>📝 Descripción</label>
-                <input type="text" id="tx-description" placeholder="${isExpense ? 'Ej: Supermercado...' : 'Ej: Pago mensual...'}" required>
-            </div>
-            <div class="input-group">
-                <label>💵 Monto</label>
-                <input type="number" id="tx-amount" step="0.01" min="0.01" placeholder="0.00" required>
-            </div>
-            <div class="input-group">
-                <label>${isExpense ? '📂 Categoría' : '📂 Tipo'}</label>
-                <select id="tx-category" required>${categories}</select>
-            </div>
-            <div class="input-group">
-                <label>📅 Fecha</label>
-                <input type="date" id="tx-date" value="${new Date().toISOString().split('T')[0]}" required>
-            </div>
-            ${isExpense ? `
-            <div class="input-group">
-                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
-                    <input type="checkbox" id="tx-recurring" style="width: auto;" onchange="toggleRecurringOptions()">
-                    <span>🔄 Hacer recurrente</span>
-                </label>
-                <div id="recurring-options" style="display: none; margin-top: 10px;">
-                    <select id="tx-frequency">
-                        <option value="monthly">📅 Mensual</option>
-                        <option value="weekly">📆 Semanal</option>
-                        <option value="biweekly">📆 Quincenal</option>
-                        <option value="yearly">📋 Anual</option>
-                    </select>
-                </div>
-            </div>
-            ` : ''}
-            <button type="submit" style="
-                width: 100%;
-                padding: 12px;
-                background: ${isExpense ? '#ef4444' : '#10b981'};
-                color: white;
-                border: none;
-                border-radius: 8px;
-                font-size: 1rem;
-                cursor: pointer;
-                margin-top: 1rem;
-            ">${isExpense ? '💸 Guardar Gasto' : '💰 Guardar Ingreso'}</button>
-            <button type="button" onclick="closeModal()" style="
-                width: 100%;
-                padding: 12px;
-                background: rgba(255,255,255,0.1);
-                color: white;
-                border: 1px solid rgba(255,255,255,0.2);
-                border-radius: 8px;
-                font-size: 1rem;
-                cursor: pointer;
-                margin-top: 0.5rem;
-            ">Cancelar</button>
-        </form>
-    `;
-}
-
-// Toggle para opciones recurrentes
-function toggleRecurringOptions() {
-    const checkbox = document.getElementById('tx-recurring');
-    const options = document.getElementById('recurring-options');
-    if (checkbox && options) {
-        options.style.display = checkbox.checked ? 'block' : 'none';
-    }
-}
-
-// Handler para submit del formulario
-async function handleTransactionSubmit(event, type) {
-    event.preventDefault();
-    
-    const description = document.getElementById('tx-description')?.value.trim();
-    const amount = parseFloat(document.getElementById('tx-amount')?.value);
-    const category = document.getElementById('tx-category')?.value;
-    const date = document.getElementById('tx-date')?.value;
-    const isRecurring = document.getElementById('tx-recurring')?.checked;
-    const frequency = document.getElementById('tx-frequency')?.value;
-    
-    if (!description || !amount || !category || !date) {
-        showToast('❌ Completa todos los campos', 'error');
-        return false;
-    }
-    
-    if (amount <= 0) {
-        showToast('❌ El monto debe ser mayor a 0', 'error');
-        return false;
-    }
-
-    const submitBtn = event.target.querySelector('button[type="submit"]');
-    const originalText = submitBtn.innerHTML;
-    submitBtn.innerHTML = '⏳ Guardando...';
-    submitBtn.disabled = true;
-    
-    try {
-        if (!currentUser) {
-            throw new Error('No hay usuario autenticado');
-        }
-        
-        const isExpense = type === 'expense';
-        
-        if (isExpense && isRecurring && recurringModule) {
-            await recurringModule.createRecurringExpense({
-                name: description,
-                description: description,
-                amount: amount,
-                category: category,
-                frequency: frequency || 'monthly'
-            });
-            showToast('✅ Gasto recurrente creado', 'success');
-        } else {
-            const collectionName = isExpense ? 'expenses' : 'incomes';
-            const data = {
-                description,
-                amount,
-                category,
-                date,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            };
-            
-            if (!isExpense) data.type = category;
-            
-            await db.collection('users').doc(currentUser.uid).collection(collectionName).add(data);
-            
-            if (isExpense) {
-                expenses.unshift({ ...data, id: 'temp-' + Date.now() });
-            } else {
-                incomeHistory.unshift({ ...data, id: 'temp-' + Date.now() });
-                income[category] = (income[category] || 0) + amount;
+        console.log('🔁 Usando Firebase ya inicializado.');
+    } else {
+        // Si por alguna razón firebase-init.js no se cargó, puedes inicializar aquí usando window.firebaseConfig
+        if (window.firebaseConfig) {
+            try {
+                firebase.initializeApp(window.firebaseConfig);
+                window.firebaseApp = firebase.apps[0];
+                window.firebaseAuth = firebase.auth();
+                window.db = firebase.firestore();
+                window.__firebaseInitialized = true;
+                console.log('✅ Firebase inicializado desde app.js usando window.firebaseConfig');
+            } catch (err) {
+                console.error('❌ Error inicializando Firebase en app.js:', err);
             }
-            
-            showToast('✅ ' + (isExpense ? 'Gasto' : 'Ingreso') + ' guardado', 'success');
-        }
-        
-        closeModal();
-        
-        if (typeof loadUserData === 'function') await loadUserData();
-        if (typeof render === 'function') render();
-        
-    } catch (error) {
-        console.error('Error:', error);
-        showToast('❌ ' + error.message, 'error');
-        submitBtn.innerHTML = originalText;
-        submitBtn.disabled = false;
-    }
-    
-    return false;
-}
-
-// Función showToast si no existe
-if (typeof showToast === 'undefined') {
-    window.showToast = function(message, type) {
-        if (typeof Toastify !== 'undefined') {
-            Toastify({
-                text: message,
-                duration: 3000,
-                gravity: "top",
-                position: "center",
-                style: {
-                    background: type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6',
-                    borderRadius: '8px',
-                    padding: '12px 24px'
-                }
-            }).showToast();
         } else {
-            alert(message);
+            console.warn('⚠️ No existe window.firebaseConfig ni inicialización previa. Revisa firebase-init.js.');
         }
-    };
-}
-
-// Ocultar botón flotante del asistente
-function hideFloatingAssistant() {
-    const selectors = ['.assistant-float-btn', '.floating-assistant-button', '#assistantFloatBtn', 
-                       '#floating-assistant', '.ai-assistant-float', '.assistant-fab'];
-    selectors.forEach(s => {
-        document.querySelectorAll(s).forEach(el => {
-            el.style.display = 'none';
-            el.remove();
-        });
-    });
-}
-
-console.log('✅ Modal Fix integrado cargado correctamente');
-
-// ========================================
-// FIN DEL MODAL FIX
-// ========================================
-
+    }
+})();
 
 // ========================================
 // ESTADO GLOBAL
