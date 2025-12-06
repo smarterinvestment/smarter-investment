@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="description" content="Smarter Investment 💰🧠 - Tu gestor financiero personal">
+    <meta name="description" content="Smarter Investment - Tu gestor financiero personal">
     <meta name="theme-color" content="#05BFDB">
     
     <!-- PWA Meta Tags -->
@@ -25,7 +25,7 @@
     <!-- Manifest -->
     <link rel="manifest" href="manifest.json">
     
-    <title>Smarter Investment 💰🧠</title>
+    <title>Smarter Investment</title>
     
     <!-- Toastify CSS -->
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
@@ -58,6 +58,17 @@
         body {
             overscroll-behavior-y: contain;
         }
+        /* Ocultar botón flotante del asistente */
+        .assistant-float-btn,
+        .floating-assistant-button,
+        .assistant-floating-btn,
+        #assistantFloatBtn,
+        #floating-assistant,
+        .ai-assistant-float,
+        .assistant-fab {
+            display: none !important;
+            visibility: hidden !important;
+        }
     </style>
 </head>
 <body>
@@ -79,7 +90,7 @@
     <script src="assistant-module.js"></script>
     <script src="reports-module.js"></script>
     
-    <!-- APP PRINCIPAL (YA INCLUYE EL MODAL FIX) -->
+    <!-- APP PRINCIPAL (INCLUYE MODAL FIX INTEGRADO) -->
     <script src="app.js"></script>
     
     <!-- Service Worker -->
@@ -87,8 +98,8 @@
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./service-worker.js')
-                    .then(reg => console.log('✅ Service Worker registrado:', reg.scope))
-                    .catch(err => console.log('⚠️ Service Worker error:', err));
+                    .then(reg => console.log('Service Worker registrado'))
+                    .catch(err => console.log('Service Worker error:', err));
             });
         }
     </script>
