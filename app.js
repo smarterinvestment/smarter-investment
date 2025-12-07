@@ -658,6 +658,27 @@ async function handleLogin(email, password) {
     }
 }
 
+// Función wrapper para el formulario de login
+function loginSubmit() {
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+    handleLogin(email, password);
+}
+
+// Función wrapper para el formulario de registro
+function registerSubmit() {
+    const email = document.getElementById('register-email').value;
+    const password = document.getElementById('register-password').value;
+    const confirm = document.getElementById('register-confirm').value;
+    
+    if (password !== confirm) {
+        alert('❌ Las contraseñas no coinciden');
+        return;
+    }
+    
+    handleRegister(email, password);
+}
+
 async function handleLogout() {
     if (confirm('¿Seguro que quieres cerrar sesión?')) {
         try {
