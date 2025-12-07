@@ -389,6 +389,8 @@ let budgets = {
 // Variables para gráficos
 let expenseChart = null;
 let categoryChart = null;
+let descriptionChart = null;
+let incomeChart = null;
 
 // ✨ NUEVO: Variables para tutorial guiado
 let tutorialActive = false;
@@ -409,6 +411,9 @@ let reportsModule = null;
 
 // 📈 NUEVO: Módulo de Comparación
 let comparisonModule = null;
+
+// 📅 Nombres de meses en español
+const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
 // ✨ CATEGORÍAS PARA GASTOS E INGRESOS
 const categorias = [
@@ -2015,7 +2020,7 @@ function renderDashboard() {
             <div class="card-title">
                 <span>📈</span> Gastos por Categoría
             </div>
-            <div class="chart-container">
+            <div class="chart-container" style="height: 250px; position: relative;">
                 <canvas id="expenseChart"></canvas>
             </div>
         </div>
@@ -2026,7 +2031,7 @@ function renderDashboard() {
             <div class="card-title">
                 <span>💸</span> ¿Dónde va mi dinero?
             </div>
-            <div class="chart-container">
+            <div class="chart-container" style="height: 300px; position: relative;">
                 <canvas id="descriptionChart"></canvas>
             </div>
         </div>
@@ -2037,7 +2042,7 @@ function renderDashboard() {
             <div class="card-title">
                 <span>💰</span> Distribución de Ingresos
             </div>
-            <div class="chart-container">
+            <div class="chart-container" style="height: 250px; position: relative;">
                 <canvas id="incomeChart"></canvas>
             </div>
         </div>
@@ -2048,7 +2053,7 @@ function renderDashboard() {
             <div class="card-title">
                 <span>📊</span> Tasa de Ahorro e Inversión Mensual
             </div>
-            <div class="chart-container">
+            <div class="chart-container" style="height: 250px; position: relative;">
                 <canvas id="savingsRateChart"></canvas>
             </div>
         </div>
@@ -2890,6 +2895,22 @@ title="Eliminar">
 // 🔧 FUNCIONES AUXILIARES COMPLETAS
 // ========================================
 
+// Función para verificar y generar gastos recurrentes
+async function checkAndGenerateRecurringExpenses() {
+    try {
+        if (typeof recurringModule !== 'undefined' && recurringModule && recurringModule.isInitialized) {
+            if (typeof recurringModule.checkAndGenerate === 'function') {
+                await recurringModule.checkAndGenerate();
+            } else if (typeof recurringModule.processRecurringExpenses === 'function') {
+                await recurringModule.processRecurringExpenses();
+            }
+            console.log('✅ Gastos recurrentes procesados');
+        }
+    } catch (error) {
+        console.warn('⚠️ Error procesando gastos recurrentes:', error);
+    }
+}
+
 // Función para cambiar de tab
 function switchTab(tab) {
     activeTab = tab;
@@ -2963,46 +2984,82 @@ function initCharts() {
         // Destroy existing charts
         if (typeof expenseChart !== 'undefined' && expenseChart) expenseChart.destroy();
         if (typeof categoryChart !== 'undefined' && categoryChart) categoryChart.destroy();
+        if (typeof descriptionChart !== 'undefined' && descriptionChart) descriptionChart.destroy();
+        if (typeof incomeChart !== 'undefined' && incomeChart) incomeChart.destroy();
         
         const totals = typeof calculateTotals === 'function' ? calculateTotals() : { expensesByCategory: {} };
+        const expensesByDescription = typeof calculateExpensesByDescription === 'function' ? calculateExpensesByDescription() : {};
+        const incomeDistribution = typeof calculateIncomeDistribution === 'function' ? calculateIncomeDistribution() : {};
         
-        // Expense trend chart
-        const expenseCtx = document.getElementById('expense-chart');
-        if (expenseCtx) {
+        // Expense by Category chart (expenseChart)
+        const expenseCtx = document.getElementById('expenseChart');
+        if (expenseCtx && totals.expensesByCategory && Object.keys(totals.expensesByCategory).length > 0) {
             expenseChart = new Chart(expenseCtx.getContext('2d'), {
-                type: 'line',
-                data: {
-                    labels: getLast7Days(),
-                    datasets: [{
-                        label: 'Gastos',
-                        data: getExpensesLast7Days(),
-                        borderColor: '#ef4444',
-                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                        fill: true,
-                        tension: 0.4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } }
-                }
-            });
-        }
-        
-        // Category chart
-        const categoryCtx = document.getElementById('category-chart');
-        if (categoryCtx && totals.expensesByCategory && Object.keys(totals.expensesByCategory).length > 0) {
-            categoryChart = new Chart(categoryCtx.getContext('2d'), {
                 type: 'doughnut',
                 data: {
                     labels: Object.keys(totals.expensesByCategory),
                     datasets: [{
                         data: Object.values(totals.expensesByCategory),
-                        backgroundColor: ['#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899']
+                        backgroundColor: ['#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6', '#f43f5e']
                     }]
                 },
-                options: { responsive: true, maintainAspectRatio: false }
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { color: 'white' } }
+                    }
+                }
+            });
+        }
+        
+        // Description chart (descriptionChart) - "¿Dónde va mi dinero?"
+        const descCtx = document.getElementById('descriptionChart');
+        if (descCtx && Object.keys(expensesByDescription).length > 0) {
+            descriptionChart = new Chart(descCtx.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(expensesByDescription).slice(0, 10),
+                    datasets: [{
+                        label: 'Gastos',
+                        data: Object.values(expensesByDescription).slice(0, 10),
+                        backgroundColor: 'rgba(239, 68, 68, 0.7)',
+                        borderColor: '#ef4444',
+                        borderWidth: 1
+                    }]
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { ticks: { color: 'rgba(255,255,255,0.7)' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+                        y: { ticks: { color: 'rgba(255,255,255,0.7)' }, grid: { display: false } }
+                    }
+                }
+            });
+        }
+        
+        // Income distribution chart (incomeChart)
+        const incomeCtx = document.getElementById('incomeChart');
+        if (incomeCtx && Object.keys(incomeDistribution).length > 0) {
+            incomeChart = new Chart(incomeCtx.getContext('2d'), {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(incomeDistribution),
+                    datasets: [{
+                        data: Object.values(incomeDistribution),
+                        backgroundColor: ['#22c55e', '#06b6d4', '#8b5cf6', '#f97316', '#3b82f6']
+                    }]
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { color: 'white' } }
+                    }
+                }
             });
         }
         
@@ -3162,3 +3219,28 @@ function toggleFabMenu() {
 }
 
 console.log('✅ App.js cargado correctamente - versión limpia final');
+
+// ========================================
+// 🔧 FUNCIONES FALTANTES
+// ========================================
+
+// Función para verificar y generar gastos recurrentes
+async function checkAndGenerateRecurringExpenses() {
+    try {
+        if (typeof recurringModule !== 'undefined' && recurringModule && typeof recurringModule.checkAndGenerate === 'function') {
+            await recurringModule.checkAndGenerate();
+        } else if (typeof recurringModule !== 'undefined' && recurringModule && typeof recurringModule.processRecurringExpenses === 'function') {
+            await recurringModule.processRecurringExpenses();
+        }
+        console.log('✅ Gastos recurrentes verificados');
+    } catch (error) {
+        console.warn('⚠️ Error verificando gastos recurrentes:', error);
+    }
+}
+
+// Variable monthNames (si no existe)
+if (typeof monthNames === 'undefined') {
+    var monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+}
+
+console.log('✅ Funciones faltantes cargadas');
