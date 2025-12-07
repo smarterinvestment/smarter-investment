@@ -192,25 +192,23 @@ class NotificationsModule {
         console.log('📊 Verificando alertas de presupuesto...');
     }
 
-    /**
-     * Verificar reporte semanal
-     */
-    async checkWeeklyReport() {
-        try {
-            const today = new Date();
-            const dayOfWeek = today.toLocaleLowerCase('en-US', { weekday: 'long' });
-            
-            // Asegurar que weeklyReportDay es string y está en minúsculas
-            const reportDay = (this.preferences.weeklyReportDay || 'monday').toString().toLowerCase();
-            
-            if (dayOfWeek === reportDay) {
-                console.log('📅 Es día de reporte semanal');
-                await this.generateWeeklyReport();
-            }
-        } catch (error) {
-            console.error('Error en reporte semanal:', error);
+   async checkWeeklyReport() {
+    try {
+        const today = new Date();
+        const dayOfWeek = today.toLocaleString('en-US', { weekday: 'long' }).toLowerCase();
+        
+        let reportDay = this.preferences.weeklyReportDay;
+        if (typeof reportDay !== 'string') reportDay = 'monday';
+        reportDay = reportDay.toLowerCase();
+
+        if (dayOfWeek === reportDay) {
+            console.log("Hoy es día de reporte semanal");
+            await this.generateWeeklyReport();
         }
+    } catch (error) {
+        console.error('Error en checkWeeklyReport:', error);
     }
+}
 
     /**
      * Verificar gastos inusuales
