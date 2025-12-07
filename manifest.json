@@ -1,6 +1,3 @@
-<link rel="manifest" href="./manifest.json">
-<link rel="icon" href="./assets/logo-smarter.jpg">
-<link rel="apple-touch-icon" href="./assets/logo-smarter.jpg">
 {
   "name": "Smarter Investment",
   "short_name": "Smarter",
