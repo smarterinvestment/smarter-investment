@@ -1,4 +1,13 @@
 // ========================================
+// 🔥 FIREBASE INITIALIZATION
+// ========================================
+// Obtener referencias de Firebase (ya inicializado en firebase-init.js)
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+console.log('✅ Modal Fix integrado cargado correctamente');
+
+// ========================================
 // 🔧 MODAL FIX - SOLUCIÓN INTEGRADA
 // ========================================
 // Este código crea la estructura del modal y las funciones necesarias
@@ -369,7 +378,7 @@ let isInitialized = false;  // Flag para evitar inicializaciones múltiples
 let currentView = 'login';
 let activeTab = 'dashboard';
 let expenses = [];
-let incomeHistory = []; // ✅ NUEVO: Array para historial de ingresos
+let incomeHistory = []; // Array para historial de ingresos
 let goals = [];
 let income = { salary: 0, freelance: 0, investments: 0 };
 let budgets = {
@@ -384,48 +393,18 @@ let budgets = {
 let expenseChart = null;
 let categoryChart = null;
 
-// ✨ NUEVO: Variables para tutorial guiado
+// Variables para tutorial guiado
 let tutorialActive = false;
 let tutorialStep = 0;
 let tutorialCompleted = false;
 
-// 🤖 NUEVO: Asistente Virtual
+// Módulos
 let assistantModule = null;
-
-// 🔔 NUEVO: Módulo de Notificaciones
 let notificationsModule = null;
-
-// 🔄 NUEVO: Módulo de Gastos Recurrentes
 let recurringModule = null;
-
-// 📊 NUEVO: Módulo de Reportes
 let reportsModule = null;
-
-// 📈 NUEVO: Módulo de Comparación
 let comparisonModule = null;
 
-// ✨ CATEGORÍAS PARA GASTOS E INGRESOS
-const categorias = [
-    { nombre: 'Alimentación', emoji: '🍔', color: '#ef4444', tipo: 'gasto' },
-    { nombre: 'Transporte', emoji: '🚗', color: '#f59e0b', tipo: 'gasto' },
-    { nombre: 'Entretenimiento', emoji: '🎬', color: '#8b5cf6', tipo: 'gasto' },
-    { nombre: 'Salud', emoji: '💊', color: '#ec4899', tipo: 'gasto' },
-    { nombre: 'Educación', emoji: '📚', color: '#3b82f6', tipo: 'gasto' },
-    { nombre: 'Vivienda', emoji: '🏠', color: '#10b981', tipo: 'gasto' },
-    { nombre: 'Servicios', emoji: '💡', color: '#14b8a6', tipo: 'gasto' },
-    { nombre: 'Ropa', emoji: '👕', color: '#f43f5e', tipo: 'gasto' },
-    { nombre: 'Tecnología', emoji: '💻', color: '#6366f1', tipo: 'gasto' },
-    { nombre: 'Mascotas', emoji: '🐕', color: '#fb923c', tipo: 'gasto' },
-    { nombre: 'Gastos Esenciales', emoji: '🏠', color: '#10b981', tipo: 'gasto' },
-    { nombre: 'Gastos Discrecionales', emoji: '🎭', color: '#8b5cf6', tipo: 'gasto' },
-    { nombre: 'Pago Deudas', emoji: '💳', color: '#ef4444', tipo: 'gasto' },
-    { nombre: 'Otros', emoji: '📌', color: '#64748b', tipo: 'gasto' }
-];
-
-// ========================================
-// LISTENER DE AUTENTICACIÓN
-// ========================================
-auth.onAuthStateChanged(async (user) => {
     if (user) {
         currentUser = user;
         
