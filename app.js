@@ -1,76 +1,3 @@
-
-IMPORTANTE: Agregar estos estilos CSS al archivo styles.css:
-
-.fab-menu {
-    position: fixed;
-    bottom: 90px;
-    right: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    z-index: 999;
-    animation: fadeIn 0.3s ease;
-}
-
-.fab-option {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    border: none;
-    font-size: 1.5rem;
-    cursor: pointer;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-weight: bold;
-}
-
-.fab-option:hover {
-    transform: scale(1.1);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
-}
-
-.fab-option:active {
-    transform: scale(0.95);
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-*/
-
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyBT3UJTHLuBQaB9kK0539-acw8ertf__vY",
-  authDomain: "smarter-investment.firebaseapp.com",
-  projectId: "smarter-investment",
-  storageBucket: "smarter-investment.firebasestorage.app",
-  messagingSenderId: "1037439323005",
-  appId: "1:1037439323005:web:43b7b89a9c4a0313c45a14",
-  measurementId: "G-DQKR8KNV2V"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
-
 // ========================================
 // 🔧 MODAL FIX - SOLUCIÓN INTEGRADA
 // ========================================
@@ -3316,23 +3243,36 @@ function renderRecurringExpensesViewIntegrated() {
     const activeRecurring = recurringModule.recurringExpenses.filter(r => r.active);
     const pausedRecurring = recurringModule.recurringExpenses.filter(r => !r.active);
     
-    return '<div class="recurring-container">' +
-        '<div class="recurring-summary"><h2>🔄 Gastos Recurrentes</h2><p class="subtitle">Gestiona tus pagos automáticos</p></div>' +
-        '<div class="recurring-stats-grid">' +
-            '<div class="stat-item"><div class="stat-icon">📊</div><div class="stat-value">' + recurringModule.recurringExpenses.length + '</div><div class="stat-label">Total</div></div>' +
-            '<div class="stat-item"><div class="stat-icon">✅</div><div class="stat-value">' + stats.active + '</div><div class="stat-label">Activos</div></div>' +
-            '<div class="stat-item"><div class="stat-icon">💰</div><div class="stat-value">$' + stats.monthlyEstimate.toFixed(2) + '</div><div class="stat-label">Mensual</div></div>' +
-            '<div class="stat-item"><div class="stat-icon">📅</div><div class="stat-value">' + stats.totalGenerated + '</div><div class="stat-label">Generados</div></div>' +
-        '</div>' +
-        '<div class="recurring-list-section"><h3>📋 Tus Recurrentes</h3>' +
-            activeRecurring.map(function(r) { return recurringModule.renderRecurringItem(r); }).join('') +
-            pausedRecurring.map(function(r) { return recurringModule.renderRecurringItem(r); }).join('') +
-        '</div>' +
-        '<div class="upcoming-section"><h3>📆 Próximos</h3>' +
-            upcoming.map(function(u) { 
-                return '<div class="upcoming-item"><div class="upcoming-date">' + u.nextDate.toLocaleDateString() + '</div><div class="upcoming-description">' + u.name + '</div><div class="upcoming-amount">$' + u.amount.toFixed(2) + '</div></div>'; 
-            }).join('') +
-        '</div>' +
-        '<div class="charts-section"><h3>📊 Análisis</h3><canvas id="recurring-chart"></canvas></div>' +
-    '</div>';
+    let html = '<div class="recurring-container">';
+    html += '<div class="recurring-summary"><h2>🔄 Gastos Recurrentes</h2><p class="subtitle">Gestiona tus pagos automáticos</p></div>';
+    html += '<div class="recurring-stats-grid">';
+    html += '<div class="stat-item"><div class="stat-icon">📊</div><div class="stat-value">' + recurringModule.recurringExpenses.length + '</div><div class="stat-label">Total</div></div>';
+    html += '<div class="stat-item"><div class="stat-icon">✅</div><div class="stat-value">' + stats.active + '</div><div class="stat-label">Activos</div></div>';
+    html += '<div class="stat-item"><div class="stat-icon">💰</div><div class="stat-value">$' + stats.monthlyEstimate.toFixed(2) + '</div><div class="stat-label">Mensual</div></div>';
+    html += '<div class="stat-item"><div class="stat-icon">📅</div><div class="stat-value">' + stats.totalGenerated + '</div><div class="stat-label">Generados</div></div>';
+    html += '</div>';
+    html += '<div class="recurring-list-section"><h3>📋 Tus Recurrentes</h3>';
+    
+    activeRecurring.forEach(function(r) { 
+        html += recurringModule.renderRecurringItem(r); 
+    });
+    pausedRecurring.forEach(function(r) { 
+        html += recurringModule.renderRecurringItem(r); 
+    });
+    
+    html += '</div>';
+    html += '<div class="upcoming-section"><h3>📆 Próximos</h3>';
+    
+    upcoming.forEach(function(u) { 
+        html += '<div class="upcoming-item"><div class="upcoming-date">' + u.nextDate.toLocaleDateString() + '</div><div class="upcoming-description">' + u.name + '</div><div class="upcoming-amount">$' + u.amount.toFixed(2) + '</div></div>'; 
+    });
+    
+    html += '</div>';
+    html += '<div class="charts-section"><h3>📊 Análisis</h3><canvas id="recurring-chart"></canvas></div>';
+    html += '</div>';
+    
+    return html;
 }
+
+// Fin del archivo app.js
+console.log('✅ App.js cargado correctamente - versión limpia');
