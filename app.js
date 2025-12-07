@@ -405,6 +405,10 @@ let recurringModule = null;
 let reportsModule = null;
 let comparisonModule = null;
 
+// ========================================
+// LISTENER DE AUTENTICACIÓN
+// ========================================
+auth.onAuthStateChanged(async (user) => {
     if (user) {
         currentUser = user;
         
