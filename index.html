@@ -1,13 +1,42 @@
-  <!-- CSS -->
-  <link rel="stylesheet" href="/css/styles.css">
-  
-  <!-- MANIFEST E ICONOS -->
-  <link rel="manifest" href="/manifest.json">
-  <link rel="icon" href="/assets/logo-smarter.jpg">
-  <link rel="apple-touch-icon" href="/assets/logo-smarter.jpg">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smarter Investment</title>
+  <meta name="description" content="Tu Gestor Financiero Personal con IA" />
+  <meta name="theme-color" content="#05BFDB" />
 
-  <!-- ORDEN CRÍTICO - RUTAS ABSOLUTAS CON / PARA VERCEL -->
-  <script type="module" src="/firebase-init.js"></script>
+  <!-- Firebase SDK v9 (OBLIGATORIO ANTES DE TODO) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBT3UJTHLuBQaB9kK0539-acw8ertf__vY",
+      authDomain: "smarter-investment.firebaseapp.com",
+      projectId: "smarter-investment",
+      storageBucket: "smarter-investment.firebasestorage.app",
+      messagingSenderId: "1037439323005",
+      appId: "1:1037439323005:web:43b7b89a9c4a0313c45a14"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    window.auth = getAuth(app);
+    window.db = getFirestore(app);
+    window.analytics = getAnalytics(app);
+  </script>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="/css/styles.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css" />
+
+  <!-- ICONOS Y MANIFEST -->
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="icon" href="/assets/logo-smarter.jpg" />
+  <link rel="apple-touch-icon" href="/assets/logo-smarter.jpg" />
+
+  <!-- MÓDULOS -->
   <script type="module" src="/utils.js"></script>
   <script type="module" src="/modal-fix.js"></script>
   <script type="module" src="/notifications-module.js"></script>
@@ -17,6 +46,5 @@
   <script type="module" src="/comparison-module.js"></script>
   <script type="module" src="/app.js"></script>
 
-  <!-- Toastify -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
   <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+</head>
