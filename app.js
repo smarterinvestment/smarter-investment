@@ -3238,9 +3238,6 @@ async function checkAndGenerateRecurringExpenses() {
     }
 }
 
-// Variable monthNames (si no existe)
-if (typeof monthNames === 'undefined') {
-    var monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-}
+// monthNames ya está declarado en línea 416
 
 console.log('✅ Funciones faltantes cargadas');
