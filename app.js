@@ -726,8 +726,147 @@ function handlePasswordResetSubmit() {
 // ========================================
 // FUNCIONES DE GASTOS
 // ========================================
-checkUnusualExpense()
-checkBudgetAlerts()
+
+// Función principal de renderizado
+function render() {
+    const app = document.getElementById('app');
+    if (!app) return;
+    
+    let content = '';
+    
+    if (currentView === 'login') {
+        content = typeof renderLogin === 'function' ? renderLogin() : '<h1>Login</h1>';
+    } else if (currentView === 'register') {
+        content = typeof renderRegister === 'function' ? renderRegister() : '<h1>Register</h1>';
+    } else if (currentView === 'app') {
+        content = renderMainApp();
+    } else {
+        content = typeof renderLogin === 'function' ? renderLogin() : '<h1>Login</h1>';
+    }
+    
+    app.innerHTML = content;
+    
+    // Inicializar gráficos si estamos en dashboard
+    if (currentView === 'app' && activeTab === 'dashboard') {
+        setTimeout(() => {
+            if (typeof initCharts === 'function') initCharts();
+        }, 100);
+    }
+}
+
+// Función para renderizar la app principal con navegación
+function renderMainApp() {
+    const header = typeof renderHeader === 'function' ? renderHeader() : '';
+    let tabContent = '';
+    
+    switch(activeTab) {
+        case 'dashboard': 
+            tabContent = typeof renderDashboard === 'function' ? renderDashboard() : '<p>Dashboard</p>'; 
+            break;
+        case 'expenses': 
+            tabContent = typeof renderExpenses === 'function' ? renderExpenses() : '<p>Expenses</p>'; 
+            break;
+        case 'budget': 
+            tabContent = typeof renderBudget === 'function' ? renderBudget() : '<p>Budget</p>'; 
+            break;
+        case 'goals': 
+            tabContent = typeof renderGoals === 'function' ? renderGoals() : '<p>Goals</p>'; 
+            break;
+        case 'more': 
+            tabContent = typeof renderMoreSection === 'function' ? renderMoreSection() : '<p>More</p>'; 
+            break;
+        case 'more-recurring': 
+            tabContent = typeof renderRecurringExpensesViewIntegrated === 'function' ? renderRecurringExpensesViewIntegrated() : '<p>Recurring</p>'; 
+            break;
+        case 'more-reports': 
+            tabContent = typeof renderReports === 'function' ? renderReports() : '<p>Reports</p>'; 
+            break;
+        default: 
+            tabContent = typeof renderDashboard === 'function' ? renderDashboard() : '<p>Dashboard</p>';
+    }
+    
+    const tutorial = tutorialActive && typeof renderTutorialOverlay === 'function' ? renderTutorialOverlay() : '';
+    
+    return `
+        ${header}
+        <div class="tab-content" id="tab-content">
+            ${tabContent}
+        </div>
+        <nav class="bottom-nav">
+            <button class="nav-item ${activeTab === 'dashboard' ? 'active' : ''}" onclick="switchTab('dashboard')">
+                🏠<span>Inicio</span>
+            </button>
+            <button class="nav-item ${activeTab === 'expenses' ? 'active' : ''}" onclick="switchTab('expenses')">
+                💰<span>Gastos</span>
+            </button>
+            <button class="nav-item ${activeTab === 'budget' ? 'active' : ''}" onclick="switchTab('budget')">
+                📊<span>Presupuesto</span>
+            </button>
+            <button class="nav-item ${activeTab === 'goals' ? 'active' : ''}" onclick="switchTab('goals')">
+                🎯<span>Metas</span>
+            </button>
+            <button class="nav-item ${activeTab === 'more' ? 'active' : ''}" onclick="switchTab('more')">
+                ⚙️<span>Más</span>
+            </button>
+        </nav>
+        <button class="fab" onclick="toggleFabMenu()">+</button>
+        <div id="fab-menu" class="fab-menu" style="display: none;">
+            <button class="fab-option" style="background: linear-gradient(135deg, #ef4444, #dc2626);" onclick="openModal('expense')">💸 Gasto</button>
+            <button class="fab-option" style="background: linear-gradient(135deg, #22c55e, #16a34a);" onclick="openModal('income')">💵 Ingreso</button>
+        </div>
+        ${tutorial}
+    `;
+}
+
+// Función para cambiar de tab
+function switchTab(tab) {
+    activeTab = tab;
+    render();
+}
+
+// Función para toggle del menú FAB
+function toggleFabMenu() {
+    const menu = document.getElementById('fab-menu');
+    if (menu) {
+        menu.style.display = menu.style.display === 'none' ? 'flex' : 'none';
+    }
+}
+
+// Función para verificar gastos inusuales
+function checkUnusualExpense(amount) {
+    if (!amount) return;
+    
+    const avgExpense = expenses.length > 0 
+        ? expenses.reduce((sum, e) => sum + (e.amount || 0), 0) / expenses.length 
+        : 0;
+    
+    if (avgExpense > 0 && amount > avgExpense * 3) {
+        console.log('⚠️ Gasto inusualmente alto detectado:', amount);
+        if (typeof showToast === 'function') {
+            showToast('¡Gasto inusualmente alto!', 'warning');
+        }
+    }
+}
+
+// Función para verificar alertas de presupuesto
+async function checkBudgetAlerts() {
+    if (!budgets || Object.keys(budgets).length === 0) return;
+    
+    const totals = typeof calculateTotals === 'function' ? calculateTotals() : { expensesByCategory: {} };
+    const expensesByCategory = totals.expensesByCategory || {};
+    
+    for (const [category, budget] of Object.entries(budgets)) {
+        if (budget > 0) {
+            const spent = expensesByCategory[category] || 0;
+            const percentage = (spent / budget) * 100;
+            
+            if (percentage >= 90) {
+                console.log(`⚠️ Presupuesto de ${category} al ${percentage.toFixed(0)}%`);
+            }
+        }
+    }
+}
+
 async function addExpense(expense) {
     try {
         const docRef = await db.collection('users').doc(currentUser.uid)
