@@ -3733,18 +3733,10 @@ async function saveRecurringExpense() {
     }
     
     try {
-        // Intentar usar el módulo de recurrentes
-        if (typeof recurringModule !== 'undefined' && recurringModule && typeof recurringModule.addRecurring === 'function') {
-            await recurringModule.addRecurring({
-                name: name,
-                amount: amount,
-                category: category,
-                frequency: frequency,
-                dayOfMonth: dayOfMonth,
-                active: true
-            });
-        } else if (typeof db !== 'undefined' && typeof currentUser !== 'undefined' && currentUser) {
-            // Guardar directamente en Firebase
+        var saved = false;
+        
+        // Guardar en Firebase directamente
+        if (typeof db !== 'undefined' && typeof currentUser !== 'undefined' && currentUser) {
             await db.collection('users').doc(currentUser.uid).collection('recurring').add({
                 name: name,
                 description: name,
@@ -3755,23 +3747,51 @@ async function saveRecurringExpense() {
                 active: true,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
+            saved = true;
+            console.log('✅ Recurrente guardado en Firebase');
+        }
+        
+        // También intentar con el módulo si existe
+        if (typeof recurringModule !== 'undefined' && recurringModule) {
+            if (typeof recurringModule.addRecurring === 'function') {
+                await recurringModule.addRecurring({
+                    name: name,
+                    amount: amount,
+                    category: category,
+                    frequency: frequency,
+                    dayOfMonth: dayOfMonth,
+                    active: true
+                });
+                saved = true;
+            }
+            // Recargar la lista del módulo
+            if (typeof recurringModule.loadRecurringExpenses === 'function') {
+                await recurringModule.loadRecurringExpenses();
+            }
         }
         
         closeRecurringForm();
-        if (typeof showToast === 'function') {
-            showToast('Gasto recurrente guardado', 'success');
+        
+        if (saved) {
+            if (typeof showToast === 'function') {
+                showToast('✅ Gasto recurrente guardado', 'success');
+            } else {
+                alert('✅ Gasto recurrente guardado correctamente');
+            }
         } else {
-            alert('✅ Gasto recurrente guardado');
-            alert('✅ Gasto recurrente guardado');
+            alert('⚠️ No se pudo guardar. Verifica tu conexión.');
         }
         
-        // Recargar vista si estamos en recurrentes
-        if (typeof activeTab !== 'undefined' && activeTab === 'more-recurring') {
-            switchTab('more-recurring');
+        // Recargar vista
+        if (typeof activeTab !== 'undefined') {
+            if (activeTab === 'more-recurring' || activeTab === 'expenses') {
+                switchTab(activeTab);
+            }
         }
+        
     } catch (error) {
         console.error('Error guardando recurrente:', error);
-        alert('Error al guardar: ' + error.message);
+        alert('Error: ' + error.message);
     }
 }
 
@@ -4333,3 +4353,64 @@ function showComparisonChart(period) {
 }
 
 console.log('✅ App.js FINAL completo - Versión limpia sin duplicados');
+
+// ========================================
+// 📑 FUNCIÓN PARA CAMBIAR PESTAÑAS DE TRANSACCIONES
+// ========================================
+function switchTransactionTab(tab) {
+    // Guardar pestaña activa
+    window.activeExpensesTab = tab;
+    
+    // Ocultar todos los contenidos
+    var expensesContent = document.getElementById('expenses-content');
+    var incomesContent = document.getElementById('incomes-content');
+    var recurringContent = document.getElementById('recurring-content');
+    
+    if (expensesContent) expensesContent.style.display = 'none';
+    if (incomesContent) incomesContent.style.display = 'none';
+    if (recurringContent) recurringContent.style.display = 'none';
+    
+    // Mostrar el contenido seleccionado
+    var activeContent = document.getElementById(tab + '-content');
+    if (activeContent) activeContent.style.display = 'block';
+    
+    // Actualizar estilos de botones
+    var tabExpenses = document.getElementById('tab-expenses');
+    var tabIncomes = document.getElementById('tab-incomes');
+    var tabRecurring = document.getElementById('tab-recurring');
+    
+    // Resetear todos los botones
+    [tabExpenses, tabIncomes, tabRecurring].forEach(function(btn) {
+        if (btn) {
+            btn.style.background = 'rgba(255,255,255,0.1)';
+            btn.style.border = '2px solid rgba(255,255,255,0.2)';
+            btn.style.fontWeight = 'normal';
+            btn.style.color = 'rgba(255,255,255,0.7)';
+        }
+    });
+    
+    // Activar el botón seleccionado
+    if (tab === 'expenses' && tabExpenses) {
+        tabExpenses.style.background = 'rgba(5, 191, 219, 0.2)';
+        tabExpenses.style.border = '2px solid #05BFDB';
+        tabExpenses.style.fontWeight = 'bold';
+        tabExpenses.style.color = 'white';
+    } else if (tab === 'incomes' && tabIncomes) {
+        tabIncomes.style.background = 'rgba(34, 197, 94, 0.2)';
+        tabIncomes.style.border = '2px solid #22c55e';
+        tabIncomes.style.fontWeight = 'bold';
+        tabIncomes.style.color = 'white';
+    } else if (tab === 'recurring' && tabRecurring) {
+        tabRecurring.style.background = 'rgba(168, 85, 247, 0.2)';
+        tabRecurring.style.border = '2px solid #a855f7';
+        tabRecurring.style.fontWeight = 'bold';
+        tabRecurring.style.color = 'white';
+    }
+}
+
+// Inicializar pestaña por defecto
+if (typeof window.activeExpensesTab === 'undefined') {
+    window.activeExpensesTab = 'expenses';
+}
+
+console.log('✅ switchTransactionTab cargada');
