@@ -3313,29 +3313,52 @@ function renderNotificationSettings() {
 
 // Vista integrada de gastos recurrentes
 function renderRecurringExpensesViewIntegrated() {
-    if (typeof recurringModule === 'undefined' || !recurringModule || !recurringModule.isInitialized) {
-        return '<div class="card"><p>Módulo de gastos recurrentes no disponible</p><button class="btn btn-primary" onclick="location.reload()">Recargar</button></div>';
-    }
-
-    const stats = typeof recurringModule.getStats === 'function' ? recurringModule.getStats() : { active: 0, monthlyEstimate: 0, totalGenerated: 0 };
-    const recurring = recurringModule.recurringExpenses || [];
-    const activeRecurring = recurring.filter(r => r.active);
+    // Obtener datos del módulo o de la lista local
+    var recurring = [];
+    var stats = { active: 0, monthlyEstimate: 0 };
     
-    return '<div class="recurring-container">' +
-        '<div class="recurring-summary"><h2>🔄 Gastos Recurrentes</h2><p>Gestiona tus pagos automáticos</p></div>' +
-        '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin:1rem 0;">' +
-            '<div style="text-align:center;padding:1rem;background:rgba(255,255,255,0.05);border-radius:0.5rem;"><div style="font-size:1.5rem;font-weight:bold;">' + recurring.length + '</div><div style="font-size:0.8rem;opacity:0.7;">Total</div></div>' +
-            '<div style="text-align:center;padding:1rem;background:rgba(255,255,255,0.05);border-radius:0.5rem;"><div style="font-size:1.5rem;font-weight:bold;">' + stats.active + '</div><div style="font-size:0.8rem;opacity:0.7;">Activos</div></div>' +
-            '<div style="text-align:center;padding:1rem;background:rgba(255,255,255,0.05);border-radius:0.5rem;"><div style="font-size:1.5rem;font-weight:bold;">$' + (stats.monthlyEstimate || 0).toFixed(2) + '</div><div style="font-size:0.8rem;opacity:0.7;">Mensual</div></div>' +
+    if (typeof recurringModule !== 'undefined' && recurringModule) {
+        recurring = recurringModule.recurringExpenses || [];
+        stats = typeof recurringModule.getStats === 'function' ? recurringModule.getStats() : stats;
+    }
+    
+    var activeRecurring = recurring.filter(function(r) { return r.active; });
+    stats.active = activeRecurring.length;
+    stats.monthlyEstimate = activeRecurring.reduce(function(sum, r) {
+        var amount = r.amount || 0;
+        if (r.frequency === 'weekly') return sum + (amount * 4);
+        if (r.frequency === 'biweekly') return sum + (amount * 2);
+        if (r.frequency === 'yearly') return sum + (amount / 12);
+        return sum + amount; // monthly
+    }, 0);
+    
+    return '<div class="recurring-container" style="padding: 0.5rem;">' +
+        '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">' +
+            '<div><h2 style="margin: 0; color: var(--color-primary);">🔄 Gastos Recurrentes</h2><p style="margin: 0.25rem 0 0 0; opacity: 0.7; font-size: 0.9rem;">Gestiona tus pagos automáticos</p></div>' +
+            '<button onclick="showRecurringForm()" style="padding: 0.5rem 1rem; border-radius: 20px; background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; border: none; cursor: pointer; font-weight: 500;">+ Añadir</button>' +
         '</div>' +
-        '<div style="margin-top:1rem;"><h3>📋 Tus Recurrentes</h3>' +
+        '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem;margin:1rem 0;">' +
+            '<div style="text-align:center;padding:1rem;background:rgba(255,255,255,0.05);border-radius:0.75rem;border:1px solid rgba(139,92,246,0.2);"><div style="font-size:1.5rem;font-weight:bold;color:#a855f7;">' + recurring.length + '</div><div style="font-size:0.75rem;opacity:0.7;">Total</div></div>' +
+            '<div style="text-align:center;padding:1rem;background:rgba(255,255,255,0.05);border-radius:0.75rem;border:1px solid rgba(34,197,94,0.2);"><div style="font-size:1.5rem;font-weight:bold;color:#22c55e;">' + stats.active + '</div><div style="font-size:0.75rem;opacity:0.7;">Activos</div></div>' +
+            '<div style="text-align:center;padding:1rem;background:rgba(255,255,255,0.05);border-radius:0.75rem;border:1px solid rgba(239,68,68,0.2);"><div style="font-size:1.5rem;font-weight:bold;color:#ef4444;">$' + stats.monthlyEstimate.toFixed(0) + '</div><div style="font-size:0.75rem;opacity:0.7;">Mensual</div></div>' +
+        '</div>' +
+        '<div style="margin-top:1rem;"><h3 style="margin-bottom: 0.75rem;">📋 Tus Recurrentes</h3>' +
         (activeRecurring.length > 0 
             ? activeRecurring.map(function(r) { 
-                return typeof recurringModule.renderRecurringItem === 'function' 
-                    ? recurringModule.renderRecurringItem(r) 
-                    : '<div class="card">' + (r.description || r.name) + ' - $' + r.amount + '</div>'; 
+                var freqLabels = { weekly: 'Semanal', biweekly: 'Quincenal', monthly: 'Mensual', yearly: 'Anual' };
+                return '<div class="card" style="padding: 1rem; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid #8b5cf6;">' +
+                    '<div>' +
+                        '<div style="font-weight: bold; color: white;">' + (r.name || r.description || 'Sin nombre') + '</div>' +
+                        '<div style="font-size: 0.85rem; color: rgba(255,255,255,0.6);">' + (r.category || 'Sin categoría') + ' • ' + (freqLabels[r.frequency] || r.frequency) + '</div>' +
+                    '</div>' +
+                    '<div style="display: flex; align-items: center; gap: 0.75rem;">' +
+                        '<span style="font-weight: bold; color: #ef4444;">-$' + (r.amount || 0).toFixed(2) + '</span>' +
+                        '<button onclick="toggleRecurring(\'' + r.id + '\')" style="background: rgba(255,255,255,0.1); border: none; padding: 0.4rem; border-radius: 6px; cursor: pointer; color: white;" title="' + (r.active ? 'Pausar' : 'Activar') + '">' + (r.active ? '⏸️' : '▶️') + '</button>' +
+                        '<button onclick="deleteRecurring(\'' + r.id + '\')" style="background: rgba(239,68,68,0.2); border: none; padding: 0.4rem; border-radius: 6px; cursor: pointer; color: #ef4444;" title="Eliminar">🗑️</button>' +
+                    '</div>' +
+                '</div>'; 
             }).join('') 
-            : '<p style="opacity:0.7;">No hay gastos recurrentes activos</p>') +
+            : '<div class="card" style="text-align: center; padding: 2rem;"><div style="font-size: 3rem; margin-bottom: 1rem;">🔄</div><p style="opacity:0.7; margin-bottom: 1rem;">No hay gastos recurrentes activos</p><button onclick="showRecurringForm()" style="padding: 0.75rem 1.5rem; border-radius: 25px; background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; border: none; cursor: pointer;">+ Añadir Recurrente</button></div>') +
         '</div></div>';
 }
 
@@ -3734,10 +3757,11 @@ async function saveRecurringExpense() {
     
     try {
         var saved = false;
+        var newRecurringId = null;
         
         // Guardar en Firebase directamente
         if (typeof db !== 'undefined' && typeof currentUser !== 'undefined' && currentUser) {
-            await db.collection('users').doc(currentUser.uid).collection('recurring').add({
+            var docRef = await db.collection('users').doc(currentUser.uid).collection('recurring').add({
                 name: name,
                 description: name,
                 amount: amount,
@@ -3747,26 +3771,34 @@ async function saveRecurringExpense() {
                 active: true,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
+            newRecurringId = docRef.id;
             saved = true;
-            console.log('✅ Recurrente guardado en Firebase');
+            console.log('✅ Recurrente guardado en Firebase con ID:', newRecurringId);
         }
         
-        // También intentar con el módulo si existe
+        // Agregar al módulo de recurrentes manualmente
         if (typeof recurringModule !== 'undefined' && recurringModule) {
-            if (typeof recurringModule.addRecurring === 'function') {
-                await recurringModule.addRecurring({
-                    name: name,
-                    amount: amount,
-                    category: category,
-                    frequency: frequency,
-                    dayOfMonth: dayOfMonth,
-                    active: true
-                });
-                saved = true;
+            // Agregar directamente a la lista
+            if (!recurringModule.recurringExpenses) {
+                recurringModule.recurringExpenses = [];
             }
-            // Recargar la lista del módulo
+            recurringModule.recurringExpenses.push({
+                id: newRecurringId || Date.now().toString(),
+                name: name,
+                description: name,
+                amount: amount,
+                category: category,
+                frequency: frequency,
+                dayOfMonth: dayOfMonth,
+                active: true,
+                createdAt: new Date().toISOString()
+            });
+            console.log('✅ Agregado al módulo, total:', recurringModule.recurringExpenses.length);
+            
+            // Recargar la lista del módulo desde Firebase
             if (typeof recurringModule.loadRecurringExpenses === 'function') {
                 await recurringModule.loadRecurringExpenses();
+                console.log('✅ Lista recargada, total:', recurringModule.recurringExpenses.length);
             }
         }
         
@@ -3778,15 +3810,30 @@ async function saveRecurringExpense() {
             } else {
                 alert('✅ Gasto recurrente guardado correctamente');
             }
+            
+            // Forzar actualización de la vista - cargar desde Firebase
+            setTimeout(async function() {
+                // Recargar lista desde Firebase
+                await loadRecurringFromFirebase();
+                
+                // Refrescar la vista
+                refreshRecurringView();
+                
+                // Si estamos viendo recurrentes, actualizar la vista
+                if (window.activeExpensesTab === 'recurring') {
+                    switchTransactionTab('recurring');
+                }
+                // También actualizar la pestaña si estamos en more-recurring
+                if (typeof activeTab !== 'undefined' && activeTab === 'more-recurring') {
+                    switchTab('more-recurring');
+                }
+                // Re-renderizar la vista de gastos si estamos ahí
+                if (typeof activeTab !== 'undefined' && activeTab === 'expenses') {
+                    switchTab('expenses');
+                }
+            }, 500);
         } else {
             alert('⚠️ No se pudo guardar. Verifica tu conexión.');
-        }
-        
-        // Recargar vista
-        if (typeof activeTab !== 'undefined') {
-            if (activeTab === 'more-recurring' || activeTab === 'expenses') {
-                switchTab(activeTab);
-            }
         }
         
     } catch (error) {
@@ -4414,3 +4461,148 @@ if (typeof window.activeExpensesTab === 'undefined') {
 }
 
 console.log('✅ switchTransactionTab cargada');
+
+// ========================================
+// 🔄 FUNCIONES DE GESTIÓN DE RECURRENTES
+// ========================================
+
+// Cargar recurrentes desde Firebase directamente
+async function loadRecurringFromFirebase() {
+    try {
+        if (typeof db === 'undefined' || typeof currentUser === 'undefined' || !currentUser) {
+            console.log('⚠️ No hay usuario o DB para cargar recurrentes');
+            return [];
+        }
+        
+        var snapshot = await db.collection('users').doc(currentUser.uid).collection('recurring').get();
+        var list = [];
+        
+        snapshot.forEach(function(doc) {
+            list.push({
+                id: doc.id,
+                ...doc.data()
+            });
+        });
+        
+        console.log('✅ Recurrentes cargados desde Firebase:', list.length);
+        
+        // Sincronizar con recurringModule si existe
+        if (typeof recurringModule !== 'undefined' && recurringModule) {
+            recurringModule.recurringExpenses = list;
+        }
+        
+        return list;
+    } catch (error) {
+        console.error('Error cargando recurrentes:', error);
+        return [];
+    }
+}
+
+// Alternar estado activo/pausado
+async function toggleRecurring(id) {
+    try {
+        if (typeof db === 'undefined' || typeof currentUser === 'undefined' || !currentUser) {
+            alert('Error: No hay sesión activa');
+            return;
+        }
+        
+        var docRef = db.collection('users').doc(currentUser.uid).collection('recurring').doc(id);
+        var doc = await docRef.get();
+        
+        if (doc.exists) {
+            var currentActive = doc.data().active;
+            await docRef.update({ active: !currentActive });
+            console.log('✅ Recurrente actualizado:', id, 'activo:', !currentActive);
+            
+            // Recargar y actualizar vista
+            await loadRecurringFromFirebase();
+            refreshRecurringView();
+            
+            if (typeof showToast === 'function') {
+                showToast(currentActive ? '⏸️ Recurrente pausado' : '▶️ Recurrente activado', 'success');
+            }
+        }
+    } catch (error) {
+        console.error('Error al alternar recurrente:', error);
+        alert('Error: ' + error.message);
+    }
+}
+
+// Eliminar recurrente
+async function deleteRecurring(id) {
+    if (!confirm('¿Eliminar este gasto recurrente?')) return;
+    
+    try {
+        if (typeof db === 'undefined' || typeof currentUser === 'undefined' || !currentUser) {
+            alert('Error: No hay sesión activa');
+            return;
+        }
+        
+        await db.collection('users').doc(currentUser.uid).collection('recurring').doc(id).delete();
+        console.log('✅ Recurrente eliminado:', id);
+        
+        // Recargar y actualizar vista
+        await loadRecurringFromFirebase();
+        refreshRecurringView();
+        
+        if (typeof showToast === 'function') {
+            showToast('🗑️ Recurrente eliminado', 'success');
+        } else {
+            alert('✅ Recurrente eliminado');
+        }
+    } catch (error) {
+        console.error('Error al eliminar recurrente:', error);
+        alert('Error: ' + error.message);
+    }
+}
+
+// Refrescar la vista de recurrentes
+function refreshRecurringView() {
+    // Actualizar contenido de recurrentes en la pestaña de transacciones
+    var recurringContent = document.getElementById('recurring-content');
+    if (recurringContent) {
+        recurringContent.innerHTML = renderRecurringExpensesViewIntegrated();
+    }
+    
+    // Si estamos en more-recurring, actualizar esa vista también
+    if (typeof activeTab !== 'undefined' && activeTab === 'more-recurring') {
+        var tabContent = document.getElementById('tab-content');
+        if (tabContent) {
+            tabContent.innerHTML = renderRecurringExpensesViewIntegrated();
+        }
+    }
+    
+    // Actualizar el contador en el botón de pestañas
+    var tabRecurring = document.getElementById('tab-recurring');
+    if (tabRecurring && typeof recurringModule !== 'undefined' && recurringModule) {
+        var activeCount = (recurringModule.recurringExpenses || []).filter(function(r) { return r.active; }).length;
+        tabRecurring.innerHTML = '🔄 Recurrentes (' + activeCount + ')';
+    }
+}
+
+// Cargar recurrentes al iniciar la app
+document.addEventListener('DOMContentLoaded', function() {
+    // Esperar a que Firebase esté listo
+    setTimeout(function() {
+        if (typeof currentUser !== 'undefined' && currentUser) {
+            loadRecurringFromFirebase().then(function() {
+                console.log('✅ Recurrentes inicializados');
+            });
+        }
+    }, 2000);
+});
+
+// También cargar cuando el usuario inicie sesión
+if (typeof firebase !== 'undefined' && firebase.auth) {
+    firebase.auth().onAuthStateChanged(function(user) {
+        if (user) {
+            setTimeout(function() {
+                loadRecurringFromFirebase().then(function() {
+                    refreshRecurringView();
+                });
+            }, 1000);
+        }
+    });
+}
+
+console.log('✅ Funciones de gestión de recurrentes cargadas');
