@@ -2762,45 +2762,50 @@ function renderReports() {
 // ========================================
 function renderMoreSection() {
     return `
-        <div style="display: flex; flex-direction: column; gap: 1rem; padding: 0.5rem;">
+        <div style="display: flex; flex-direction: column; gap: 0.75rem; padding: 0.5rem; padding-bottom: 120px;">
             <!-- Gastos Recurrentes -->
-            <div class="card" onclick="switchTab('more-recurring')" style="cursor: pointer; padding: 1rem;">
-                <h3 style="font-size: 1.1rem; margin-bottom: 0.5rem;">🔄 Gastos Recurrentes</h3>
-                <p style="color: rgba(255, 255, 255, 0.7); font-size: 0.85rem;">
-                    Configura gastos automáticos mensuales
-                </p>
+            <div class="card" onclick="switchTab('more-recurring')" style="cursor: pointer; padding: 0.875rem; display: flex; align-items: center; gap: 1rem;">
+                <span style="font-size: 1.5rem;">🔄</span>
+                <div>
+                    <h3 style="font-size: 1rem; margin: 0 0 0.25rem 0;">Gastos Recurrentes</h3>
+                    <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.8rem; margin: 0;">Configura gastos automáticos mensuales</p>
+                </div>
             </div>
             
             <!-- Ingresos Recurrentes -->
-            <div class="card" onclick="switchTab('more-recurring-income')" style="cursor: pointer; padding: 1rem;">
-                <h3 style="font-size: 1.1rem; margin-bottom: 0.5rem;">💰 Ingresos Recurrentes</h3>
-                <p style="color: rgba(255, 255, 255, 0.7); font-size: 0.85rem;">
-                    Configura ingresos automáticos (salario, rentas)
-                </p>
+            <div class="card" onclick="switchTab('more-recurring-income')" style="cursor: pointer; padding: 0.875rem; display: flex; align-items: center; gap: 1rem;">
+                <span style="font-size: 1.5rem;">💰</span>
+                <div>
+                    <h3 style="font-size: 1rem; margin: 0 0 0.25rem 0;">Ingresos Recurrentes</h3>
+                    <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.8rem; margin: 0;">Configura ingresos automáticos (salario, rentas)</p>
+                </div>
             </div>
             
             <!-- Reportes -->
-            <div class="card" onclick="switchTab('more-reports')" style="cursor: pointer; padding: 1rem;">
-                <h3 style="font-size: 1.1rem; margin-bottom: 0.5rem;">📊 Reportes y Gráficos</h3>
-                <p style="color: rgba(255, 255, 255, 0.7); font-size: 0.85rem;">
-                    Comparativas semanal, quincenal y mensual
-                </p>
+            <div class="card" onclick="switchTab('more-reports')" style="cursor: pointer; padding: 0.875rem; display: flex; align-items: center; gap: 1rem;">
+                <span style="font-size: 1.5rem;">📊</span>
+                <div>
+                    <h3 style="font-size: 1rem; margin: 0 0 0.25rem 0;">Reportes y Gráficos</h3>
+                    <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.8rem; margin: 0;">Análisis visual de tus finanzas</p>
+                </div>
             </div>
             
             <!-- Comparación -->
-            <div class="card" onclick="switchTab('more-comparison')" style="cursor: pointer; padding: 1rem;">
-                <h3 style="font-size: 1.1rem; margin-bottom: 0.5rem;">📈 Comparación de Periodos</h3>
-                <p style="color: rgba(255, 255, 255, 0.7); font-size: 0.85rem;">
-                    Compara tus finanzas entre periodos
-                </p>
+            <div class="card" onclick="switchTab('more-comparison')" style="cursor: pointer; padding: 0.875rem; display: flex; align-items: center; gap: 1rem;">
+                <span style="font-size: 1.5rem;">📈</span>
+                <div>
+                    <h3 style="font-size: 1rem; margin: 0 0 0.25rem 0;">Comparación de Periodos</h3>
+                    <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.8rem; margin: 0;">Semanal, quincenal y mensual</p>
+                </div>
             </div>
             
             <!-- Notificaciones -->
-            <div class="card" onclick="switchTab('more-notifications')" style="cursor: pointer; padding: 1rem;">
-                <h3 style="font-size: 1.1rem; margin-bottom: 0.5rem;">🔔 Notificaciones</h3>
-                <p style="color: rgba(255, 255, 255, 0.7); font-size: 0.85rem;">
-                    Configura alertas y recordatorios
-                </p>
+            <div class="card" onclick="switchTab('more-notifications')" style="cursor: pointer; padding: 0.875rem; display: flex; align-items: center; gap: 1rem;">
+                <span style="font-size: 1.5rem;">🔔</span>
+                <div>
+                    <h3 style="font-size: 1rem; margin: 0 0 0.25rem 0;">Notificaciones</h3>
+                    <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.8rem; margin: 0;">Alertas semanales y recordatorios</p>
+                </div>
             </div>
         </div>
     `;
@@ -3304,13 +3309,6 @@ function renderComparisonView() {
 }
 
 // Función para renderizar configuración de notificaciones
-function renderNotificationSettings() {
-    if (typeof notificationsModule !== 'undefined' && notificationsModule && typeof notificationsModule.renderSettingsCard === 'function') {
-        return notificationsModule.renderSettingsCard();
-    }
-    return '<div class="card"><h3>🔔 Notificaciones</h3><p style="color: rgba(255,255,255,0.7);">Configura alertas y recordatorios</p></div>';
-}
-
 // Vista integrada de gastos recurrentes
 function renderRecurringExpensesViewIntegrated() {
     // Obtener datos del módulo o de la lista local
@@ -3929,42 +3927,12 @@ function renderRecurringIncomeView() {
 
 // Modal para ingreso recurrente
 function openRecurringIncomeModal() {
-    const modal = document.getElementById('modal');
-    const modalBody = document.getElementById('modal-body');
-    const modalTitle = document.getElementById('modal-title');
+    // Cerrar FAB menu si está abierto
+    var fabMenu = document.getElementById('fab-menu');
+    if (fabMenu) fabMenu.style.display = 'none';
     
-    if (!modal || !modalBody) {
-        alert('Error: Modal no disponible');
-        return;
-    }
-    
-    modalTitle.textContent = '💰 Nuevo Ingreso Recurrente';
-    modalBody.innerHTML = '<form id="recurring-income-form" onsubmit="event.preventDefault(); saveRecurringIncome();">' +
-        '<div style="margin-bottom: 1rem;">' +
-            '<label style="display: block; margin-bottom: 0.5rem; color: rgba(255,255,255,0.8); font-size: 0.9rem;">📝 Descripción</label>' +
-            '<input type="text" id="rec-income-name" placeholder="Ej: Salario, Alquiler, Dividendos..." required style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid rgba(5,191,219,0.3); background: rgba(0,0,0,0.3); color: white; font-size: 1rem; box-sizing: border-box;">' +
-        '</div>' +
-        '<div style="margin-bottom: 1rem;">' +
-            '<label style="display: block; margin-bottom: 0.5rem; color: rgba(255,255,255,0.8); font-size: 0.9rem;">💵 Monto</label>' +
-            '<input type="number" id="rec-income-amount" placeholder="0.00" step="0.01" min="0" required style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid rgba(5,191,219,0.3); background: rgba(0,0,0,0.3); color: white; font-size: 1rem; box-sizing: border-box;">' +
-        '</div>' +
-        '<div style="margin-bottom: 1rem;">' +
-            '<label style="display: block; margin-bottom: 0.5rem; color: rgba(255,255,255,0.8); font-size: 0.9rem;">🔄 Frecuencia</label>' +
-            '<select id="rec-income-frequency" required style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid rgba(5,191,219,0.3); background: rgba(0,0,0,0.3); color: white; font-size: 1rem; box-sizing: border-box;">' +
-                '<option value="monthly">📅 Mensual</option>' +
-                '<option value="biweekly">📆 Quincenal</option>' +
-                '<option value="weekly">📆 Semanal</option>' +
-                '<option value="yearly">📋 Anual</option>' +
-            '</select>' +
-        '</div>' +
-        '<div style="margin-bottom: 1.5rem;">' +
-            '<label style="display: block; margin-bottom: 0.5rem; color: rgba(255,255,255,0.8); font-size: 0.9rem;">📆 Día de pago (1-31)</label>' +
-            '<input type="number" id="rec-income-day" value="1" min="1" max="31" required style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid rgba(5,191,219,0.3); background: rgba(0,0,0,0.3); color: white; font-size: 1rem; box-sizing: border-box;">' +
-        '</div>' +
-        '<button type="submit" style="width: 100%; padding: 1rem; border-radius: 8px; background: linear-gradient(135deg, #22c55e, #16a34a); color: white; border: none; cursor: pointer; font-weight: bold; font-size: 1rem;">✅ Guardar Ingreso</button>' +
-    '</form>';
-    
-    modal.style.display = 'flex';
+    // Usar el nuevo formulario
+    showRecurringIncomeFormNew();
 }
 
 // Guardar ingreso recurrente
@@ -4606,3 +4574,516 @@ if (typeof firebase !== 'undefined' && firebase.auth) {
 }
 
 console.log('✅ Funciones de gestión de recurrentes cargadas');
+
+// ========================================
+// 🔔 NOTIFICACIONES Y ALERTAS SEMANALES
+// ========================================
+function renderNotificationSettings() {
+    // Obtener configuración guardada
+    var notifSettings = JSON.parse(localStorage.getItem('notificationSettings') || '{}');
+    var weeklyReport = notifSettings.weeklyReport !== false;
+    var budgetAlerts = notifSettings.budgetAlerts !== false;
+    var goalReminders = notifSettings.goalReminders !== false;
+    var unusualSpending = notifSettings.unusualSpending !== false;
+    
+    // Calcular resumen semanal
+    var weeklyAnalysis = calculateWeeklyAnalysis();
+    
+    return '<div style="padding: 0.5rem; padding-bottom: 120px;">' +
+        '<div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">' +
+            '<button onclick="switchTab(\'more\')" style="background: none; border: none; color: white; font-size: 1.2rem; cursor: pointer;">←</button>' +
+            '<h2 style="margin: 0; color: var(--color-primary);">🔔 Notificaciones</h2>' +
+        '</div>' +
+        
+        // Resumen semanal actual
+        '<div class="card" style="padding: 1rem; margin-bottom: 1rem; background: linear-gradient(135deg, rgba(5,191,219,0.2), rgba(139,92,246,0.2)); border: 1px solid rgba(5,191,219,0.3);">' +
+            '<h3 style="margin: 0 0 1rem 0; color: #05BFDB;">📊 Tu Resumen Semanal</h3>' +
+            '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">' +
+                '<div style="text-align: center; padding: 0.75rem; background: rgba(0,0,0,0.2); border-radius: 8px;">' +
+                    '<div style="font-size: 0.75rem; opacity: 0.7;">Gastos esta semana</div>' +
+                    '<div style="font-size: 1.3rem; font-weight: bold; color: #ef4444;">$' + weeklyAnalysis.currentWeek.toFixed(0) + '</div>' +
+                '</div>' +
+                '<div style="text-align: center; padding: 0.75rem; background: rgba(0,0,0,0.2); border-radius: 8px;">' +
+                    '<div style="font-size: 0.75rem; opacity: 0.7;">Semana pasada</div>' +
+                    '<div style="font-size: 1.3rem; font-weight: bold; color: #f97316;">$' + weeklyAnalysis.lastWeek.toFixed(0) + '</div>' +
+                '</div>' +
+            '</div>' +
+            '<div style="margin-top: 1rem; padding: 0.75rem; background: rgba(0,0,0,0.2); border-radius: 8px; text-align: center;">' +
+                '<div style="font-size: 0.85rem; color: ' + (weeklyAnalysis.difference <= 0 ? '#22c55e' : '#ef4444') + ';">' +
+                    (weeklyAnalysis.difference <= 0 
+                        ? '✅ ¡Vas ' + Math.abs(weeklyAnalysis.percentChange).toFixed(0) + '% mejor que la semana pasada!' 
+                        : '⚠️ Has gastado ' + weeklyAnalysis.percentChange.toFixed(0) + '% más que la semana pasada') +
+                '</div>' +
+            '</div>' +
+        '</div>' +
+        
+        // Configuración de alertas
+        '<div class="card" style="padding: 1rem; margin-bottom: 1rem;">' +
+            '<h3 style="margin: 0 0 1rem 0;">⚙️ Configurar Alertas</h3>' +
+            
+            '<div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid rgba(255,255,255,0.1);">' +
+                '<div><div style="font-weight: 500;">📊 Reporte Semanal</div><div style="font-size: 0.8rem; opacity: 0.6;">Resumen de gastos cada lunes</div></div>' +
+                '<label style="position: relative; width: 50px; height: 26px;">' +
+                    '<input type="checkbox" id="notif-weekly" ' + (weeklyReport ? 'checked' : '') + ' onchange="saveNotificationSetting(\'weeklyReport\', this.checked)" style="opacity: 0; width: 0; height: 0;">' +
+                    '<span style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: ' + (weeklyReport ? '#22c55e' : 'rgba(255,255,255,0.2)') + '; border-radius: 26px; transition: 0.3s;"></span>' +
+                    '<span style="position: absolute; height: 20px; width: 20px; left: ' + (weeklyReport ? '26px' : '4px') + '; bottom: 3px; background: white; border-radius: 50%; transition: 0.3s;"></span>' +
+                '</label>' +
+            '</div>' +
+            
+            '<div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid rgba(255,255,255,0.1);">' +
+                '<div><div style="font-weight: 500;">💰 Alertas de Presupuesto</div><div style="font-size: 0.8rem; opacity: 0.6;">Aviso al 80% y 100% del límite</div></div>' +
+                '<label style="position: relative; width: 50px; height: 26px;">' +
+                    '<input type="checkbox" id="notif-budget" ' + (budgetAlerts ? 'checked' : '') + ' onchange="saveNotificationSetting(\'budgetAlerts\', this.checked)" style="opacity: 0; width: 0; height: 0;">' +
+                    '<span style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: ' + (budgetAlerts ? '#22c55e' : 'rgba(255,255,255,0.2)') + '; border-radius: 26px; transition: 0.3s;"></span>' +
+                    '<span style="position: absolute; height: 20px; width: 20px; left: ' + (budgetAlerts ? '26px' : '4px') + '; bottom: 3px; background: white; border-radius: 50%; transition: 0.3s;"></span>' +
+                '</label>' +
+            '</div>' +
+            
+            '<div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid rgba(255,255,255,0.1);">' +
+                '<div><div style="font-weight: 500;">🎯 Recordatorios de Metas</div><div style="font-size: 0.8rem; opacity: 0.6;">Seguimiento de progreso semanal</div></div>' +
+                '<label style="position: relative; width: 50px; height: 26px;">' +
+                    '<input type="checkbox" id="notif-goals" ' + (goalReminders ? 'checked' : '') + ' onchange="saveNotificationSetting(\'goalReminders\', this.checked)" style="opacity: 0; width: 0; height: 0;">' +
+                    '<span style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: ' + (goalReminders ? '#22c55e' : 'rgba(255,255,255,0.2)') + '; border-radius: 26px; transition: 0.3s;"></span>' +
+                    '<span style="position: absolute; height: 20px; width: 20px; left: ' + (goalReminders ? '26px' : '4px') + '; bottom: 3px; background: white; border-radius: 50%; transition: 0.3s;"></span>' +
+                '</label>' +
+            '</div>' +
+            
+            '<div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0;">' +
+                '<div><div style="font-weight: 500;">⚠️ Gastos Inusuales</div><div style="font-size: 0.8rem; opacity: 0.6;">Alerta si un gasto es 3x mayor al promedio</div></div>' +
+                '<label style="position: relative; width: 50px; height: 26px;">' +
+                    '<input type="checkbox" id="notif-unusual" ' + (unusualSpending ? 'checked' : '') + ' onchange="saveNotificationSetting(\'unusualSpending\', this.checked)" style="opacity: 0; width: 0; height: 0;">' +
+                    '<span style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: ' + (unusualSpending ? '#22c55e' : 'rgba(255,255,255,0.2)') + '; border-radius: 26px; transition: 0.3s;"></span>' +
+                    '<span style="position: absolute; height: 20px; width: 20px; left: ' + (unusualSpending ? '26px' : '4px') + '; bottom: 3px; background: white; border-radius: 50%; transition: 0.3s;"></span>' +
+                '</label>' +
+            '</div>' +
+        '</div>' +
+        
+        // Historial de alertas
+        '<div class="card" style="padding: 1rem;">' +
+            '<h3 style="margin: 0 0 1rem 0;">📋 Alertas Recientes</h3>' +
+            renderRecentAlerts() +
+        '</div>' +
+    '</div>';
+}
+
+function calculateWeeklyAnalysis() {
+    var expensesList = typeof expenses !== 'undefined' ? expenses : [];
+    var now = new Date();
+    var startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - now.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
+    
+    var startOfLastWeek = new Date(startOfWeek);
+    startOfLastWeek.setDate(startOfLastWeek.getDate() - 7);
+    
+    var currentWeek = expensesList.filter(function(e) {
+        var d = new Date(e.date);
+        return d >= startOfWeek;
+    }).reduce(function(sum, e) { return sum + (e.amount || 0); }, 0);
+    
+    var lastWeek = expensesList.filter(function(e) {
+        var d = new Date(e.date);
+        return d >= startOfLastWeek && d < startOfWeek;
+    }).reduce(function(sum, e) { return sum + (e.amount || 0); }, 0);
+    
+    var difference = currentWeek - lastWeek;
+    var percentChange = lastWeek > 0 ? ((difference / lastWeek) * 100) : 0;
+    
+    return { currentWeek: currentWeek, lastWeek: lastWeek, difference: difference, percentChange: percentChange };
+}
+
+function renderRecentAlerts() {
+    var alerts = JSON.parse(localStorage.getItem('recentAlerts') || '[]');
+    
+    if (alerts.length === 0) {
+        // Generar alertas basadas en datos actuales
+        var analysis = calculateWeeklyAnalysis();
+        var generatedAlerts = [];
+        
+        if (analysis.percentChange > 20) {
+            generatedAlerts.push({ type: 'warning', message: 'Gastos aumentaron ' + analysis.percentChange.toFixed(0) + '% esta semana', time: 'Hoy' });
+        }
+        if (analysis.currentWeek > 0) {
+            generatedAlerts.push({ type: 'info', message: 'Total gastado esta semana: $' + analysis.currentWeek.toFixed(0), time: 'Hoy' });
+        }
+        
+        if (generatedAlerts.length === 0) {
+            return '<p style="opacity: 0.6; text-align: center;">No hay alertas recientes</p>';
+        }
+        alerts = generatedAlerts;
+    }
+    
+    return alerts.slice(0, 5).map(function(alert) {
+        var icon = alert.type === 'warning' ? '⚠️' : (alert.type === 'success' ? '✅' : 'ℹ️');
+        var color = alert.type === 'warning' ? '#f97316' : (alert.type === 'success' ? '#22c55e' : '#05BFDB');
+        return '<div style="display: flex; gap: 0.75rem; padding: 0.5rem 0; border-bottom: 1px solid rgba(255,255,255,0.05);">' +
+            '<span style="font-size: 1.2rem;">' + icon + '</span>' +
+            '<div style="flex: 1;"><div style="color: ' + color + ';">' + alert.message + '</div><div style="font-size: 0.75rem; opacity: 0.5;">' + alert.time + '</div></div>' +
+        '</div>';
+    }).join('');
+}
+
+function saveNotificationSetting(key, value) {
+    var settings = JSON.parse(localStorage.getItem('notificationSettings') || '{}');
+    settings[key] = value;
+    localStorage.setItem('notificationSettings', JSON.stringify(settings));
+    // Recargar vista para actualizar toggles
+    switchTab('more-notifications');
+}
+
+// ========================================
+// 📈 COMPARACIÓN DE PERIODOS PROFESIONAL
+// ========================================
+function renderPeriodComparison() {
+    setTimeout(function() { initComparisonCharts(); }, 100);
+    
+    var analysis = calculatePeriodAnalysis();
+    
+    return '<div style="padding: 0.5rem; padding-bottom: 120px;">' +
+        '<div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">' +
+            '<button onclick="switchTab(\'more\')" style="background: none; border: none; color: white; font-size: 1.2rem; cursor: pointer;">←</button>' +
+            '<h2 style="margin: 0; color: var(--color-primary);">📈 Comparación de Periodos</h2>' +
+        '</div>' +
+        
+        // Selector de tipo de comparación
+        '<div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">' +
+            '<button onclick="setComparisonType(\'weekly\')" id="cmp-weekly" class="cmp-btn" style="flex: 1; padding: 0.6rem; border-radius: 8px; background: linear-gradient(135deg, #05BFDB, #088395); color: white; border: none; cursor: pointer; font-weight: 500;">Semanal</button>' +
+            '<button onclick="setComparisonType(\'biweekly\')" id="cmp-biweekly" class="cmp-btn" style="flex: 1; padding: 0.6rem; border-radius: 8px; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;">Quincenal</button>' +
+            '<button onclick="setComparisonType(\'monthly\')" id="cmp-monthly" class="cmp-btn" style="flex: 1; padding: 0.6rem; border-radius: 8px; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;">Mensual</button>' +
+        '</div>' +
+        
+        // Resumen de comparación
+        '<div class="card" style="padding: 1rem; margin-bottom: 1rem;">' +
+            '<h3 style="margin: 0 0 1rem 0;">📊 Resumen Comparativo</h3>' +
+            '<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem;">' +
+                '<div style="padding: 1rem; background: rgba(239,68,68,0.1); border-radius: 8px; border-left: 4px solid #ef4444;">' +
+                    '<div style="font-size: 0.75rem; opacity: 0.7;">Periodo Actual</div>' +
+                    '<div style="font-size: 1.4rem; font-weight: bold; color: #ef4444;">$' + analysis.current.expenses.toFixed(0) + '</div>' +
+                    '<div style="font-size: 0.8rem; color: #22c55e;">Ing: $' + analysis.current.income.toFixed(0) + '</div>' +
+                '</div>' +
+                '<div style="padding: 1rem; background: rgba(139,92,246,0.1); border-radius: 8px; border-left: 4px solid #8b5cf6;">' +
+                    '<div style="font-size: 0.75rem; opacity: 0.7;">Periodo Anterior</div>' +
+                    '<div style="font-size: 1.4rem; font-weight: bold; color: #8b5cf6;">$' + analysis.previous.expenses.toFixed(0) + '</div>' +
+                    '<div style="font-size: 0.8rem; color: #22c55e;">Ing: $' + analysis.previous.income.toFixed(0) + '</div>' +
+                '</div>' +
+            '</div>' +
+            '<div style="margin-top: 1rem; padding: 1rem; background: ' + (analysis.trend <= 0 ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)') + '; border-radius: 8px; text-align: center;">' +
+                '<div style="font-size: 1.5rem;">' + (analysis.trend <= 0 ? '📉' : '📈') + '</div>' +
+                '<div style="font-weight: bold; color: ' + (analysis.trend <= 0 ? '#22c55e' : '#ef4444') + ';">' +
+                    (analysis.trend <= 0 ? 'Redujiste gastos un ' + Math.abs(analysis.trend).toFixed(0) + '%' : 'Aumentaste gastos un ' + analysis.trend.toFixed(0) + '%') +
+                '</div>' +
+            '</div>' +
+        '</div>' +
+        
+        // Gráfico de comparación
+        '<div class="card" style="padding: 1rem; margin-bottom: 1rem;">' +
+            '<h3 style="margin: 0 0 1rem 0;">📈 Gráfico Comparativo</h3>' +
+            '<div style="height: 250px; position: relative;"><canvas id="periodComparisonChart"></canvas></div>' +
+        '</div>' +
+        
+        // Análisis por categoría
+        '<div class="card" style="padding: 1rem;">' +
+            '<h3 style="margin: 0 0 1rem 0;">📂 Por Categoría</h3>' +
+            renderCategoryComparison(analysis) +
+        '</div>' +
+    '</div>';
+}
+
+function calculatePeriodAnalysis() {
+    var expensesList = typeof expenses !== 'undefined' ? expenses : [];
+    var incomeList = typeof incomeHistory !== 'undefined' ? incomeHistory : [];
+    var now = new Date();
+    var type = window.comparisonType || 'weekly';
+    
+    var currentStart, previousStart, previousEnd;
+    
+    if (type === 'weekly') {
+        currentStart = new Date(now); currentStart.setDate(now.getDate() - 7);
+        previousStart = new Date(now); previousStart.setDate(now.getDate() - 14);
+        previousEnd = currentStart;
+    } else if (type === 'biweekly') {
+        currentStart = new Date(now); currentStart.setDate(now.getDate() - 15);
+        previousStart = new Date(now); previousStart.setDate(now.getDate() - 30);
+        previousEnd = currentStart;
+    } else {
+        currentStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        previousStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        previousEnd = currentStart;
+    }
+    
+    var currentExpenses = expensesList.filter(function(e) { return new Date(e.date) >= currentStart; }).reduce(function(s, e) { return s + (e.amount || 0); }, 0);
+    var previousExpenses = expensesList.filter(function(e) { var d = new Date(e.date); return d >= previousStart && d < previousEnd; }).reduce(function(s, e) { return s + (e.amount || 0); }, 0);
+    var currentIncome = incomeList.filter(function(e) { return new Date(e.date) >= currentStart; }).reduce(function(s, e) { return s + (e.amount || 0); }, 0);
+    var previousIncome = incomeList.filter(function(e) { var d = new Date(e.date); return d >= previousStart && d < previousEnd; }).reduce(function(s, e) { return s + (e.amount || 0); }, 0);
+    
+    var trend = previousExpenses > 0 ? ((currentExpenses - previousExpenses) / previousExpenses * 100) : 0;
+    
+    // Por categoría
+    var categories = {};
+    expensesList.forEach(function(e) {
+        var cat = e.category || 'Otros';
+        if (!categories[cat]) categories[cat] = { current: 0, previous: 0 };
+        var d = new Date(e.date);
+        if (d >= currentStart) categories[cat].current += e.amount || 0;
+        else if (d >= previousStart && d < previousEnd) categories[cat].previous += e.amount || 0;
+    });
+    
+    return {
+        current: { expenses: currentExpenses, income: currentIncome },
+        previous: { expenses: previousExpenses, income: previousIncome },
+        trend: trend,
+        categories: categories
+    };
+}
+
+function renderCategoryComparison(analysis) {
+    var cats = Object.keys(analysis.categories);
+    if (cats.length === 0) return '<p style="opacity: 0.6; text-align: center;">No hay datos suficientes</p>';
+    
+    return cats.map(function(cat) {
+        var data = analysis.categories[cat];
+        var diff = data.current - data.previous;
+        var icon = diff <= 0 ? '📉' : '📈';
+        var color = diff <= 0 ? '#22c55e' : '#ef4444';
+        return '<div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid rgba(255,255,255,0.05);">' +
+            '<div style="font-size: 0.9rem;">' + cat + '</div>' +
+            '<div style="display: flex; align-items: center; gap: 1rem;">' +
+                '<span style="color: #8b5cf6;">$' + data.previous.toFixed(0) + '</span>' +
+                '<span>→</span>' +
+                '<span style="color: #ef4444;">$' + data.current.toFixed(0) + '</span>' +
+                '<span style="color: ' + color + ';">' + icon + '</span>' +
+            '</div>' +
+        '</div>';
+    }).join('');
+}
+
+function setComparisonType(type) {
+    window.comparisonType = type;
+    document.querySelectorAll('.cmp-btn').forEach(function(btn) {
+        btn.style.background = 'rgba(255,255,255,0.1)';
+        btn.style.border = '1px solid rgba(255,255,255,0.2)';
+    });
+    var btn = document.getElementById('cmp-' + type);
+    if (btn) {
+        btn.style.background = 'linear-gradient(135deg, #05BFDB, #088395)';
+        btn.style.border = 'none';
+    }
+    switchTab('more-comparison');
+}
+
+function initComparisonCharts() {
+    var ctx = document.getElementById('periodComparisonChart');
+    if (!ctx || typeof Chart === 'undefined') return;
+    
+    var analysis = calculatePeriodAnalysis();
+    
+    new Chart(ctx.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: ['Periodo Anterior', 'Periodo Actual'],
+            datasets: [
+                { label: 'Gastos', data: [analysis.previous.expenses, analysis.current.expenses], backgroundColor: ['rgba(139,92,246,0.7)', 'rgba(239,68,68,0.7)'], borderColor: ['#8b5cf6', '#ef4444'], borderWidth: 2, borderRadius: 8 },
+                { label: 'Ingresos', data: [analysis.previous.income, analysis.current.income], backgroundColor: ['rgba(34,197,94,0.5)', 'rgba(34,197,94,0.7)'], borderColor: ['#22c55e', '#22c55e'], borderWidth: 2, borderRadius: 8 }
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { position: 'top', labels: { color: 'white' } } },
+            scales: { y: { beginAtZero: true, ticks: { color: 'rgba(255,255,255,0.7)' }, grid: { color: 'rgba(255,255,255,0.1)' } }, x: { ticks: { color: 'rgba(255,255,255,0.7)' } } }
+        }
+    });
+}
+
+// ========================================
+// 💰 INGRESOS RECURRENTES COMPLETO
+// ========================================
+function renderRecurringIncomeViewComplete() {
+    // Cargar ingresos recurrentes
+    var recurringIncome = JSON.parse(localStorage.getItem('recurringIncome') || '[]');
+    
+    // Calcular totales
+    var totalMonthly = recurringIncome.filter(function(i) { return i.active !== false; }).reduce(function(sum, i) {
+        var amount = i.amount || 0;
+        if (i.frequency === 'weekly') return sum + (amount * 4);
+        if (i.frequency === 'biweekly') return sum + (amount * 2);
+        if (i.frequency === 'yearly') return sum + (amount / 12);
+        return sum + amount;
+    }, 0);
+    
+    return '<div style="padding: 0.5rem; padding-bottom: 120px;">' +
+        '<div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">' +
+            '<button onclick="switchTab(\'more\')" style="background: none; border: none; color: white; font-size: 1.2rem; cursor: pointer;">←</button>' +
+            '<h2 style="margin: 0; color: #22c55e;">💰 Ingresos Recurrentes</h2>' +
+        '</div>' +
+        
+        // Estadísticas
+        '<div class="card" style="padding: 1rem; margin-bottom: 1rem; background: linear-gradient(135deg, rgba(34,197,94,0.2), rgba(16,185,129,0.1)); border: 1px solid rgba(34,197,94,0.3);">' +
+            '<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; text-align: center;">' +
+                '<div><div style="font-size: 1.5rem; font-weight: bold; color: #22c55e;">' + recurringIncome.length + '</div><div style="font-size: 0.75rem; opacity: 0.7;">Total</div></div>' +
+                '<div><div style="font-size: 1.5rem; font-weight: bold; color: #22c55e;">' + recurringIncome.filter(function(i) { return i.active !== false; }).length + '</div><div style="font-size: 0.75rem; opacity: 0.7;">Activos</div></div>' +
+                '<div><div style="font-size: 1.5rem; font-weight: bold; color: #22c55e;">$' + totalMonthly.toFixed(0) + '</div><div style="font-size: 0.75rem; opacity: 0.7;">Mensual Est.</div></div>' +
+            '</div>' +
+        '</div>' +
+        
+        // Botón añadir
+        '<button onclick="showRecurringIncomeFormNew()" style="width: 100%; padding: 1rem; margin-bottom: 1rem; border-radius: 12px; background: linear-gradient(135deg, #22c55e, #16a34a); color: white; border: none; cursor: pointer; font-weight: bold; font-size: 1rem;">+ Añadir Ingreso Recurrente</button>' +
+        
+        // Lista de ingresos
+        '<div class="card" style="padding: 1rem;">' +
+            '<h3 style="margin: 0 0 1rem 0;">📋 Tus Ingresos Recurrentes</h3>' +
+            (recurringIncome.length > 0 
+                ? recurringIncome.map(function(inc, idx) {
+                    var freqLabels = { weekly: 'Semanal', biweekly: 'Quincenal', monthly: 'Mensual', yearly: 'Anual' };
+                    return '<div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; margin-bottom: 0.5rem; background: rgba(34,197,94,0.1); border-radius: 8px; border-left: 4px solid #22c55e;">' +
+                        '<div>' +
+                            '<div style="font-weight: bold; color: white;">' + (inc.name || 'Sin nombre') + '</div>' +
+                            '<div style="font-size: 0.8rem; color: rgba(255,255,255,0.6);">' + (inc.source || 'Otros') + ' • ' + (freqLabels[inc.frequency] || 'Mensual') + '</div>' +
+                        '</div>' +
+                        '<div style="display: flex; align-items: center; gap: 0.5rem;">' +
+                            '<span style="font-weight: bold; color: #22c55e;">+$' + (inc.amount || 0).toFixed(2) + '</span>' +
+                            '<button onclick="deleteRecurringIncomeItem(' + idx + ')" style="background: rgba(239,68,68,0.2); border: none; padding: 0.4rem; border-radius: 6px; cursor: pointer; color: #ef4444;">🗑️</button>' +
+                        '</div>' +
+                    '</div>';
+                }).join('')
+                : '<div style="text-align: center; padding: 2rem;"><div style="font-size: 3rem; margin-bottom: 1rem;">💸</div><p style="opacity: 0.6;">No tienes ingresos recurrentes</p></div>'
+            ) +
+        '</div>' +
+    '</div>';
+}
+
+function showRecurringIncomeFormNew() {
+    var modal = document.getElementById('recurring-income-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'recurring-income-modal';
+        document.body.appendChild(modal);
+    }
+    
+    modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:10000;padding:1rem;';
+    
+    modal.innerHTML = '<div style="background:linear-gradient(135deg,rgba(26,35,50,0.98),rgba(13,21,32,0.98));border-radius:1rem;padding:1.5rem;width:100%;max-width:400px;max-height:90vh;overflow-y:auto;border:1px solid rgba(34,197,94,0.3);">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">' +
+            '<h3 style="color:#22c55e;margin:0;">💰 Nuevo Ingreso Recurrente</h3>' +
+            '<button onclick="closeRecurringIncomeForm()" style="background:none;border:none;color:white;font-size:1.5rem;cursor:pointer;">&times;</button>' +
+        '</div>' +
+        '<form onsubmit="event.preventDefault();saveNewRecurringIncome();">' +
+            '<div style="margin-bottom:1rem;"><label style="display:block;margin-bottom:0.5rem;color:rgba(255,255,255,0.8);">📝 Nombre</label>' +
+            '<input type="text" id="ri-name" placeholder="Ej: Salario, Renta..." required style="width:100%;padding:0.75rem;border-radius:8px;border:1px solid rgba(34,197,94,0.3);background:rgba(0,0,0,0.3);color:white;font-size:16px;"></div>' +
+            '<div style="margin-bottom:1rem;"><label style="display:block;margin-bottom:0.5rem;color:rgba(255,255,255,0.8);">💵 Monto</label>' +
+            '<input type="number" id="ri-amount" placeholder="0.00" step="0.01" min="0.01" required style="width:100%;padding:0.75rem;border-radius:8px;border:1px solid rgba(34,197,94,0.3);background:rgba(0,0,0,0.3);color:white;font-size:16px;"></div>' +
+            '<div style="margin-bottom:1rem;"><label style="display:block;margin-bottom:0.5rem;color:rgba(255,255,255,0.8);">📁 Fuente</label>' +
+            '<select id="ri-source" style="width:100%;padding:0.75rem;border-radius:8px;border:1px solid rgba(34,197,94,0.3);background:rgba(0,0,0,0.3);color:white;font-size:16px;">' +
+                '<option value="Salario">💼 Salario</option><option value="Freelance">💻 Freelance</option><option value="Renta">🏠 Renta</option><option value="Inversiones">📈 Inversiones</option><option value="Otros">📦 Otros</option></select></div>' +
+            '<div style="margin-bottom:1.5rem;"><label style="display:block;margin-bottom:0.5rem;color:rgba(255,255,255,0.8);">🔄 Frecuencia</label>' +
+            '<select id="ri-frequency" style="width:100%;padding:0.75rem;border-radius:8px;border:1px solid rgba(34,197,94,0.3);background:rgba(0,0,0,0.3);color:white;font-size:16px;">' +
+                '<option value="weekly">Semanal</option><option value="biweekly">Quincenal</option><option value="monthly" selected>Mensual</option><option value="yearly">Anual</option></select></div>' +
+            '<div style="display:flex;gap:0.75rem;">' +
+                '<button type="button" onclick="closeRecurringIncomeForm()" style="flex:1;padding:0.875rem;border-radius:8px;background:rgba(255,255,255,0.1);color:white;border:1px solid rgba(255,255,255,0.2);cursor:pointer;">Cancelar</button>' +
+                '<button type="submit" style="flex:1;padding:0.875rem;border-radius:8px;background:linear-gradient(135deg,#22c55e,#16a34a);color:white;border:none;cursor:pointer;font-weight:bold;">✅ Guardar</button>' +
+            '</div></form></div>';
+}
+
+function closeRecurringIncomeForm() {
+    var modal = document.getElementById('recurring-income-modal');
+    if (modal) modal.style.display = 'none';
+}
+
+function saveNewRecurringIncome() {
+    var name = document.getElementById('ri-name').value.trim();
+    var amount = parseFloat(document.getElementById('ri-amount').value);
+    var source = document.getElementById('ri-source').value;
+    var frequency = document.getElementById('ri-frequency').value;
+    
+    if (!name || !amount || amount <= 0) {
+        alert('Por favor completa todos los campos');
+        return;
+    }
+    
+    var list = JSON.parse(localStorage.getItem('recurringIncome') || '[]');
+    list.push({
+        id: Date.now().toString(),
+        name: name,
+        amount: amount,
+        source: source,
+        frequency: frequency,
+        active: true,
+        createdAt: new Date().toISOString()
+    });
+    localStorage.setItem('recurringIncome', JSON.stringify(list));
+    
+    // También guardar en Firebase si está disponible
+    if (typeof db !== 'undefined' && typeof currentUser !== 'undefined' && currentUser) {
+        db.collection('users').doc(currentUser.uid).collection('recurringIncome').add({
+            name: name, amount: amount, source: source, frequency: frequency, active: true,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        }).catch(function(e) { console.warn('Error Firebase:', e); });
+    }
+    
+    closeRecurringIncomeForm();
+    alert('✅ Ingreso recurrente guardado');
+    switchTab('more-recurring-income');
+}
+
+function deleteRecurringIncomeItem(index) {
+    if (!confirm('¿Eliminar este ingreso recurrente?')) return;
+    var list = JSON.parse(localStorage.getItem('recurringIncome') || '[]');
+    list.splice(index, 1);
+    localStorage.setItem('recurringIncome', JSON.stringify(list));
+    switchTab('more-recurring-income');
+}
+
+// ========================================
+// 🔧 ACTUALIZAR SWITCH TAB
+// ========================================
+var originalSwitchTab = typeof switchTab === 'function' ? switchTab : null;
+
+// Sobrescribir switchTab para incluir nuevas vistas
+switchTab = function(tab) {
+    activeTab = tab;
+    var tabContent = document.getElementById('tab-content');
+    if (!tabContent) return;
+    
+    switch(tab) {
+        case 'dashboard':
+            tabContent.innerHTML = typeof renderDashboard === 'function' ? renderDashboard() : '<p>Dashboard</p>';
+            setTimeout(initCharts, 100);
+            break;
+        case 'expenses':
+            tabContent.innerHTML = typeof renderExpenses === 'function' ? renderExpenses() : '<p>Expenses</p>';
+            break;
+        case 'budget':
+            tabContent.innerHTML = typeof renderBudget === 'function' ? renderBudget() : '<p>Budget</p>';
+            break;
+        case 'goals':
+            tabContent.innerHTML = typeof renderGoals === 'function' ? renderGoals() : '<p>Goals</p>';
+            break;
+        case 'assistant':
+            tabContent.innerHTML = typeof renderAssistantTab === 'function' ? renderAssistantTab() : '<p>Asistente</p>';
+            break;
+        case 'more':
+            tabContent.innerHTML = renderMoreSection();
+            break;
+        case 'more-recurring':
+            tabContent.innerHTML = renderRecurringExpensesViewIntegrated();
+            break;
+        case 'more-recurring-income':
+            tabContent.innerHTML = renderRecurringIncomeViewComplete();
+            break;
+        case 'more-reports':
+            tabContent.innerHTML = typeof renderComparisonChartsView === 'function' ? renderComparisonChartsView() : renderPeriodComparison();
+            break;
+        case 'more-comparison':
+            tabContent.innerHTML = renderPeriodComparison();
+            break;
+        case 'more-notifications':
+            tabContent.innerHTML = renderNotificationSettings();
+            break;
+        default:
+            tabContent.innerHTML = typeof renderDashboard === 'function' ? renderDashboard() : '<p>Dashboard</p>';
+    }
+    
+    // Actualizar navegación
+    document.querySelectorAll('.nav-item').forEach(function(item) { item.classList.remove('active'); });
+};
+
+console.log('✅ Vistas completas de Más cargadas: Notificaciones, Comparación, Ingresos Recurrentes');
