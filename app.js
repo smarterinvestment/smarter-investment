@@ -2955,7 +2955,7 @@ function switchTab(tab) {
                 tabContent.innerHTML = typeof renderGoals === 'function' ? renderGoals() : '<p>Goals</p>';
                 break;
             case 'assistant':
-                tabContent.innerHTML = renderAssistantTab();
+                tabContent.innerHTML = typeof renderAssistantTab === 'function' ? renderAssistantTab() : '<p>Asistente</p>';
                 break;
             case 'more':
                 tabContent.innerHTML = typeof renderMoreSection === 'function' ? renderMoreSection() : '<p>More</p>';
@@ -2963,19 +2963,27 @@ function switchTab(tab) {
             case 'more-recurring':
                 tabContent.innerHTML = typeof renderRecurringExpensesViewIntegrated === 'function' 
                     ? renderRecurringExpensesViewIntegrated() 
-                    : (typeof renderRecurringExpensesView === 'function' ? renderRecurringExpensesView() : '<p>Recurring</p>');
+                    : '<p>Recurring</p>';
                 break;
             case 'more-recurring-income':
-                tabContent.innerHTML = renderRecurringIncomeView();
+                tabContent.innerHTML = typeof renderRecurringIncomeViewComplete === 'function' 
+                    ? renderRecurringIncomeViewComplete() 
+                    : '<p>Ingresos Recurrentes</p>';
                 break;
             case 'more-reports':
-                tabContent.innerHTML = typeof renderReports === 'function' ? renderReports() : renderComparisonChartsView();
+                tabContent.innerHTML = typeof renderPeriodComparison === 'function' 
+                    ? renderPeriodComparison() 
+                    : '<p>Reportes</p>';
                 break;
             case 'more-comparison':
-                tabContent.innerHTML = renderComparisonChartsView();
+                tabContent.innerHTML = typeof renderPeriodComparison === 'function' 
+                    ? renderPeriodComparison() 
+                    : '<p>Comparación</p>';
                 break;
             case 'more-notifications':
-                tabContent.innerHTML = typeof renderNotificationSettings === 'function' ? renderNotificationSettings() : '<p>Notifications</p>';
+                tabContent.innerHTML = typeof renderNotificationSettings === 'function' 
+                    ? renderNotificationSettings() 
+                    : '<p>Notificaciones</p>';
                 break;
             default:
                 tabContent.innerHTML = typeof renderDashboard === 'function' ? renderDashboard() : '<p>Dashboard</p>';
@@ -3640,22 +3648,137 @@ function checkUnusualExpense(amount) {
 function showCategoryDetailsBudget(category) {
     if (!category) return;
     
-    const expensesList = typeof expenses !== 'undefined' ? expenses : [];
-    const categoryExpenses = expensesList.filter(function(e) { return e.category === category; });
-    const total = categoryExpenses.reduce(function(sum, e) { return sum + (e.amount || 0); }, 0);
+    var expensesList = typeof expenses !== 'undefined' ? expenses : [];
+    var categoryExpenses = expensesList.filter(function(e) { return e.category === category; });
+    var total = categoryExpenses.reduce(function(sum, e) { return sum + (e.amount || 0); }, 0);
+    var budget = typeof budgets !== 'undefined' && budgets[category] ? budgets[category] : 0;
+    var percentage = budget > 0 ? (total / budget * 100) : 0;
     
-    let details = '📊 Detalles de ' + category + ':\\n\\n';
-    details += 'Total gastado: $' + total.toFixed(2) + '\\n';
-    details += 'Número de gastos: ' + categoryExpenses.length + '\\n\\n';
+    // Agrupar por mes para gráfica
+    var monthlyData = {};
+    categoryExpenses.forEach(function(e) {
+        var date = new Date(e.date);
+        var monthKey = date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0');
+        if (!monthlyData[monthKey]) monthlyData[monthKey] = 0;
+        monthlyData[monthKey] += e.amount || 0;
+    });
     
-    if (categoryExpenses.length > 0) {
-        details += 'Últimos gastos:\\n';
-        categoryExpenses.slice(0, 5).forEach(function(e) {
-            details += '• ' + (e.description || 'Sin descripción') + ': $' + (e.amount || 0).toFixed(2) + '\\n';
-        });
+    // Crear modal
+    var modal = document.getElementById('category-detail-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'category-detail-modal';
+        document.body.appendChild(modal);
     }
     
-    alert(details);
+    modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.9);display:flex;align-items:center;justify-content:center;z-index:10000;padding:1rem;overflow-y:auto;';
+    
+    var statusColor = percentage >= 100 ? '#ef4444' : (percentage >= 80 ? '#f97316' : '#22c55e');
+    var statusText = percentage >= 100 ? '⚠️ Excedido' : (percentage >= 80 ? '⚡ Cerca del límite' : '✅ Bajo control');
+    
+    modal.innerHTML = '<div style="background:linear-gradient(135deg,rgba(26,35,50,0.98),rgba(13,21,32,0.98));border-radius:1rem;padding:1.5rem;width:100%;max-width:500px;max-height:90vh;overflow-y:auto;border:1px solid rgba(5,191,219,0.3);">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">' +
+            '<h2 style="color:var(--color-primary);margin:0;font-size:1.2rem;">📂 ' + category + '</h2>' +
+            '<button onclick="closeCategoryModal()" style="background:none;border:none;color:white;font-size:1.5rem;cursor:pointer;">&times;</button>' +
+        '</div>' +
+        
+        // Resumen
+        '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:0.75rem;margin-bottom:1.5rem;">' +
+            '<div style="padding:1rem;background:rgba(239,68,68,0.1);border-radius:10px;text-align:center;border-left:4px solid #ef4444;">' +
+                '<div style="font-size:0.75rem;opacity:0.7;">Total Gastado</div>' +
+                '<div style="font-size:1.5rem;font-weight:bold;color:#ef4444;">$' + total.toFixed(0) + '</div>' +
+            '</div>' +
+            '<div style="padding:1rem;background:rgba(5,191,219,0.1);border-radius:10px;text-align:center;border-left:4px solid #05BFDB;">' +
+                '<div style="font-size:0.75rem;opacity:0.7;">Presupuesto</div>' +
+                '<div style="font-size:1.5rem;font-weight:bold;color:#05BFDB;">$' + budget.toFixed(0) + '</div>' +
+            '</div>' +
+        '</div>' +
+        
+        // Barra de progreso
+        '<div style="margin-bottom:1.5rem;">' +
+            '<div style="display:flex;justify-content:space-between;margin-bottom:0.5rem;">' +
+                '<span style="color:' + statusColor + ';font-weight:500;">' + statusText + '</span>' +
+                '<span style="font-weight:bold;">' + percentage.toFixed(1) + '%</span>' +
+            '</div>' +
+            '<div style="height:12px;background:rgba(255,255,255,0.1);border-radius:6px;overflow:hidden;">' +
+                '<div style="height:100%;width:' + Math.min(percentage, 100) + '%;background:linear-gradient(90deg,' + statusColor + ',' + statusColor + 'aa);border-radius:6px;transition:width 0.5s;"></div>' +
+            '</div>' +
+        '</div>' +
+        
+        // Gráfica mensual
+        '<div style="margin-bottom:1.5rem;">' +
+            '<h3 style="margin:0 0 1rem 0;font-size:1rem;">📈 Gastos por Mes</h3>' +
+            '<div style="height:180px;position:relative;"><canvas id="categoryMonthlyChart"></canvas></div>' +
+        '</div>' +
+        
+        // Historial de transacciones
+        '<div>' +
+            '<h3 style="margin:0 0 1rem 0;font-size:1rem;">📋 Historial de Transacciones (' + categoryExpenses.length + ')</h3>' +
+            '<div style="max-height:200px;overflow-y:auto;">' +
+                (categoryExpenses.length > 0 
+                    ? categoryExpenses.sort(function(a,b) { return new Date(b.date) - new Date(a.date); }).map(function(e) {
+                        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:0.75rem;margin-bottom:0.5rem;background:rgba(255,255,255,0.05);border-radius:8px;border-left:3px solid #ef4444;">' +
+                            '<div>' +
+                                '<div style="font-weight:500;">' + (e.description || 'Sin descripción') + '</div>' +
+                                '<div style="font-size:0.75rem;opacity:0.6;">' + (e.date || 'Sin fecha') + '</div>' +
+                            '</div>' +
+                            '<div style="font-weight:bold;color:#ef4444;">-$' + (e.amount || 0).toFixed(2) + '</div>' +
+                        '</div>';
+                    }).join('')
+                    : '<p style="text-align:center;opacity:0.6;">No hay gastos en esta categoría</p>'
+                ) +
+            '</div>' +
+        '</div>' +
+        
+        '<button onclick="closeCategoryModal()" style="width:100%;margin-top:1.5rem;padding:1rem;border-radius:10px;background:linear-gradient(135deg,#05BFDB,#088395);color:white;border:none;cursor:pointer;font-weight:bold;">Cerrar</button>' +
+    '</div>';
+    
+    // Inicializar gráfica después de renderizar
+    setTimeout(function() {
+        initCategoryMonthlyChart(monthlyData);
+    }, 100);
+}
+
+function closeCategoryModal() {
+    var modal = document.getElementById('category-detail-modal');
+    if (modal) modal.style.display = 'none';
+}
+
+function initCategoryMonthlyChart(monthlyData) {
+    var ctx = document.getElementById('categoryMonthlyChart');
+    if (!ctx || typeof Chart === 'undefined') return;
+    
+    var months = Object.keys(monthlyData).sort();
+    var values = months.map(function(m) { return monthlyData[m]; });
+    var monthLabels = months.map(function(m) {
+        var parts = m.split('-');
+        var monthNames = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+        return monthNames[parseInt(parts[1]) - 1] + ' ' + parts[0].slice(2);
+    });
+    
+    new Chart(ctx.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: monthLabels.length > 0 ? monthLabels : ['Sin datos'],
+            datasets: [{
+                label: 'Gastos',
+                data: values.length > 0 ? values : [0],
+                backgroundColor: 'rgba(239, 68, 68, 0.7)',
+                borderColor: '#ef4444',
+                borderWidth: 2,
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, ticks: { color: 'rgba(255,255,255,0.7)' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+                x: { ticks: { color: 'rgba(255,255,255,0.7)' }, grid: { display: false } }
+            }
+        }
+    });
 }
 
 // Abrir modal de gastos recurrentes
@@ -4008,9 +4131,15 @@ function renderComparisonChartsView() {
     const biweekIncome = incomeList.filter(function(e) { return new Date(e.date) >= twoWeeksAgo; }).reduce(function(sum, e) { return sum + (e.amount || 0); }, 0);
     const monthIncome = incomeList.filter(function(e) { return new Date(e.date) >= monthAgo; }).reduce(function(sum, e) { return sum + (e.amount || 0); }, 0);
     
+    // Inicializar gráfico después de renderizar
+    setTimeout(function() {
+        initVisualComparisonChart(weekExpenses, weekIncome, biweekExpenses, biweekIncome, monthExpenses, monthIncome);
+    }, 100);
+    
     return '<div style="padding: 0.5rem; padding-bottom: 100px;">' +
-        '<div class="card" style="margin-bottom: 1rem;">' +
-            '<h2 style="font-size: 1.2rem; color: var(--color-primary); margin-bottom: 1rem;">📊 Comparativas Financieras</h2>' +
+        '<div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">' +
+            '<button onclick="switchTab(\'more\')" style="background: none; border: none; color: white; font-size: 1.2rem; cursor: pointer;">←</button>' +
+            '<h2 style="margin: 0; color: var(--color-primary);">📊 Comparativas Financieras</h2>' +
         '</div>' +
         
         // Semanal
@@ -4073,13 +4202,70 @@ function renderComparisonChartsView() {
         // Gráfico de barras visual
         '<div class="card" style="padding: 1rem;">' +
             '<h3 style="font-size: 1rem; margin-bottom: 1rem;">📈 Comparativa Visual</h3>' +
-            '<div style="height: 200px; position: relative;">' +
-                '<canvas id="comparisonChart"></canvas>' +
+            '<div style="height: 220px; position: relative;">' +
+                '<canvas id="visualComparisonChart"></canvas>' +
             '</div>' +
         '</div>' +
         
-        '<button onclick="switchTab(\'more\')" style="display: block; margin: 1rem auto; padding: 0.5rem 1rem; background: none; border: 1px solid rgba(255,255,255,0.3); color: rgba(255,255,255,0.7); border-radius: 20px; cursor: pointer;">← Volver</button>' +
+        '<button onclick="switchTab(\'more\')" style="display: block; margin: 1rem auto; padding: 0.75rem 1.5rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: white; border-radius: 25px; cursor: pointer;">← Volver al Menú</button>' +
     '</div>';
+}
+
+// Inicializar gráfico de comparativa visual
+function initVisualComparisonChart(weekExp, weekInc, biweekExp, biweekInc, monthExp, monthInc) {
+    var ctx = document.getElementById('visualComparisonChart');
+    if (!ctx || typeof Chart === 'undefined') {
+        console.log('Chart.js o canvas no disponible');
+        return;
+    }
+    
+    new Chart(ctx.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: ['Semanal', 'Quincenal', 'Mensual'],
+            datasets: [
+                {
+                    label: 'Ingresos',
+                    data: [weekInc, biweekInc, monthInc],
+                    backgroundColor: 'rgba(34, 197, 94, 0.7)',
+                    borderColor: '#22c55e',
+                    borderWidth: 2,
+                    borderRadius: 6
+                },
+                {
+                    label: 'Gastos',
+                    data: [weekExp, biweekExp, monthExp],
+                    backgroundColor: 'rgba(239, 68, 68, 0.7)',
+                    borderColor: '#ef4444',
+                    borderWidth: 2,
+                    borderRadius: 6
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: { duration: 1000, easing: 'easeOutQuart' },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: { color: 'white', padding: 10 }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { color: 'rgba(255,255,255,0.7)' },
+                    grid: { color: 'rgba(255,255,255,0.1)' }
+                },
+                x: {
+                    ticks: { color: 'rgba(255,255,255,0.7)' },
+                    grid: { display: false }
+                }
+            }
+        }
+    });
+    console.log('✅ Gráfico de comparativa visual inicializado');
 }
 
 // Cargar ingresos recurrentes
@@ -5031,59 +5217,5 @@ function deleteRecurringIncomeItem(index) {
     localStorage.setItem('recurringIncome', JSON.stringify(list));
     switchTab('more-recurring-income');
 }
-
-// ========================================
-// 🔧 ACTUALIZAR SWITCH TAB
-// ========================================
-var originalSwitchTab = typeof switchTab === 'function' ? switchTab : null;
-
-// Sobrescribir switchTab para incluir nuevas vistas
-switchTab = function(tab) {
-    activeTab = tab;
-    var tabContent = document.getElementById('tab-content');
-    if (!tabContent) return;
-    
-    switch(tab) {
-        case 'dashboard':
-            tabContent.innerHTML = typeof renderDashboard === 'function' ? renderDashboard() : '<p>Dashboard</p>';
-            setTimeout(initCharts, 100);
-            break;
-        case 'expenses':
-            tabContent.innerHTML = typeof renderExpenses === 'function' ? renderExpenses() : '<p>Expenses</p>';
-            break;
-        case 'budget':
-            tabContent.innerHTML = typeof renderBudget === 'function' ? renderBudget() : '<p>Budget</p>';
-            break;
-        case 'goals':
-            tabContent.innerHTML = typeof renderGoals === 'function' ? renderGoals() : '<p>Goals</p>';
-            break;
-        case 'assistant':
-            tabContent.innerHTML = typeof renderAssistantTab === 'function' ? renderAssistantTab() : '<p>Asistente</p>';
-            break;
-        case 'more':
-            tabContent.innerHTML = renderMoreSection();
-            break;
-        case 'more-recurring':
-            tabContent.innerHTML = renderRecurringExpensesViewIntegrated();
-            break;
-        case 'more-recurring-income':
-            tabContent.innerHTML = renderRecurringIncomeViewComplete();
-            break;
-        case 'more-reports':
-            tabContent.innerHTML = typeof renderComparisonChartsView === 'function' ? renderComparisonChartsView() : renderPeriodComparison();
-            break;
-        case 'more-comparison':
-            tabContent.innerHTML = renderPeriodComparison();
-            break;
-        case 'more-notifications':
-            tabContent.innerHTML = renderNotificationSettings();
-            break;
-        default:
-            tabContent.innerHTML = typeof renderDashboard === 'function' ? renderDashboard() : '<p>Dashboard</p>';
-    }
-    
-    // Actualizar navegación
-    document.querySelectorAll('.nav-item').forEach(function(item) { item.classList.remove('active'); });
-};
 
 console.log('✅ Vistas completas de Más cargadas: Notificaciones, Comparación, Ingresos Recurrentes');
