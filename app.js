@@ -2762,28 +2762,46 @@ function renderReports() {
 // ========================================
 function renderMoreSection() {
     return `
-        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+        <div style="display: flex; flex-direction: column; gap: 1rem; padding: 0.5rem;">
             <!-- Gastos Recurrentes -->
-            <div class="card" onclick="switchTab('more-recurring')" style="cursor: pointer;">
-                <h3>🔄 Gastos Recurrentes Automáticos</h3>
-                <p style="color: rgba(255, 255, 255, 0.7); margin-top: 0.5rem;">
-                    Configura gastos que se repiten y deja que la app los registre por ti
+            <div class="card" onclick="switchTab('more-recurring')" style="cursor: pointer; padding: 1rem;">
+                <h3 style="font-size: 1.1rem; margin-bottom: 0.5rem;">🔄 Gastos Recurrentes</h3>
+                <p style="color: rgba(255, 255, 255, 0.7); font-size: 0.85rem;">
+                    Configura gastos automáticos mensuales
                 </p>
             </div>
             
-            <!-- Reportes Interactivos -->
-            <div class="card" onclick="switchTab('more-reports')" style="cursor: pointer;">
-                <h3>📊 Reportes Detallados</h3>
-                <p style="color: rgba(255, 255, 255, 0.7); margin-top: 0.5rem;">
-                    Análisis profundo, gráficos comparativos y exportación de datos
+            <!-- Ingresos Recurrentes -->
+            <div class="card" onclick="switchTab('more-recurring-income')" style="cursor: pointer; padding: 1rem;">
+                <h3 style="font-size: 1.1rem; margin-bottom: 0.5rem;">💰 Ingresos Recurrentes</h3>
+                <p style="color: rgba(255, 255, 255, 0.7); font-size: 0.85rem;">
+                    Configura ingresos automáticos (salario, rentas)
                 </p>
             </div>
             
-            <!-- Comparación Temporal -->
-            ${renderComparisonView()}
+            <!-- Reportes -->
+            <div class="card" onclick="switchTab('more-reports')" style="cursor: pointer; padding: 1rem;">
+                <h3 style="font-size: 1.1rem; margin-bottom: 0.5rem;">📊 Reportes y Gráficos</h3>
+                <p style="color: rgba(255, 255, 255, 0.7); font-size: 0.85rem;">
+                    Comparativas semanal, quincenal y mensual
+                </p>
+            </div>
+            
+            <!-- Comparación -->
+            <div class="card" onclick="switchTab('more-comparison')" style="cursor: pointer; padding: 1rem;">
+                <h3 style="font-size: 1.1rem; margin-bottom: 0.5rem;">📈 Comparación de Periodos</h3>
+                <p style="color: rgba(255, 255, 255, 0.7); font-size: 0.85rem;">
+                    Compara tus finanzas entre periodos
+                </p>
+            </div>
             
             <!-- Notificaciones -->
-            ${renderNotificationSettings()}
+            <div class="card" onclick="switchTab('more-notifications')" style="cursor: pointer; padding: 1rem;">
+                <h3 style="font-size: 1.1rem; margin-bottom: 0.5rem;">🔔 Notificaciones</h3>
+                <p style="color: rgba(255, 255, 255, 0.7); font-size: 0.85rem;">
+                    Configura alertas y recordatorios
+                </p>
+            </div>
         </div>
     `;
 }
@@ -2942,8 +2960,17 @@ function switchTab(tab) {
                     ? renderRecurringExpensesViewIntegrated() 
                     : (typeof renderRecurringExpensesView === 'function' ? renderRecurringExpensesView() : '<p>Recurring</p>');
                 break;
+            case 'more-recurring-income':
+                tabContent.innerHTML = renderRecurringIncomeView();
+                break;
             case 'more-reports':
-                tabContent.innerHTML = typeof renderReports === 'function' ? renderReports() : '<p>Reports</p>';
+                tabContent.innerHTML = typeof renderReports === 'function' ? renderReports() : renderComparisonChartsView();
+                break;
+            case 'more-comparison':
+                tabContent.innerHTML = renderComparisonChartsView();
+                break;
+            case 'more-notifications':
+                tabContent.innerHTML = typeof renderNotificationSettings === 'function' ? renderNotificationSettings() : '<p>Notifications</p>';
                 break;
             default:
                 tabContent.innerHTML = typeof renderDashboard === 'function' ? renderDashboard() : '<p>Dashboard</p>';
@@ -3367,10 +3394,11 @@ function renderMainApp() {
             '<button class="nav-item' + (activeTab === 'more' ? ' active' : '') + '" onclick="switchTab(\'more\')" style="display:flex;flex-direction:column;align-items:center;gap:0.15rem;background:none;border:none;color:' + (activeTab === 'more' ? '#05BFDB' : 'rgba(255,255,255,0.6)') + ';cursor:pointer;padding:0.25rem 0.5rem;font-size:0.65rem;"><span style="font-size:1.1rem;">⚙️</span><span>Más</span></button>' +
         '</nav>' +
         '<button class="fab" onclick="toggleFabMenu()" style="position:fixed;bottom:90px;right:20px;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#05BFDB,#088395);color:white;font-size:24px;border:none;cursor:pointer;box-shadow:0 4px 15px rgba(5,191,219,0.4);z-index:1001;">+</button>' +
-        '<div id="fab-menu" style="display:none;position:fixed;bottom:160px;right:20px;flex-direction:column;gap:0.75rem;z-index:1001;">' +
-            '<button onclick="openModal(\'expense\')" style="padding:0.75rem 1.25rem;border-radius:25px;background:linear-gradient(135deg,#ef4444,#dc2626);color:white;border:none;cursor:pointer;box-shadow:0 4px 15px rgba(239,68,68,0.4);font-weight:500;">💸 Gasto</button>' +
-            '<button onclick="openModal(\'income\')" style="padding:0.75rem 1.25rem;border-radius:25px;background:linear-gradient(135deg,#22c55e,#16a34a);color:white;border:none;cursor:pointer;box-shadow:0 4px 15px rgba(34,197,94,0.4);font-weight:500;">💵 Ingreso</button>' +
-            '<button onclick="openRecurringModal()" style="padding:0.75rem 1.25rem;border-radius:25px;background:linear-gradient(135deg,#8b5cf6,#7c3aed);color:white;border:none;cursor:pointer;box-shadow:0 4px 15px rgba(139,92,246,0.4);font-weight:500;">🔄 Recurrente</button>' +
+        '<div id="fab-menu" style="display:none;position:fixed;bottom:160px;right:20px;flex-direction:column;gap:0.5rem;z-index:1001;">' +
+            '<button onclick="openModal(\'expense\')" style="padding: 0.6rem 1rem; border-radius: 25px; background: linear-gradient(135deg,#ef4444,#dc2626); color: white; border: none; cursor: pointer; box-shadow: 0 4px 15px rgba(239,68,68,0.4); font-weight: 500; font-size: 0.85rem; white-space: nowrap;">💸 Gasto</button>' +
+            '<button onclick="openModal(\'income\')" style="padding: 0.6rem 1rem; border-radius: 25px; background: linear-gradient(135deg,#22c55e,#16a34a); color: white; border: none; cursor: pointer; box-shadow: 0 4px 15px rgba(34,197,94,0.4); font-weight: 500; font-size: 0.85rem; white-space: nowrap;">💵 Ingreso</button>' +
+            '<button onclick="openRecurringModal()" style="padding: 0.6rem 1rem; border-radius: 25px; background: linear-gradient(135deg,#8b5cf6,#7c3aed); color: white; border: none; cursor: pointer; box-shadow: 0 4px 15px rgba(139,92,246,0.4); font-weight: 500; font-size: 0.85rem; white-space: nowrap;">🔄 Gasto Rec.</button>' +
+            '<button onclick="openRecurringIncomeModal()" style="padding: 0.6rem 1rem; border-radius: 25px; background: linear-gradient(135deg,#06b6d4,#0891b2); color: white; border: none; cursor: pointer; box-shadow: 0 4px 15px rgba(6,182,212,0.4); font-weight: 500; font-size: 0.85rem; white-space: nowrap;">💰 Ingreso Rec.</button>' +
         '</div>' +
         tutorial;
 }
@@ -3380,20 +3408,6 @@ function toggleFabMenu() {
     const menu = document.getElementById('fab-menu');
     if (menu) {
         menu.style.display = menu.style.display === 'none' ? 'flex' : 'none';
-    }
-}
-
-// Abrir modal de gastos recurrentes
-function openRecurringModal() {
-    toggleFabMenu(); // Cerrar menú FAB
-    if (typeof recurringModule !== 'undefined' && recurringModule && typeof recurringModule.openAddModal === 'function') {
-        recurringModule.openAddModal();
-    } else {
-        // Navegar a la sección de recurrentes
-        switchTab('more-recurring');
-        if (typeof showToast === 'function') {
-            showToast('Usa el botón + en la sección de recurrentes', 'info');
-        }
     }
 }
 
@@ -3748,3 +3762,560 @@ async function saveRecurringExpense() {
 }
 
 console.log('✅ Funciones adicionales cargadas');
+
+// ========================================
+// 🔔 ALERTAS DE PRESUPUESTO
+// ========================================
+async function checkBudgetAlerts() {
+    try {
+        if (typeof budgets === 'undefined' || !budgets) return;
+        if (typeof expenses === 'undefined' || !expenses) return;
+        
+        const currentMonth = new Date().getMonth();
+        const currentYear = new Date().getFullYear();
+        
+        const monthlyExpenses = {};
+        expenses.forEach(function(exp) {
+            const expDate = new Date(exp.date);
+            if (expDate.getMonth() === currentMonth && expDate.getFullYear() === currentYear) {
+                const cat = exp.category || 'Otros';
+                monthlyExpenses[cat] = (monthlyExpenses[cat] || 0) + (exp.amount || 0);
+            }
+        });
+        
+        Object.keys(budgets).forEach(function(category) {
+            const budget = budgets[category] || 0;
+            const spent = monthlyExpenses[category] || 0;
+            const percentage = budget > 0 ? (spent / budget) * 100 : 0;
+            
+            if (percentage >= 100) {
+                console.warn('🚨 Presupuesto excedido en ' + category);
+            } else if (percentage >= 80) {
+                console.warn('⚠️ Presupuesto al ' + percentage.toFixed(1) + '% en ' + category);
+            }
+        });
+        
+        console.log('✅ Alertas de presupuesto verificadas');
+    } catch (error) {
+        console.warn('Error verificando alertas:', error);
+    }
+}
+
+console.log('✅ checkBudgetAlerts cargada');
+
+// ========================================
+// 💰 INGRESOS RECURRENTES
+// ========================================
+function renderRecurringIncomeView() {
+    const recurringIncomes = typeof recurringIncomeList !== 'undefined' ? recurringIncomeList : [];
+    
+    return '<div style="padding: 0.5rem; padding-bottom: 100px;">' +
+        '<div class="card" style="margin-bottom: 1rem;">' +
+            '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">' +
+                '<h2 style="font-size: 1.2rem; color: var(--color-primary);">💰 Ingresos Recurrentes</h2>' +
+                '<button onclick="openRecurringIncomeModal()" style="padding: 0.5rem 1rem; border-radius: 20px; background: linear-gradient(135deg, #22c55e, #16a34a); color: white; border: none; cursor: pointer; font-size: 0.85rem;">+ Agregar</button>' +
+            '</div>' +
+            '<p style="color: rgba(255,255,255,0.7); font-size: 0.85rem;">Configura tus ingresos automáticos como salario, rentas, dividendos, etc.</p>' +
+        '</div>' +
+        
+        '<div id="recurring-income-list">' +
+            (recurringIncomes.length > 0 
+                ? recurringIncomes.map(function(inc) {
+                    return '<div class="card" style="margin-bottom: 0.75rem; padding: 1rem;">' +
+                        '<div style="display: flex; justify-content: space-between; align-items: center;">' +
+                            '<div>' +
+                                '<strong style="color: #22c55e;">' + (inc.name || 'Sin nombre') + '</strong>' +
+                                '<p style="font-size: 0.8rem; color: rgba(255,255,255,0.6);">' + (inc.frequency || 'Mensual') + '</p>' +
+                            '</div>' +
+                            '<div style="text-align: right;">' +
+                                '<div style="font-size: 1.1rem; color: #22c55e;">+$' + (inc.amount || 0).toFixed(2) + '</div>' +
+                                '<button onclick="deleteRecurringIncome(\'' + inc.id + '\')" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 0.8rem;">🗑️ Eliminar</button>' +
+                            '</div>' +
+                        '</div>' +
+                    '</div>';
+                }).join('')
+                : '<div class="card" style="text-align: center; padding: 2rem;">' +
+                    '<div style="font-size: 3rem; margin-bottom: 1rem;">💰</div>' +
+                    '<p style="color: rgba(255,255,255,0.6);">No tienes ingresos recurrentes configurados</p>' +
+                    '<button onclick="openRecurringIncomeModal()" style="margin-top: 1rem; padding: 0.75rem 1.5rem; border-radius: 25px; background: linear-gradient(135deg, #22c55e, #16a34a); color: white; border: none; cursor: pointer;">+ Agregar Ingreso Recurrente</button>' +
+                '</div>'
+            ) +
+        '</div>' +
+        
+        '<button onclick="switchTab(\'more\')" style="display: block; margin: 1rem auto; padding: 0.5rem 1rem; background: none; border: 1px solid rgba(255,255,255,0.3); color: rgba(255,255,255,0.7); border-radius: 20px; cursor: pointer;">← Volver</button>' +
+    '</div>';
+}
+
+// Modal para ingreso recurrente
+function openRecurringIncomeModal() {
+    const modal = document.getElementById('modal');
+    const modalBody = document.getElementById('modal-body');
+    const modalTitle = document.getElementById('modal-title');
+    
+    if (!modal || !modalBody) {
+        alert('Error: Modal no disponible');
+        return;
+    }
+    
+    modalTitle.textContent = '💰 Nuevo Ingreso Recurrente';
+    modalBody.innerHTML = '<form id="recurring-income-form" onsubmit="event.preventDefault(); saveRecurringIncome();">' +
+        '<div style="margin-bottom: 1rem;">' +
+            '<label style="display: block; margin-bottom: 0.5rem; color: rgba(255,255,255,0.8); font-size: 0.9rem;">📝 Descripción</label>' +
+            '<input type="text" id="rec-income-name" placeholder="Ej: Salario, Alquiler, Dividendos..." required style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid rgba(5,191,219,0.3); background: rgba(0,0,0,0.3); color: white; font-size: 1rem; box-sizing: border-box;">' +
+        '</div>' +
+        '<div style="margin-bottom: 1rem;">' +
+            '<label style="display: block; margin-bottom: 0.5rem; color: rgba(255,255,255,0.8); font-size: 0.9rem;">💵 Monto</label>' +
+            '<input type="number" id="rec-income-amount" placeholder="0.00" step="0.01" min="0" required style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid rgba(5,191,219,0.3); background: rgba(0,0,0,0.3); color: white; font-size: 1rem; box-sizing: border-box;">' +
+        '</div>' +
+        '<div style="margin-bottom: 1rem;">' +
+            '<label style="display: block; margin-bottom: 0.5rem; color: rgba(255,255,255,0.8); font-size: 0.9rem;">🔄 Frecuencia</label>' +
+            '<select id="rec-income-frequency" required style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid rgba(5,191,219,0.3); background: rgba(0,0,0,0.3); color: white; font-size: 1rem; box-sizing: border-box;">' +
+                '<option value="monthly">📅 Mensual</option>' +
+                '<option value="biweekly">📆 Quincenal</option>' +
+                '<option value="weekly">📆 Semanal</option>' +
+                '<option value="yearly">📋 Anual</option>' +
+            '</select>' +
+        '</div>' +
+        '<div style="margin-bottom: 1.5rem;">' +
+            '<label style="display: block; margin-bottom: 0.5rem; color: rgba(255,255,255,0.8); font-size: 0.9rem;">📆 Día de pago (1-31)</label>' +
+            '<input type="number" id="rec-income-day" value="1" min="1" max="31" required style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid rgba(5,191,219,0.3); background: rgba(0,0,0,0.3); color: white; font-size: 1rem; box-sizing: border-box;">' +
+        '</div>' +
+        '<button type="submit" style="width: 100%; padding: 1rem; border-radius: 8px; background: linear-gradient(135deg, #22c55e, #16a34a); color: white; border: none; cursor: pointer; font-weight: bold; font-size: 1rem;">✅ Guardar Ingreso</button>' +
+    '</form>';
+    
+    modal.style.display = 'flex';
+}
+
+// Guardar ingreso recurrente
+async function saveRecurringIncome() {
+    const name = document.getElementById('rec-income-name').value;
+    const amount = parseFloat(document.getElementById('rec-income-amount').value);
+    const frequency = document.getElementById('rec-income-frequency').value;
+    const dayOfMonth = parseInt(document.getElementById('rec-income-day').value);
+    
+    if (!name || !amount || amount <= 0) {
+        alert('Por favor completa todos los campos');
+        return;
+    }
+    
+    try {
+        if (typeof db !== 'undefined' && typeof currentUser !== 'undefined' && currentUser) {
+            await db.collection('users').doc(currentUser.uid).collection('recurringIncome').add({
+                name: name,
+                amount: amount,
+                frequency: frequency,
+                dayOfMonth: dayOfMonth,
+                active: true,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            
+            closeModal();
+            if (typeof showToast === 'function') {
+                showToast('✅ Ingreso recurrente guardado', 'success');
+            } else {
+                alert('✅ Ingreso recurrente guardado');
+            }
+            switchTab('more-recurring-income');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error al guardar: ' + error.message);
+    }
+}
+
+// Eliminar ingreso recurrente
+async function deleteRecurringIncome(id) {
+    if (!confirm('¿Eliminar este ingreso recurrente?')) return;
+    try {
+        if (typeof db !== 'undefined' && typeof currentUser !== 'undefined' && currentUser) {
+            await db.collection('users').doc(currentUser.uid).collection('recurringIncome').doc(id).delete();
+            switchTab('more-recurring-income');
+        }
+    } catch (error) {
+        alert('Error al eliminar: ' + error.message);
+    }
+}
+
+// ========================================
+// 📊 GRÁFICOS COMPARATIVOS
+// ========================================
+function renderComparisonChartsView() {
+    const expensesList = typeof expenses !== 'undefined' ? expenses : [];
+    const incomeList = typeof incomeHistory !== 'undefined' ? incomeHistory : [];
+    
+    // Calcular datos por periodo
+    const now = new Date();
+    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+    const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    
+    // Gastos por periodo
+    const weekExpenses = expensesList.filter(function(e) { return new Date(e.date) >= weekAgo; }).reduce(function(sum, e) { return sum + (e.amount || 0); }, 0);
+    const biweekExpenses = expensesList.filter(function(e) { return new Date(e.date) >= twoWeeksAgo; }).reduce(function(sum, e) { return sum + (e.amount || 0); }, 0);
+    const monthExpenses = expensesList.filter(function(e) { return new Date(e.date) >= monthAgo; }).reduce(function(sum, e) { return sum + (e.amount || 0); }, 0);
+    
+    // Ingresos por periodo
+    const weekIncome = incomeList.filter(function(e) { return new Date(e.date) >= weekAgo; }).reduce(function(sum, e) { return sum + (e.amount || 0); }, 0);
+    const biweekIncome = incomeList.filter(function(e) { return new Date(e.date) >= twoWeeksAgo; }).reduce(function(sum, e) { return sum + (e.amount || 0); }, 0);
+    const monthIncome = incomeList.filter(function(e) { return new Date(e.date) >= monthAgo; }).reduce(function(sum, e) { return sum + (e.amount || 0); }, 0);
+    
+    return '<div style="padding: 0.5rem; padding-bottom: 100px;">' +
+        '<div class="card" style="margin-bottom: 1rem;">' +
+            '<h2 style="font-size: 1.2rem; color: var(--color-primary); margin-bottom: 1rem;">📊 Comparativas Financieras</h2>' +
+        '</div>' +
+        
+        // Semanal
+        '<div class="card" style="margin-bottom: 1rem; padding: 1rem;">' +
+            '<h3 style="font-size: 1rem; margin-bottom: 1rem; color: #06b6d4;">📅 Última Semana</h3>' +
+            '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">' +
+                '<div style="text-align: center; padding: 0.75rem; background: rgba(34,197,94,0.1); border-radius: 8px;">' +
+                    '<div style="font-size: 0.75rem; color: rgba(255,255,255,0.6);">Ingresos</div>' +
+                    '<div style="font-size: 1.25rem; color: #22c55e; font-weight: bold;">$' + weekIncome.toFixed(2) + '</div>' +
+                '</div>' +
+                '<div style="text-align: center; padding: 0.75rem; background: rgba(239,68,68,0.1); border-radius: 8px;">' +
+                    '<div style="font-size: 0.75rem; color: rgba(255,255,255,0.6);">Gastos</div>' +
+                    '<div style="font-size: 1.25rem; color: #ef4444; font-weight: bold;">$' + weekExpenses.toFixed(2) + '</div>' +
+                '</div>' +
+            '</div>' +
+            '<div style="text-align: center; margin-top: 0.75rem; padding: 0.5rem; background: rgba(255,255,255,0.05); border-radius: 8px;">' +
+                '<span style="color: rgba(255,255,255,0.6);">Balance: </span>' +
+                '<span style="color: ' + (weekIncome - weekExpenses >= 0 ? '#22c55e' : '#ef4444') + '; font-weight: bold;">$' + (weekIncome - weekExpenses).toFixed(2) + '</span>' +
+            '</div>' +
+        '</div>' +
+        
+        // Quincenal
+        '<div class="card" style="margin-bottom: 1rem; padding: 1rem;">' +
+            '<h3 style="font-size: 1rem; margin-bottom: 1rem; color: #8b5cf6;">📆 Últimas 2 Semanas</h3>' +
+            '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">' +
+                '<div style="text-align: center; padding: 0.75rem; background: rgba(34,197,94,0.1); border-radius: 8px;">' +
+                    '<div style="font-size: 0.75rem; color: rgba(255,255,255,0.6);">Ingresos</div>' +
+                    '<div style="font-size: 1.25rem; color: #22c55e; font-weight: bold;">$' + biweekIncome.toFixed(2) + '</div>' +
+                '</div>' +
+                '<div style="text-align: center; padding: 0.75rem; background: rgba(239,68,68,0.1); border-radius: 8px;">' +
+                    '<div style="font-size: 0.75rem; color: rgba(255,255,255,0.6);">Gastos</div>' +
+                    '<div style="font-size: 1.25rem; color: #ef4444; font-weight: bold;">$' + biweekExpenses.toFixed(2) + '</div>' +
+                '</div>' +
+            '</div>' +
+            '<div style="text-align: center; margin-top: 0.75rem; padding: 0.5rem; background: rgba(255,255,255,0.05); border-radius: 8px;">' +
+                '<span style="color: rgba(255,255,255,0.6);">Balance: </span>' +
+                '<span style="color: ' + (biweekIncome - biweekExpenses >= 0 ? '#22c55e' : '#ef4444') + '; font-weight: bold;">$' + (biweekIncome - biweekExpenses).toFixed(2) + '</span>' +
+            '</div>' +
+        '</div>' +
+        
+        // Mensual
+        '<div class="card" style="margin-bottom: 1rem; padding: 1rem;">' +
+            '<h3 style="font-size: 1rem; margin-bottom: 1rem; color: #f97316;">📋 Último Mes</h3>' +
+            '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">' +
+                '<div style="text-align: center; padding: 0.75rem; background: rgba(34,197,94,0.1); border-radius: 8px;">' +
+                    '<div style="font-size: 0.75rem; color: rgba(255,255,255,0.6);">Ingresos</div>' +
+                    '<div style="font-size: 1.25rem; color: #22c55e; font-weight: bold;">$' + monthIncome.toFixed(2) + '</div>' +
+                '</div>' +
+                '<div style="text-align: center; padding: 0.75rem; background: rgba(239,68,68,0.1); border-radius: 8px;">' +
+                    '<div style="font-size: 0.75rem; color: rgba(255,255,255,0.6);">Gastos</div>' +
+                    '<div style="font-size: 1.25rem; color: #ef4444; font-weight: bold;">$' + monthExpenses.toFixed(2) + '</div>' +
+                '</div>' +
+            '</div>' +
+            '<div style="text-align: center; margin-top: 0.75rem; padding: 0.5rem; background: rgba(255,255,255,0.05); border-radius: 8px;">' +
+                '<span style="color: rgba(255,255,255,0.6);">Balance: </span>' +
+                '<span style="color: ' + (monthIncome - monthExpenses >= 0 ? '#22c55e' : '#ef4444') + '; font-weight: bold;">$' + (monthIncome - monthExpenses).toFixed(2) + '</span>' +
+            '</div>' +
+        '</div>' +
+        
+        // Gráfico de barras visual
+        '<div class="card" style="padding: 1rem;">' +
+            '<h3 style="font-size: 1rem; margin-bottom: 1rem;">📈 Comparativa Visual</h3>' +
+            '<div style="height: 200px; position: relative;">' +
+                '<canvas id="comparisonChart"></canvas>' +
+            '</div>' +
+        '</div>' +
+        
+        '<button onclick="switchTab(\'more\')" style="display: block; margin: 1rem auto; padding: 0.5rem 1rem; background: none; border: 1px solid rgba(255,255,255,0.3); color: rgba(255,255,255,0.7); border-radius: 20px; cursor: pointer;">← Volver</button>' +
+    '</div>';
+}
+
+// Cargar ingresos recurrentes
+var recurringIncomeList = [];
+async function loadRecurringIncomeList() {
+    try {
+        if (typeof db !== 'undefined' && typeof currentUser !== 'undefined' && currentUser) {
+            const snapshot = await db.collection('users').doc(currentUser.uid).collection('recurringIncome').get();
+            recurringIncomeList = snapshot.docs.map(function(doc) {
+                return { id: doc.id, ...doc.data() };
+            });
+        }
+    } catch (error) {
+        console.warn('Error cargando ingresos recurrentes:', error);
+    }
+}
+
+console.log('✅ Vistas de ingresos recurrentes y comparativas cargadas');
+
+// ========================================
+// 📱 ESTILOS RESPONSIVE
+// ========================================
+function injectResponsiveStyles() {
+    const styleId = 'responsive-styles';
+    if (document.getElementById(styleId)) return;
+    
+    const style = document.createElement('style');
+    style.id = styleId;
+    style.textContent = `
+        /* Base responsive */
+        * { box-sizing: border-box; }
+        
+        /* Cards responsive */
+        .card {
+            padding: 1rem !important;
+            margin-bottom: 0.75rem !important;
+            border-radius: 12px !important;
+        }
+        
+        /* Tab content spacing */
+        .tab-content {
+            padding: 0.5rem !important;
+            padding-bottom: 100px !important;
+        }
+        
+        /* Charts responsive */
+        .chart-container {
+            height: 200px !important;
+            min-height: 180px !important;
+            position: relative !important;
+        }
+        
+        /* Grid responsive */
+        .responsive-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 0.75rem;
+        }
+        
+        /* Mobile - Pantallas pequeñas */
+        @media (max-width: 480px) {
+            .card {
+                padding: 0.75rem !important;
+                margin-bottom: 0.5rem !important;
+            }
+            
+            .card h2, .card h3 {
+                font-size: 1rem !important;
+            }
+            
+            .card p {
+                font-size: 0.8rem !important;
+            }
+            
+            .chart-container {
+                height: 180px !important;
+            }
+            
+            /* Navigation móvil */
+            .bottom-nav {
+                padding: 0.4rem 0 !important;
+            }
+            
+            .nav-item {
+                font-size: 0.6rem !important;
+                padding: 0.2rem !important;
+            }
+            
+            .nav-item span:first-child {
+                font-size: 1rem !important;
+            }
+            
+            /* FAB móvil */
+            .fab {
+                width: 48px !important;
+                height: 48px !important;
+                font-size: 20px !important;
+                bottom: 75px !important;
+            }
+            
+            #fab-menu {
+                bottom: 130px !important;
+                right: 15px !important;
+            }
+            
+            #fab-menu button {
+                padding: 0.5rem 0.75rem !important;
+                font-size: 0.75rem !important;
+            }
+        }
+        
+        /* Tablet */
+        @media (min-width: 481px) and (max-width: 768px) {
+            .card {
+                padding: 1rem !important;
+            }
+            
+            .chart-container {
+                height: 220px !important;
+            }
+        }
+        
+        /* Desktop */
+        @media (min-width: 769px) {
+            .tab-content {
+                max-width: 800px;
+                margin: 0 auto;
+                padding: 1rem !important;
+            }
+            
+            .card {
+                padding: 1.25rem !important;
+            }
+            
+            .chart-container {
+                height: 280px !important;
+            }
+            
+            /* Navigation desktop */
+            .bottom-nav {
+                max-width: 600px;
+                margin: 0 auto;
+                border-radius: 20px 20px 0 0;
+            }
+        }
+        
+        /* Modal responsive */
+        #modal .modal-content,
+        .modal-content {
+            width: 95% !important;
+            max-width: 450px !important;
+            max-height: 90vh !important;
+            overflow-y: auto !important;
+            margin: auto !important;
+        }
+        
+        /* Input responsive */
+        input, select, textarea {
+            font-size: 16px !important; /* Previene zoom en iOS */
+        }
+        
+        /* Botones responsive */
+        button {
+            min-height: 44px;
+            cursor: pointer;
+        }
+        
+        /* Scrollbar estilizado */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.1);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: rgba(5,191,219,0.5);
+            border-radius: 3px;
+        }
+    `;
+    
+    document.head.appendChild(style);
+    console.log('✅ Estilos responsive inyectados');
+}
+
+// Inyectar estilos al cargar
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', injectResponsiveStyles);
+} else {
+    injectResponsiveStyles();
+}
+
+console.log('✅ Módulo responsive cargado');
+
+// ========================================
+// 🔔 FUNCIÓN CHECKBUDGETALERTS
+// ========================================
+
+// Mostrar gráfico comparativo por período
+var comparisonChartInstance = null;
+
+function showComparisonChart(period) {
+    // Actualizar botones activos
+    document.querySelectorAll('[id^="btn-"]').forEach(function(btn) {
+        if (btn.id.startsWith('btn-weekly') || btn.id.startsWith('btn-biweekly') || btn.id.startsWith('btn-monthly')) {
+            btn.style.background = 'rgba(255,255,255,0.1)';
+            btn.style.border = '1px solid rgba(255,255,255,0.2)';
+        }
+    });
+    var activeBtn = document.getElementById('btn-' + period);
+    if (activeBtn) {
+        activeBtn.style.background = 'linear-gradient(135deg, #05BFDB, #088395)';
+        activeBtn.style.border = 'none';
+    }
+    
+    var expensesList = typeof expenses !== 'undefined' ? expenses : [];
+    var incomeList = typeof incomeHistory !== 'undefined' ? incomeHistory : [];
+    var labels = [], expenseData = [], incomeData = [], periodLabel = '';
+    var now = new Date();
+    
+    if (period === 'weekly') {
+        periodLabel = 'Últimas 4 semanas';
+        for (var i = 3; i >= 0; i--) {
+            var weekStart = new Date(now); weekStart.setDate(now.getDate() - (i * 7) - now.getDay());
+            var weekEnd = new Date(weekStart); weekEnd.setDate(weekStart.getDate() + 6);
+            labels.push('Sem ' + (4 - i));
+            expenseData.push(expensesList.filter(function(e) { var d = new Date(e.date); return d >= weekStart && d <= weekEnd; }).reduce(function(s, e) { return s + (e.amount || 0); }, 0));
+            incomeData.push(incomeList.filter(function(e) { var d = new Date(e.date); return d >= weekStart && d <= weekEnd; }).reduce(function(s, e) { return s + (e.amount || 0); }, 0));
+        }
+    } else if (period === 'biweekly') {
+        periodLabel = 'Últimas 4 quincenas';
+        for (var i = 3; i >= 0; i--) {
+            var start = new Date(now); start.setDate(now.getDate() - (i * 15));
+            var end = new Date(start); end.setDate(start.getDate() + 14);
+            labels.push('Q' + (4 - i));
+            expenseData.push(expensesList.filter(function(e) { var d = new Date(e.date); return d >= start && d <= end; }).reduce(function(s, e) { return s + (e.amount || 0); }, 0));
+            incomeData.push(incomeList.filter(function(e) { var d = new Date(e.date); return d >= start && d <= end; }).reduce(function(s, e) { return s + (e.amount || 0); }, 0));
+        }
+    } else {
+        periodLabel = 'Últimos 6 meses';
+        var mNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+        for (var i = 5; i >= 0; i--) {
+            var month = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            var monthEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0);
+            labels.push(mNames[month.getMonth()]);
+            expenseData.push(expensesList.filter(function(e) { var d = new Date(e.date); return d >= month && d <= monthEnd; }).reduce(function(s, e) { return s + (e.amount || 0); }, 0));
+            incomeData.push(incomeList.filter(function(e) { var d = new Date(e.date); return d >= month && d <= monthEnd; }).reduce(function(s, e) { return s + (e.amount || 0); }, 0));
+        }
+    }
+    
+    var ctx = document.getElementById('comparisonChart');
+    if (!ctx || typeof Chart === 'undefined') return;
+    
+    if (comparisonChartInstance) comparisonChartInstance.destroy();
+    
+    comparisonChartInstance = new Chart(ctx.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                { label: 'Ingresos', data: incomeData, backgroundColor: 'rgba(34, 197, 94, 0.7)', borderColor: '#22c55e', borderWidth: 2, borderRadius: 6 },
+                { label: 'Gastos', data: expenseData, backgroundColor: 'rgba(239, 68, 68, 0.7)', borderColor: '#ef4444', borderWidth: 2, borderRadius: 6 }
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            animation: { duration: 1000, easing: 'easeOutQuart' },
+            plugins: { legend: { position: 'top', labels: { color: 'white', padding: 15 } }, title: { display: true, text: periodLabel, color: 'white' } },
+            scales: { y: { beginAtZero: true, ticks: { color: 'rgba(255,255,255,0.7)' }, grid: { color: 'rgba(255,255,255,0.1)' } }, x: { ticks: { color: 'rgba(255,255,255,0.7)' }, grid: { display: false } } }
+        }
+    });
+    
+    // Actualizar resumen
+    var totalExp = expenseData.reduce(function(a,b){return a+b;}, 0);
+    var totalInc = incomeData.reduce(function(a,b){return a+b;}, 0);
+    var balance = totalInc - totalExp;
+    var summary = document.getElementById('comparison-summary');
+    if (summary) {
+        summary.innerHTML = '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.75rem;">' +
+            '<div class="card" style="padding: 0.75rem; text-align: center;"><div style="font-size: 0.75rem; opacity: 0.7;">Ingresos</div><div style="font-size: 1.1rem; font-weight: bold; color: #22c55e;">$' + totalInc.toFixed(0) + '</div></div>' +
+            '<div class="card" style="padding: 0.75rem; text-align: center;"><div style="font-size: 0.75rem; opacity: 0.7;">Gastos</div><div style="font-size: 1.1rem; font-weight: bold; color: #ef4444;">$' + totalExp.toFixed(0) + '</div></div>' +
+            '<div class="card" style="padding: 0.75rem; text-align: center;"><div style="font-size: 0.75rem; opacity: 0.7;">Balance</div><div style="font-size: 1.1rem; font-weight: bold; color: ' + (balance >= 0 ? '#22c55e' : '#ef4444') + ';">$' + balance.toFixed(0) + '</div></div>' +
+        '</div>';
+    }
+}
+
+console.log('✅ App.js FINAL completo - Versión limpia sin duplicados');
