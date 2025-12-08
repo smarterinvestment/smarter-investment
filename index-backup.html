@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="description" content="Smarter Investment 💰🧠 - Tu gestor financiero personal para controlar gastos, ingresos, presupuestos y metas">
+    <meta name="description" content="Smarter Investment 💰🧠 - Tu gestor financiero personal">
     <meta name="theme-color" content="#05BFDB">
     
     <!-- PWA Meta Tags -->
@@ -25,9 +25,9 @@
     <!-- Manifest -->
     <link rel="manifest" href="manifest.json">
     
-    <title>Smarter Investment 💰🧠 - Tu Gestor Financiero Personal</title>
+    <title>Smarter Investment 💰🧠</title>
     
-    <!-- Toastify para notificaciones -->
+    <!-- Toastify CSS -->
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
     
     <!-- CSS Principal -->
@@ -38,29 +38,14 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     
-    <!-- Firebase Configuration (IMPORTANTE: Cargar DESPUÉS del SDK pero ANTES de app.js) -->
+    <!-- Firebase Configuration -->
     <script src="firebase-init.js"></script>
     
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     
     <!-- Toastify JS -->
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
-    
-    <!-- Prevenir zoom en iOS -->
-    <style>
-        input[type="number"],
-        input[type="text"],
-        input[type="email"],
-        input[type="password"],
-        select {
-            font-size: 16px !important;
-        }
-        
-        body {
-            overscroll-behavior-y: contain;
-        }
-    </style>
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
 </head>
 <body>
     <div id="app"></div>
@@ -74,39 +59,67 @@
         </div>
     </div>
     
-    <!-- ✨✨✨ MÓDULOS DE FUNCIONALIDADES ✨✨✨ -->
+    <!-- ========================================
+         📦 MÓDULOS CORE (orden importante)
+         ======================================== -->
     
-    <!-- Notificaciones Inteligentes -->
+    <!-- 1. Configuración y Estado -->
+    <script src="js/config.js"></script>
+    
+    <!-- 2. Utilidades -->
+    <script src="js/utils.js"></script>
+    
+    <!-- 3. Cálculos Financieros -->
+    <script src="js/calculations.js"></script>
+    
+    <!-- 4. Base de Datos Firebase -->
+    <script src="js/firebase-db.js"></script>
+    
+    <!-- 5. Autenticación -->
+    <script src="js/auth.js"></script>
+    
+    <!-- 6. Modales -->
+    <script src="js/modals.js"></script>
+    
+    <!-- ========================================
+         📦 MÓDULOS DE FEATURES
+         ======================================== -->
     <script src="notifications-module.js"></script>
-    
-    <!-- Gastos Recurrentes -->
     <script src="recurring-expenses-module.js"></script>
-    
-    <!-- Comparación de Gastos -->
     <script src="comparison-module.js"></script>
-    
-    <!-- Asistente Virtual AI -->
     <script src="assistant-module.js"></script>
-    
-    <!-- 📊 NUEVO: Reportes Interactivos -->
     <script src="reports-module.js"></script>
     
-    <!-- Script principal -->
+    <!-- ========================================
+         🚀 APP PRINCIPAL (UI y Render)
+         ======================================== -->
     <script src="app.js"></script>
+    
+    <!-- ========================================
+         🔧 PARCHES Y FIXES
+         ======================================== -->
+    <script src="modal-fix.js"></script>
     
     <!-- Service Worker -->
     <script>
+        // Registrar Service Worker
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./service-worker.js')
-                    .then(registration => {
-                        console.log('✅ Service Worker registrado con éxito:', registration.scope);
-                    })
-                    .catch(error => {
-                        console.log('⚠️ Error al registrar Service Worker (esto es normal en desarrollo):', error);
-                    });
+                    .then(reg => console.log('✅ Service Worker registrado:', reg.scope))
+                    .catch(err => console.log('⚠️ Service Worker error:', err));
             });
         }
+        
+        // Log de módulos cargados
+        console.log('📦 Módulos Core:', [
+            'config.js',
+            'utils.js', 
+            'calculations.js',
+            'firebase-db.js',
+            'auth.js',
+            'modals.js'
+        ]);
     </script>
 </body>
 </html>

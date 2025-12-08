@@ -33,12 +33,12 @@
     <!-- CSS Principal -->
     <link rel="stylesheet" href="styles.css">
     
-    <!-- Firebase SDK (PRIMERO) -->
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     
-    <!-- Firebase Configuration (DESPUÉS del SDK) -->
+    <!-- Firebase Configuration -->
     <script src="firebase-init.js"></script>
     
     <!-- Chart.js -->
@@ -46,36 +46,6 @@
     
     <!-- Toastify JS -->
     <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
-    
-    <!-- Estilos para ocultar botón flotante del asistente -->
-    <style>
-        input[type="number"],
-        input[type="text"],
-        input[type="email"],
-        input[type="password"],
-        select {
-            font-size: 16px !important;
-        }
-        body {
-            overscroll-behavior-y: contain;
-        }
-        
-        /* Ocultar botón flotante del asistente */
-        .assistant-float-btn,
-        .floating-assistant-button,
-        .assistant-floating-btn,
-        #assistantFloatBtn,
-        #floating-assistant,
-        .ai-assistant-float,
-        .assistant-fab,
-        [class*="float"][class*="assistant"],
-        [id*="float"][id*="assistant"] {
-            display: none !important;
-            visibility: hidden !important;
-            opacity: 0 !important;
-            pointer-events: none !important;
-        }
-    </style>
 </head>
 <body>
     <div id="app"></div>
@@ -89,21 +59,50 @@
         </div>
     </div>
     
-    <!-- ========== MÓDULOS ========== -->
+    <!-- ========================================
+         📦 MÓDULOS CORE (orden importante)
+         ======================================== -->
+    
+    <!-- 1. Configuración y Estado -->
+    <script src="js/config.js"></script>
+    
+    <!-- 2. Utilidades -->
+    <script src="js/utils.js"></script>
+    
+    <!-- 3. Cálculos Financieros -->
+    <script src="js/calculations.js"></script>
+    
+    <!-- 4. Base de Datos Firebase -->
+    <script src="js/firebase-db.js"></script>
+    
+    <!-- 5. Autenticación -->
+    <script src="js/auth.js"></script>
+    
+    <!-- 6. Modales -->
+    <script src="js/modals.js"></script>
+    
+    <!-- ========================================
+         📦 MÓDULOS DE FEATURES
+         ======================================== -->
     <script src="notifications-module.js"></script>
     <script src="recurring-expenses-module.js"></script>
     <script src="comparison-module.js"></script>
     <script src="assistant-module.js"></script>
     <script src="reports-module.js"></script>
     
-    <!-- ========== APP PRINCIPAL ========== -->
+    <!-- ========================================
+         🚀 APP PRINCIPAL (UI y Render)
+         ======================================== -->
     <script src="app.js"></script>
     
-    <!-- ========== PARCHE DE CORRECCIÓN (DESPUÉS DE APP.JS) ========== -->
+    <!-- ========================================
+         🔧 PARCHES Y FIXES
+         ======================================== -->
     <script src="modal-fix.js"></script>
     
     <!-- Service Worker -->
     <script>
+        // Registrar Service Worker
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./service-worker.js')
@@ -112,15 +111,15 @@
             });
         }
         
-        // Eliminar botón flotante del asistente
-        function removeFloatingAssistant() {
-            ['.assistant-float-btn', '.floating-assistant-button', '#assistantFloatBtn', '#floating-assistant', '.ai-assistant-float']
-                .forEach(s => document.querySelectorAll(s).forEach(el => el.remove()));
-        }
-        removeFloatingAssistant();
-        setTimeout(removeFloatingAssistant, 1000);
-        setTimeout(removeFloatingAssistant, 3000);
-        new MutationObserver(removeFloatingAssistant).observe(document.body, { childList: true, subtree: true });
+        // Log de módulos cargados
+        console.log('📦 Módulos Core:', [
+            'config.js',
+            'utils.js', 
+            'calculations.js',
+            'firebase-db.js',
+            'auth.js',
+            'modals.js'
+        ]);
     </script>
 </body>
 </html>
