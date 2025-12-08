@@ -3352,10 +3352,13 @@ function renderRecurringExpensesViewIntegrated() {
         (activeRecurring.length > 0 
             ? activeRecurring.map(function(r) { 
                 var freqLabels = { weekly: 'Semanal', biweekly: 'Quincenal', monthly: 'Mensual', yearly: 'Anual' };
+                var daysInfo = calculateDaysUntilPayment(r.dayOfMonth || 1, r.frequency || 'monthly');
+                var daysColor = daysInfo.days <= 3 ? '#ef4444' : (daysInfo.days <= 7 ? '#f97316' : '#22c55e');
                 return '<div class="card" style="padding: 1rem; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid #8b5cf6;">' +
                     '<div>' +
                         '<div style="font-weight: bold; color: white;">' + (r.name || r.description || 'Sin nombre') + '</div>' +
                         '<div style="font-size: 0.85rem; color: rgba(255,255,255,0.6);">' + (r.category || 'Sin categoría') + ' • ' + (freqLabels[r.frequency] || r.frequency) + '</div>' +
+                        '<div style="font-size: 0.75rem; color: ' + daysColor + '; margin-top: 0.25rem;">⏰ ' + daysInfo.text + '</div>' +
                     '</div>' +
                     '<div style="display: flex; align-items: center; gap: 0.75rem;">' +
                         '<span style="font-weight: bold; color: #ef4444;">-$' + (r.amount || 0).toFixed(2) + '</span>' +
@@ -3366,6 +3369,51 @@ function renderRecurringExpensesViewIntegrated() {
             }).join('') 
             : '<div class="card" style="text-align: center; padding: 2rem;"><div style="font-size: 3rem; margin-bottom: 1rem;">🔄</div><p style="opacity:0.7; margin-bottom: 1rem;">No hay gastos recurrentes activos</p><button onclick="showRecurringForm()" style="padding: 0.75rem 1.5rem; border-radius: 25px; background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; border: none; cursor: pointer;">+ Añadir Recurrente</button></div>') +
         '</div></div>';
+}
+
+// Calcular días hasta el próximo pago
+function calculateDaysUntilPayment(dayOfMonth, frequency) {
+    var today = new Date();
+    var currentDay = today.getDate();
+    var currentMonth = today.getMonth();
+    var currentYear = today.getFullYear();
+    var targetDay = parseInt(dayOfMonth) || 1;
+    var days = 0;
+    
+    if (frequency === 'weekly') {
+        days = 7 - today.getDay();
+        if (days === 0) days = 7;
+        return { days: days, text: days + ' días para próximo pago' };
+    }
+    
+    if (frequency === 'biweekly') {
+        days = currentDay <= 15 ? (15 - currentDay) : (new Date(currentYear, currentMonth + 1, 0).getDate() - currentDay + 1);
+        return { days: days, text: days + ' días para próximo pago' };
+    }
+    
+    if (frequency === 'yearly') {
+        var nextYear = new Date(currentYear + 1, 0, targetDay);
+        days = Math.ceil((nextYear - today) / (1000 * 60 * 60 * 24));
+        return { days: days, text: days + ' días para próximo pago' };
+    }
+    
+    // Monthly
+    if (targetDay > currentDay) {
+        days = targetDay - currentDay;
+    } else {
+        var lastDayNextMonth = new Date(currentYear, currentMonth + 2, 0).getDate();
+        var nextTargetDay = Math.min(targetDay, lastDayNextMonth);
+        var nextPayDate = new Date(currentYear, currentMonth + 1, nextTargetDay);
+        days = Math.ceil((nextPayDate - today) / (1000 * 60 * 60 * 24));
+    }
+    
+    if (days === 0) {
+        return { days: 0, text: '¡Hoy es día de pago!' };
+    } else if (days === 1) {
+        return { days: 1, text: 'Mañana es día de pago' };
+    } else {
+        return { days: days, text: days + ' días para próximo pago' };
+    }
 }
 
 // ========================================
@@ -3735,7 +3783,7 @@ function showCategoryDetailsBudget(category) {
     
     // Inicializar gráfica después de renderizar
     setTimeout(function() {
-        initCategoryMonthlyChart(monthlyData);
+        initCategoryMonthlyChart(monthlyData, budget);
     }, 100);
 }
 
@@ -3744,12 +3792,13 @@ function closeCategoryModal() {
     if (modal) modal.style.display = 'none';
 }
 
-function initCategoryMonthlyChart(monthlyData) {
+function initCategoryMonthlyChart(monthlyData, budget) {
     var ctx = document.getElementById('categoryMonthlyChart');
     if (!ctx || typeof Chart === 'undefined') return;
     
     var months = Object.keys(monthlyData).sort();
     var values = months.map(function(m) { return monthlyData[m]; });
+    var budgetLine = months.map(function() { return budget || 0; });
     var monthLabels = months.map(function(m) {
         var parts = m.split('-');
         var monthNames = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
@@ -3760,19 +3809,34 @@ function initCategoryMonthlyChart(monthlyData) {
         type: 'bar',
         data: {
             labels: monthLabels.length > 0 ? monthLabels : ['Sin datos'],
-            datasets: [{
-                label: 'Gastos',
-                data: values.length > 0 ? values : [0],
-                backgroundColor: 'rgba(239, 68, 68, 0.7)',
-                borderColor: '#ef4444',
-                borderWidth: 2,
-                borderRadius: 6
-            }]
+            datasets: [
+                {
+                    label: 'Gastos',
+                    data: values.length > 0 ? values : [0],
+                    backgroundColor: 'rgba(239, 68, 68, 0.7)',
+                    borderColor: '#ef4444',
+                    borderWidth: 2,
+                    borderRadius: 6,
+                    order: 2
+                },
+                {
+                    label: 'Presupuesto',
+                    data: budgetLine.length > 0 ? budgetLine : [0],
+                    type: 'line',
+                    borderColor: '#05BFDB',
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    pointBackgroundColor: '#05BFDB',
+                    pointRadius: 4,
+                    fill: false,
+                    order: 1
+                }
+            ]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
+            plugins: { legend: { display: true, labels: { color: 'white' } } },
             scales: {
                 y: { beginAtZero: true, ticks: { color: 'rgba(255,255,255,0.7)' }, grid: { color: 'rgba(255,255,255,0.1)' } },
                 x: { ticks: { color: 'rgba(255,255,255,0.7)' }, grid: { display: false } }
@@ -4925,6 +4989,15 @@ function renderPeriodComparison() {
     
     var analysis = calculatePeriodAnalysis();
     
+    // Inject hover styles for buttons
+    var styleId = 'comparison-hover-styles';
+    if (!document.getElementById(styleId)) {
+        var style = document.createElement('style');
+        style.id = styleId;
+        style.textContent = '.cmp-btn:hover { background: linear-gradient(135deg, #05BFDB, #088395) !important; border-color: #05BFDB !important; transform: scale(1.02); transition: all 0.2s ease; }';
+        document.head.appendChild(style);
+    }
+    
     return '<div style="padding: 0.5rem; padding-bottom: 120px;">' +
         '<div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">' +
             '<button onclick="switchTab(\'more\')" style="background: none; border: none; color: white; font-size: 1.2rem; cursor: pointer;">←</button>' +
@@ -4933,22 +5006,24 @@ function renderPeriodComparison() {
         
         // Selector de tipo de comparación
         '<div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">' +
-            '<button onclick="setComparisonType(\'weekly\')" id="cmp-weekly" class="cmp-btn" style="flex: 1; padding: 0.6rem; border-radius: 8px; background: linear-gradient(135deg, #05BFDB, #088395); color: white; border: none; cursor: pointer; font-weight: 500;">Semanal</button>' +
-            '<button onclick="setComparisonType(\'biweekly\')" id="cmp-biweekly" class="cmp-btn" style="flex: 1; padding: 0.6rem; border-radius: 8px; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;">Quincenal</button>' +
-            '<button onclick="setComparisonType(\'monthly\')" id="cmp-monthly" class="cmp-btn" style="flex: 1; padding: 0.6rem; border-radius: 8px; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;">Mensual</button>' +
+            '<button onclick="setComparisonType(\'weekly\')" id="cmp-weekly" class="cmp-btn" style="flex: 1; padding: 0.6rem; border-radius: 8px; background: linear-gradient(135deg, #05BFDB, #088395); color: white; border: none; cursor: pointer; font-weight: 500; transition: all 0.2s ease;">Semanal</button>' +
+            '<button onclick="setComparisonType(\'biweekly\')" id="cmp-biweekly" class="cmp-btn" style="flex: 1; padding: 0.6rem; border-radius: 8px; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); cursor: pointer; transition: all 0.2s ease;">Quincenal</button>' +
+            '<button onclick="setComparisonType(\'monthly\')" id="cmp-monthly" class="cmp-btn" style="flex: 1; padding: 0.6rem; border-radius: 8px; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); cursor: pointer; transition: all 0.2s ease;">Mensual</button>' +
         '</div>' +
         
-        // Resumen de comparación
+        // Resumen de comparación con fechas
         '<div class="card" style="padding: 1rem; margin-bottom: 1rem;">' +
             '<h3 style="margin: 0 0 1rem 0;">📊 Resumen Comparativo</h3>' +
             '<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem;">' +
                 '<div style="padding: 1rem; background: rgba(239,68,68,0.1); border-radius: 8px; border-left: 4px solid #ef4444;">' +
                     '<div style="font-size: 0.75rem; opacity: 0.7;">Periodo Actual</div>' +
+                    '<div style="font-size: 0.7rem; color: #05BFDB; margin-bottom: 0.25rem;">📅 ' + analysis.currentDateRange + '</div>' +
                     '<div style="font-size: 1.4rem; font-weight: bold; color: #ef4444;">$' + analysis.current.expenses.toFixed(0) + '</div>' +
                     '<div style="font-size: 0.8rem; color: #22c55e;">Ing: $' + analysis.current.income.toFixed(0) + '</div>' +
                 '</div>' +
                 '<div style="padding: 1rem; background: rgba(139,92,246,0.1); border-radius: 8px; border-left: 4px solid #8b5cf6;">' +
                     '<div style="font-size: 0.75rem; opacity: 0.7;">Periodo Anterior</div>' +
+                    '<div style="font-size: 0.7rem; color: #a855f7; margin-bottom: 0.25rem;">📅 ' + analysis.previousDateRange + '</div>' +
                     '<div style="font-size: 1.4rem; font-weight: bold; color: #8b5cf6;">$' + analysis.previous.expenses.toFixed(0) + '</div>' +
                     '<div style="font-size: 0.8rem; color: #22c55e;">Ing: $' + analysis.previous.income.toFixed(0) + '</div>' +
                 '</div>' +
@@ -4980,27 +5055,42 @@ function calculatePeriodAnalysis() {
     var incomeList = typeof incomeHistory !== 'undefined' ? incomeHistory : [];
     var now = new Date();
     var type = window.comparisonType || 'weekly';
+    var monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
     
-    var currentStart, previousStart, previousEnd;
+    var currentStart, previousStart, previousEnd, currentEnd;
+    var currentDateRange, previousDateRange;
     
     if (type === 'weekly') {
+        currentEnd = now;
         currentStart = new Date(now); currentStart.setDate(now.getDate() - 7);
+        previousEnd = new Date(currentStart);
         previousStart = new Date(now); previousStart.setDate(now.getDate() - 14);
-        previousEnd = currentStart;
+        
+        currentDateRange = formatDateShort(currentStart) + ' - ' + formatDateShort(currentEnd);
+        previousDateRange = formatDateShort(previousStart) + ' - ' + formatDateShort(previousEnd);
     } else if (type === 'biweekly') {
+        currentEnd = now;
         currentStart = new Date(now); currentStart.setDate(now.getDate() - 15);
+        previousEnd = new Date(currentStart);
         previousStart = new Date(now); previousStart.setDate(now.getDate() - 30);
-        previousEnd = currentStart;
+        
+        currentDateRange = formatDateShort(currentStart) + ' - ' + formatDateShort(currentEnd);
+        previousDateRange = formatDateShort(previousStart) + ' - ' + formatDateShort(previousEnd);
     } else {
+        // Monthly - starts from 1st of each month
         currentStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        currentEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
         previousStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-        previousEnd = currentStart;
+        previousEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+        
+        currentDateRange = '1 ' + monthNames[currentStart.getMonth()] + ' - ' + currentEnd.getDate() + ' ' + monthNames[currentEnd.getMonth()];
+        previousDateRange = '1 ' + monthNames[previousStart.getMonth()] + ' - ' + previousEnd.getDate() + ' ' + monthNames[previousEnd.getMonth()];
     }
     
     var currentExpenses = expensesList.filter(function(e) { return new Date(e.date) >= currentStart; }).reduce(function(s, e) { return s + (e.amount || 0); }, 0);
-    var previousExpenses = expensesList.filter(function(e) { var d = new Date(e.date); return d >= previousStart && d < previousEnd; }).reduce(function(s, e) { return s + (e.amount || 0); }, 0);
+    var previousExpenses = expensesList.filter(function(e) { var d = new Date(e.date); return d >= previousStart && d < currentStart; }).reduce(function(s, e) { return s + (e.amount || 0); }, 0);
     var currentIncome = incomeList.filter(function(e) { return new Date(e.date) >= currentStart; }).reduce(function(s, e) { return s + (e.amount || 0); }, 0);
-    var previousIncome = incomeList.filter(function(e) { var d = new Date(e.date); return d >= previousStart && d < previousEnd; }).reduce(function(s, e) { return s + (e.amount || 0); }, 0);
+    var previousIncome = incomeList.filter(function(e) { var d = new Date(e.date); return d >= previousStart && d < currentStart; }).reduce(function(s, e) { return s + (e.amount || 0); }, 0);
     
     var trend = previousExpenses > 0 ? ((currentExpenses - previousExpenses) / previousExpenses * 100) : 0;
     
@@ -5011,15 +5101,25 @@ function calculatePeriodAnalysis() {
         if (!categories[cat]) categories[cat] = { current: 0, previous: 0 };
         var d = new Date(e.date);
         if (d >= currentStart) categories[cat].current += e.amount || 0;
-        else if (d >= previousStart && d < previousEnd) categories[cat].previous += e.amount || 0;
+        else if (d >= previousStart && d < currentStart) categories[cat].previous += e.amount || 0;
     });
     
     return {
         current: { expenses: currentExpenses, income: currentIncome },
         previous: { expenses: previousExpenses, income: previousIncome },
         trend: trend,
-        categories: categories
+        categories: categories,
+        currentDateRange: currentDateRange,
+        previousDateRange: previousDateRange,
+        currentStart: currentStart,
+        previousStart: previousStart
     };
+}
+
+// Formatear fecha corta
+function formatDateShort(date) {
+    var monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    return date.getDate() + ' ' + monthNames[date.getMonth()];
 }
 
 function renderCategoryComparison(analysis) {
@@ -5063,10 +5163,14 @@ function initComparisonCharts() {
     
     var analysis = calculatePeriodAnalysis();
     
+    // Use date ranges as labels
+    var previousLabel = analysis.previousDateRange || 'Periodo Anterior';
+    var currentLabel = analysis.currentDateRange || 'Periodo Actual';
+    
     new Chart(ctx.getContext('2d'), {
         type: 'bar',
         data: {
-            labels: ['Periodo Anterior', 'Periodo Actual'],
+            labels: [previousLabel, currentLabel],
             datasets: [
                 { label: 'Gastos', data: [analysis.previous.expenses, analysis.current.expenses], backgroundColor: ['rgba(139,92,246,0.7)', 'rgba(239,68,68,0.7)'], borderColor: ['#8b5cf6', '#ef4444'], borderWidth: 2, borderRadius: 8 },
                 { label: 'Ingresos', data: [analysis.previous.income, analysis.current.income], backgroundColor: ['rgba(34,197,94,0.5)', 'rgba(34,197,94,0.7)'], borderColor: ['#22c55e', '#22c55e'], borderWidth: 2, borderRadius: 8 }
@@ -5120,10 +5224,13 @@ function renderRecurringIncomeViewComplete() {
             (recurringIncome.length > 0 
                 ? recurringIncome.map(function(inc, idx) {
                     var freqLabels = { weekly: 'Semanal', biweekly: 'Quincenal', monthly: 'Mensual', yearly: 'Anual' };
+                    var daysInfo = calculateDaysUntilPayment(inc.dayOfMonth || 1, inc.frequency || 'monthly');
+                    var daysColor = daysInfo.days <= 3 ? '#22c55e' : (daysInfo.days <= 7 ? '#06b6d4' : 'rgba(255,255,255,0.6)');
                     return '<div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; margin-bottom: 0.5rem; background: rgba(34,197,94,0.1); border-radius: 8px; border-left: 4px solid #22c55e;">' +
                         '<div>' +
                             '<div style="font-weight: bold; color: white;">' + (inc.name || 'Sin nombre') + '</div>' +
                             '<div style="font-size: 0.8rem; color: rgba(255,255,255,0.6);">' + (inc.source || 'Otros') + ' • ' + (freqLabels[inc.frequency] || 'Mensual') + '</div>' +
+                            '<div style="font-size: 0.75rem; color: ' + daysColor + '; margin-top: 0.25rem;">💵 ' + daysInfo.text.replace('pago', 'ingreso') + '</div>' +
                         '</div>' +
                         '<div style="display: flex; align-items: center; gap: 0.5rem;">' +
                             '<span style="font-weight: bold; color: #22c55e;">+$' + (inc.amount || 0).toFixed(2) + '</span>' +
