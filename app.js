@@ -37,15 +37,16 @@ function createModalStructure() {
             justify-content: center;
         ">
             <div class="modal-content" style="
-                background: linear-gradient(135deg, #1a2332 0%, #0d1520 100%);
+                background: linear-gradient(135deg, rgba(5, 191, 219, 0.1) 0%, rgba(13, 38, 79, 0.95) 50%, rgba(0, 17, 56, 0.98) 100%);
                 padding: 0;
                 border-radius: 16px;
                 width: 90%;
                 max-width: 500px;
                 max-height: 90vh;
                 overflow-y: auto;
-                box-shadow: 0 25px 80px rgba(0,0,0,0.8);
-                border: 1px solid #05BFDB;
+                box-shadow: 0 25px 80px rgba(0,0,0,0.6), 0 0 40px rgba(5, 191, 219, 0.2);
+                border: 1px solid rgba(5, 191, 219, 0.3);
+                backdrop-filter: blur(20px);
             ">
                 <div class="modal-header" style="
                     padding: 1.25rem 1.5rem;
@@ -3462,7 +3463,7 @@ function renderMainApp() {
     
     return header + 
         '<div class="tab-content" id="tab-content">' + tabContent + '</div>' +
-        '<nav class="bottom-nav" style="position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:space-around;background:linear-gradient(135deg,rgba(26,35,50,0.98),rgba(13,21,32,0.98));padding:0.5rem 0;border-top:1px solid rgba(5,191,219,0.3);z-index:1000;">' +
+        '<nav class="bottom-nav" style="position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:space-around;background:linear-gradient(180deg,rgba(5,191,219,0.1),rgba(13,38,79,0.95));padding:0.5rem 0;border-top:1px solid rgba(5,191,219,0.3);z-index:1000;backdrop-filter:blur(15px);">' +
             '<button class="nav-item' + (activeTab === 'dashboard' ? ' active' : '') + '" onclick="switchTab(\'dashboard\')" style="display:flex;flex-direction:column;align-items:center;gap:0.15rem;background:none;border:none;color:' + (activeTab === 'dashboard' ? '#05BFDB' : 'rgba(255,255,255,0.6)') + ';cursor:pointer;padding:0.25rem 0.5rem;font-size:0.65rem;"><span style="font-size:1.1rem;">🏠</span><span>Inicio</span></button>' +
             '<button class="nav-item' + (activeTab === 'expenses' ? ' active' : '') + '" onclick="switchTab(\'expenses\')" style="display:flex;flex-direction:column;align-items:center;gap:0.15rem;background:none;border:none;color:' + (activeTab === 'expenses' ? '#05BFDB' : 'rgba(255,255,255,0.6)') + ';cursor:pointer;padding:0.25rem 0.5rem;font-size:0.65rem;"><span style="font-size:1.1rem;">💰</span><span>Gastos</span></button>' +
             '<button class="nav-item' + (activeTab === 'budget' ? ' active' : '') + '" onclick="switchTab(\'budget\')" style="display:flex;flex-direction:column;align-items:center;gap:0.15rem;background:none;border:none;color:' + (activeTab === 'budget' ? '#05BFDB' : 'rgba(255,255,255,0.6)') + ';cursor:pointer;padding:0.25rem 0.5rem;font-size:0.65rem;"><span style="font-size:1.1rem;">📊</span><span>Presupuesto</span></button>' +
@@ -3724,7 +3725,7 @@ function showCategoryDetailsBudget(category) {
     var statusColor = percentage >= 100 ? '#ef4444' : (percentage >= 80 ? '#f97316' : '#22c55e');
     var statusText = percentage >= 100 ? '⚠️ Excedido' : (percentage >= 80 ? '⚡ Cerca del límite' : '✅ Bajo control');
     
-    modal.innerHTML = '<div style="background:linear-gradient(135deg,rgba(26,35,50,0.98),rgba(13,21,32,0.98));border-radius:1rem;padding:1.5rem;width:100%;max-width:500px;max-height:90vh;overflow-y:auto;border:1px solid rgba(5,191,219,0.3);">' +
+    modal.innerHTML = '<div style="background:linear-gradient(135deg,rgba(5,191,219,0.1),rgba(13,38,79,0.95),rgba(0,17,56,0.98));border-radius:1rem;padding:1.5rem;width:100%;max-width:500px;max-height:90vh;overflow-y:auto;border:1px solid rgba(5,191,219,0.3);backdrop-filter:blur(20px);box-shadow:0 25px 80px rgba(0,0,0,0.6),0 0 40px rgba(5,191,219,0.2);">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">' +
             '<h2 style="color:var(--color-primary);margin:0;font-size:1.2rem;">📂 ' + category + '</h2>' +
             '<button onclick="closeCategoryModal()" style="background:none;border:none;color:white;font-size:1.5rem;cursor:pointer;">&times;</button>' +
@@ -3877,7 +3878,7 @@ function showRecurringForm() {
     
     recModal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:10000;padding:1rem;';
     
-    recModal.innerHTML = '<div style="background:linear-gradient(135deg,rgba(26,35,50,0.98),rgba(13,21,32,0.98));border-radius:1rem;padding:1.5rem;width:100%;max-width:400px;max-height:90vh;overflow-y:auto;border:1px solid rgba(139,92,246,0.3);">' +
+    recModal.innerHTML = '<div style="background:linear-gradient(135deg,rgba(5,191,219,0.1),rgba(13,38,79,0.95),rgba(0,17,56,0.98));border-radius:1rem;padding:1.5rem;width:100%;max-width:400px;max-height:90vh;overflow-y:auto;border:1px solid rgba(139,92,246,0.3);backdrop-filter:blur(20px);box-shadow:0 25px 80px rgba(0,0,0,0.6),0 0 40px rgba(139,92,246,0.2);">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">' +
             '<h3 style="color:#8b5cf6;margin:0;font-size:1.2rem;">🔄 Nuevo Gasto Recurrente</h3>' +
             '<button onclick="closeRecurringForm()" style="background:none;border:none;color:white;font-size:1.5rem;cursor:pointer;padding:0;">&times;</button>' +
@@ -4359,20 +4360,132 @@ function injectResponsiveStyles() {
     const style = document.createElement('style');
     style.id = styleId;
     style.textContent = `
+        /* ========================================
+           🎨 EFECTO CRISTAL TURQUESA - GLASSMORPHISM
+           ======================================== */
+        
+        /* Variables de colores turquesa */
+        :root {
+            --turquoise-primary: #05BFDB;
+            --turquoise-secondary: #088395;
+            --turquoise-dark: #0891b2;
+            --turquoise-glow: rgba(5, 191, 219, 0.4);
+            --glass-bg: linear-gradient(135deg, rgba(5, 191, 219, 0.15) 0%, rgba(8, 131, 149, 0.1) 50%, rgba(13, 21, 32, 0.95) 100%);
+            --glass-border: rgba(5, 191, 219, 0.3);
+        }
+        
         /* Base responsive */
         * { box-sizing: border-box; }
         
-        /* Cards responsive */
+        /* Body con fondo de cristal */
+        body, #app {
+            background: linear-gradient(180deg, #001138 0%, #0D264F 50%, #001138 100%) !important;
+        }
+        
+        /* Cards con efecto cristal turquesa */
         .card {
+            background: linear-gradient(135deg, rgba(5, 191, 219, 0.12) 0%, rgba(8, 131, 149, 0.08) 50%, rgba(13, 38, 79, 0.6) 100%) !important;
+            border: 1px solid rgba(5, 191, 219, 0.25) !important;
+            border-radius: 16px !important;
             padding: 1rem !important;
             margin-bottom: 0.75rem !important;
+            backdrop-filter: blur(10px) !important;
+            -webkit-backdrop-filter: blur(10px) !important;
+            box-shadow: 
+                0 4px 20px rgba(5, 191, 219, 0.15),
+                inset 0 1px 0 rgba(5, 191, 219, 0.2),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.1) !important;
+            transition: all 0.3s ease !important;
+        }
+        
+        .card:hover {
+            border-color: rgba(5, 191, 219, 0.4) !important;
+            box-shadow: 
+                0 8px 32px rgba(5, 191, 219, 0.25),
+                inset 0 1px 0 rgba(5, 191, 219, 0.3),
+                0 0 20px rgba(5, 191, 219, 0.1) !important;
+            transform: translateY(-2px);
+        }
+        
+        /* Stats boxes con cristal */
+        .card [style*="grid-template-columns"] > div,
+        .card [style*="display: grid"] > div {
+            background: linear-gradient(135deg, rgba(5, 191, 219, 0.1) 0%, rgba(13, 38, 79, 0.4) 100%) !important;
+            border: 1px solid rgba(5, 191, 219, 0.2) !important;
             border-radius: 12px !important;
         }
         
-        /* Tab content spacing */
+        /* Modal con cristal */
+        .modal-content,
+        #modal .modal-content,
+        [id*="modal"] > div {
+            background: linear-gradient(135deg, rgba(5, 191, 219, 0.08) 0%, rgba(13, 38, 79, 0.95) 50%, rgba(0, 17, 56, 0.98) 100%) !important;
+            border: 1px solid rgba(5, 191, 219, 0.3) !important;
+            box-shadow: 
+                0 25px 80px rgba(0, 0, 0, 0.6),
+                0 0 40px rgba(5, 191, 219, 0.2),
+                inset 0 1px 0 rgba(5, 191, 219, 0.2) !important;
+            backdrop-filter: blur(20px) !important;
+            -webkit-backdrop-filter: blur(20px) !important;
+        }
+        
+        /* Bottom navigation con cristal */
+        .bottom-nav {
+            background: linear-gradient(180deg, rgba(5, 191, 219, 0.1) 0%, rgba(13, 38, 79, 0.95) 100%) !important;
+            border-top: 1px solid rgba(5, 191, 219, 0.3) !important;
+            backdrop-filter: blur(15px) !important;
+            -webkit-backdrop-filter: blur(15px) !important;
+            box-shadow: 0 -4px 20px rgba(5, 191, 219, 0.15) !important;
+        }
+        
+        /* Inputs con cristal */
+        input, select, textarea {
+            background: linear-gradient(135deg, rgba(5, 191, 219, 0.08) 0%, rgba(13, 38, 79, 0.5) 100%) !important;
+            border: 1px solid rgba(5, 191, 219, 0.3) !important;
+            color: white !important;
+            font-size: 16px !important;
+            transition: all 0.3s ease !important;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            border-color: #05BFDB !important;
+            box-shadow: 0 0 15px rgba(5, 191, 219, 0.3) !important;
+            outline: none !important;
+        }
+        
+        /* FAB con glow turquesa */
+        .fab {
+            box-shadow: 
+                0 4px 20px rgba(5, 191, 219, 0.5),
+                0 0 30px rgba(5, 191, 219, 0.3) !important;
+        }
+        
+        .fab:hover {
+            box-shadow: 
+                0 6px 30px rgba(5, 191, 219, 0.6),
+                0 0 40px rgba(5, 191, 219, 0.4) !important;
+            transform: scale(1.05);
+        }
+        
+        /* Header con cristal */
+        .header, header {
+            background: linear-gradient(180deg, rgba(5, 191, 219, 0.15) 0%, rgba(13, 38, 79, 0.8) 100%) !important;
+            border-bottom: 1px solid rgba(5, 191, 219, 0.2) !important;
+            backdrop-filter: blur(10px) !important;
+        }
+        
+        /* Progress bars con brillo */
+        [style*="border-radius"][style*="height: 12px"],
+        [style*="border-radius"][style*="height:12px"] {
+            background: rgba(5, 191, 219, 0.1) !important;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3) !important;
+        }
+        
+        /* Tab content con padding para cristal */
         .tab-content {
             padding: 0.5rem !important;
             padding-bottom: 100px !important;
+            background: transparent !important;
         }
         
         /* Charts responsive */
@@ -4380,6 +4493,9 @@ function injectResponsiveStyles() {
             height: 200px !important;
             min-height: 180px !important;
             position: relative !important;
+            background: linear-gradient(135deg, rgba(5, 191, 219, 0.05) 0%, rgba(13, 38, 79, 0.3) 100%) !important;
+            border-radius: 12px !important;
+            padding: 0.5rem !important;
         }
         
         /* Grid responsive */
@@ -4394,6 +4510,7 @@ function injectResponsiveStyles() {
             .card {
                 padding: 0.75rem !important;
                 margin-bottom: 0.5rem !important;
+                border-radius: 12px !important;
             }
             
             .card h2, .card h3 {
@@ -4486,34 +4603,56 @@ function injectResponsiveStyles() {
             margin: auto !important;
         }
         
-        /* Input responsive */
-        input, select, textarea {
-            font-size: 16px !important; /* Previene zoom en iOS */
-        }
-        
-        /* Botones responsive */
+        /* Botones con glow */
         button {
             min-height: 44px;
             cursor: pointer;
+            transition: all 0.3s ease !important;
         }
         
-        /* Scrollbar estilizado */
+        button:hover {
+            transform: translateY(-1px);
+        }
+        
+        /* Scrollbar estilizado turquesa */
         ::-webkit-scrollbar {
             width: 6px;
         }
         
         ::-webkit-scrollbar-track {
-            background: rgba(255,255,255,0.1);
+            background: rgba(5, 191, 219, 0.1);
         }
         
         ::-webkit-scrollbar-thumb {
-            background: rgba(5,191,219,0.5);
+            background: linear-gradient(180deg, #05BFDB, #088395);
             border-radius: 3px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, #06d6f5, #05BFDB);
+        }
+        
+        /* Animación de brillo */
+        @keyframes turquoiseGlow {
+            0%, 100% { box-shadow: 0 0 20px rgba(5, 191, 219, 0.3); }
+            50% { box-shadow: 0 0 30px rgba(5, 191, 219, 0.5); }
+        }
+        
+        /* Efecto de cristal en bordes */
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(5, 191, 219, 0.5), transparent);
+            border-radius: 16px 16px 0 0;
         }
     `;
     
     document.head.appendChild(style);
-    console.log('✅ Estilos responsive inyectados');
+    console.log('✅ Estilos cristal turquesa inyectados');
 }
 
 // Inyectar estilos al cargar
@@ -5254,7 +5393,7 @@ function showRecurringIncomeFormNew() {
     
     modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:10000;padding:1rem;';
     
-    modal.innerHTML = '<div style="background:linear-gradient(135deg,rgba(26,35,50,0.98),rgba(13,21,32,0.98));border-radius:1rem;padding:1.5rem;width:100%;max-width:400px;max-height:90vh;overflow-y:auto;border:1px solid rgba(34,197,94,0.3);">' +
+    modal.innerHTML = '<div style="background:linear-gradient(135deg,rgba(5,191,219,0.1),rgba(13,38,79,0.95),rgba(0,17,56,0.98));border-radius:1rem;padding:1.5rem;width:100%;max-width:400px;max-height:90vh;overflow-y:auto;border:1px solid rgba(34,197,94,0.3);backdrop-filter:blur(20px);box-shadow:0 25px 80px rgba(0,0,0,0.6),0 0 40px rgba(34,197,94,0.2);">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">' +
             '<h3 style="color:#22c55e;margin:0;">💰 Nuevo Ingreso Recurrente</h3>' +
             '<button onclick="closeRecurringIncomeForm()" style="background:none;border:none;color:white;font-size:1.5rem;cursor:pointer;">&times;</button>' +
