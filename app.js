@@ -391,6 +391,7 @@ let expenseChart = null;
 let categoryChart = null;
 let descriptionChart = null;
 let incomeChart = null;
+let savingsRateChart = null;
 
 // ✨ NUEVO: Variables para tutorial guiado
 let tutorialActive = false;
@@ -2986,12 +2987,13 @@ function initCharts() {
         if (typeof categoryChart !== 'undefined' && categoryChart) categoryChart.destroy();
         if (typeof descriptionChart !== 'undefined' && descriptionChart) descriptionChart.destroy();
         if (typeof incomeChart !== 'undefined' && incomeChart) incomeChart.destroy();
+        if (typeof savingsRateChart !== 'undefined' && savingsRateChart) savingsRateChart.destroy();
         
         const totals = typeof calculateTotals === 'function' ? calculateTotals() : { expensesByCategory: {} };
         const expensesByDescription = typeof calculateExpensesByDescription === 'function' ? calculateExpensesByDescription() : {};
         const incomeDistribution = typeof calculateIncomeDistribution === 'function' ? calculateIncomeDistribution() : {};
         
-        // Expense by Category chart (expenseChart)
+        // Expense by Category chart (expenseChart) - Colores vibrantes
         const expenseCtx = document.getElementById('expenseChart');
         if (expenseCtx && totals.expensesByCategory && Object.keys(totals.expensesByCategory).length > 0) {
             expenseChart = new Chart(expenseCtx.getContext('2d'), {
@@ -3000,22 +3002,55 @@ function initCharts() {
                     labels: Object.keys(totals.expensesByCategory),
                     datasets: [{
                         data: Object.values(totals.expensesByCategory),
-                        backgroundColor: ['#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6', '#f43f5e']
+                        backgroundColor: [
+                            '#FF6B6B', '#4ECDC4', '#FFE66D', '#95E1D3', 
+                            '#F38181', '#AA96DA', '#FCBAD3', '#A8D8EA',
+                            '#FF9FF3', '#54A0FF'
+                        ],
+                        borderColor: 'rgba(255,255,255,0.2)',
+                        borderWidth: 2,
+                        hoverOffset: 15
                     }]
                 },
                 options: { 
                     responsive: true, 
                     maintainAspectRatio: false,
+                    animation: {
+                        animateScale: true,
+                        animateRotate: true,
+                        duration: 1500,
+                        easing: 'easeOutQuart'
+                    },
                     plugins: {
-                        legend: { position: 'bottom', labels: { color: 'white' } }
+                        legend: { 
+                            position: 'bottom', 
+                            labels: { 
+                                color: 'white',
+                                padding: 15,
+                                font: { size: 11 }
+                            } 
+                        }
                     }
                 }
             });
         }
         
-        // Description chart (descriptionChart) - "¿Dónde va mi dinero?"
+        // Description chart (descriptionChart) - "¿Dónde va mi dinero?" - Colores vibrantes
         const descCtx = document.getElementById('descriptionChart');
         if (descCtx && Object.keys(expensesByDescription).length > 0) {
+            const gradientColors = [
+                'rgba(255, 107, 107, 0.8)',
+                'rgba(78, 205, 196, 0.8)',
+                'rgba(255, 230, 109, 0.8)',
+                'rgba(149, 225, 211, 0.8)',
+                'rgba(243, 129, 129, 0.8)',
+                'rgba(170, 150, 218, 0.8)',
+                'rgba(252, 186, 211, 0.8)',
+                'rgba(168, 216, 234, 0.8)',
+                'rgba(255, 159, 243, 0.8)',
+                'rgba(84, 160, 255, 0.8)'
+            ];
+            
             descriptionChart = new Chart(descCtx.getContext('2d'), {
                 type: 'bar',
                 data: {
@@ -3023,25 +3058,37 @@ function initCharts() {
                     datasets: [{
                         label: 'Gastos',
                         data: Object.values(expensesByDescription).slice(0, 10),
-                        backgroundColor: 'rgba(239, 68, 68, 0.7)',
-                        borderColor: '#ef4444',
-                        borderWidth: 1
+                        backgroundColor: gradientColors,
+                        borderColor: gradientColors.map(c => c.replace('0.8', '1')),
+                        borderWidth: 2,
+                        borderRadius: 8,
+                        borderSkipped: false
                     }]
                 },
                 options: { 
                     responsive: true, 
                     maintainAspectRatio: false,
                     indexAxis: 'y',
+                    animation: {
+                        duration: 1500,
+                        easing: 'easeOutQuart'
+                    },
                     plugins: { legend: { display: false } },
                     scales: {
-                        x: { ticks: { color: 'rgba(255,255,255,0.7)' }, grid: { color: 'rgba(255,255,255,0.1)' } },
-                        y: { ticks: { color: 'rgba(255,255,255,0.7)' }, grid: { display: false } }
+                        x: { 
+                            ticks: { color: 'rgba(255,255,255,0.7)' }, 
+                            grid: { color: 'rgba(255,255,255,0.1)' } 
+                        },
+                        y: { 
+                            ticks: { color: 'rgba(255,255,255,0.8)', font: { size: 11 } }, 
+                            grid: { display: false } 
+                        }
                     }
                 }
             });
         }
         
-        // Income distribution chart (incomeChart)
+        // Income distribution chart (incomeChart) - Colores vibrantes
         const incomeCtx = document.getElementById('incomeChart');
         if (incomeCtx && Object.keys(incomeDistribution).length > 0) {
             incomeChart = new Chart(incomeCtx.getContext('2d'), {
@@ -3050,17 +3097,130 @@ function initCharts() {
                     labels: Object.keys(incomeDistribution),
                     datasets: [{
                         data: Object.values(incomeDistribution),
-                        backgroundColor: ['#22c55e', '#06b6d4', '#8b5cf6', '#f97316', '#3b82f6']
+                        backgroundColor: [
+                            '#00D9FF', '#00FF88', '#FFD93D', '#FF6B9D', '#C9B1FF'
+                        ],
+                        borderColor: 'rgba(255,255,255,0.3)',
+                        borderWidth: 2,
+                        hoverOffset: 10
                     }]
                 },
                 options: { 
                     responsive: true, 
                     maintainAspectRatio: false,
+                    animation: {
+                        animateScale: true,
+                        animateRotate: true,
+                        duration: 1500,
+                        easing: 'easeOutQuart'
+                    },
                     plugins: {
-                        legend: { position: 'bottom', labels: { color: 'white' } }
+                        legend: { 
+                            position: 'bottom', 
+                            labels: { 
+                                color: 'white',
+                                padding: 15,
+                                font: { size: 11 }
+                            } 
+                        }
                     }
                 }
             });
+        }
+        
+        // Savings Rate Chart (Tasa de Ahorro e Inversión Mensual)
+        const savingsCtx = document.getElementById('savingsRateChart');
+        if (savingsCtx) {
+            // Calcular datos de ahorro mensual
+            const monthlyData = {};
+            const expensesList = typeof expenses !== 'undefined' ? expenses : [];
+            const incomeList = typeof incomeHistory !== 'undefined' ? incomeHistory : [];
+            
+            // Agrupar gastos por mes
+            expensesList.forEach(exp => {
+                const date = new Date(exp.date);
+                const monthKey = date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0');
+                if (!monthlyData[monthKey]) monthlyData[monthKey] = { expenses: 0, income: 0 };
+                monthlyData[monthKey].expenses += exp.amount || 0;
+            });
+            
+            // Agrupar ingresos por mes
+            incomeList.forEach(inc => {
+                const date = new Date(inc.date);
+                const monthKey = date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0');
+                if (!monthlyData[monthKey]) monthlyData[monthKey] = { expenses: 0, income: 0 };
+                monthlyData[monthKey].income += inc.amount || 0;
+            });
+            
+            const sortedMonths = Object.keys(monthlyData).sort().slice(-6);
+            const savingsRates = sortedMonths.map(month => {
+                const data = monthlyData[month];
+                return data.income > 0 ? Math.max(0, ((data.income - data.expenses) / data.income) * 100) : 0;
+            });
+            
+            const monthLabels = sortedMonths.map(m => {
+                const [year, month] = m.split('-');
+                const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+                return monthNames[parseInt(month) - 1] + ' ' + year.slice(2);
+            });
+            
+            if (sortedMonths.length > 0) {
+                savingsRateChart = new Chart(savingsCtx.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: monthLabels,
+                        datasets: [{
+                            label: 'Tasa de Ahorro %',
+                            data: savingsRates,
+                            backgroundColor: savingsRates.map(rate => 
+                                rate >= 20 ? 'rgba(34, 197, 94, 0.8)' : 
+                                rate >= 10 ? 'rgba(234, 179, 8, 0.8)' : 
+                                'rgba(239, 68, 68, 0.8)'
+                            ),
+                            borderColor: savingsRates.map(rate => 
+                                rate >= 20 ? '#22c55e' : 
+                                rate >= 10 ? '#eab308' : 
+                                '#ef4444'
+                            ),
+                            borderWidth: 2,
+                            borderRadius: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: {
+                            duration: 1500,
+                            easing: 'easeOutBounce'
+                        },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return 'Tasa de Ahorro: ' + context.raw.toFixed(1) + '%';
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                ticks: { 
+                                    color: 'rgba(255,255,255,0.7)',
+                                    callback: function(value) { return value + '%'; }
+                                },
+                                grid: { color: 'rgba(255,255,255,0.1)' }
+                            },
+                            x: {
+                                ticks: { color: 'rgba(255,255,255,0.7)' },
+                                grid: { display: false }
+                            }
+                        }
+                    }
+                });
+            }
         }
         
         console.log('✅ Gráficos inicializados');
@@ -3204,8 +3364,10 @@ function renderMainApp() {
         '</nav>' +
         '<button class="fab" onclick="toggleFabMenu()" style="position:fixed;bottom:90px;right:20px;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#05BFDB,#088395);color:white;font-size:24px;border:none;cursor:pointer;box-shadow:0 4px 15px rgba(5,191,219,0.4);z-index:1001;">+</button>' +
         '<div id="fab-menu" style="display:none;position:fixed;bottom:160px;right:20px;flex-direction:column;gap:0.75rem;z-index:1001;">' +
-            '<button onclick="openModal(\'expense\')" style="padding:0.75rem 1.25rem;border-radius:25px;background:linear-gradient(135deg,#ef4444,#dc2626);color:white;border:none;cursor:pointer;">💸 Gasto</button>' +
-            '<button onclick="openModal(\'income\')" style="padding:0.75rem 1.25rem;border-radius:25px;background:linear-gradient(135deg,#22c55e,#16a34a);color:white;border:none;cursor:pointer;">💵 Ingreso</button>' +
+            '<button onclick="openModal(\'expense\')" style="padding:0.75rem 1.25rem;border-radius:25px;background:linear-gradient(135deg,#ef4444,#dc2626);color:white;border:none;cursor:pointer;box-shadow:0 4px 15px rgba(239,68,68,0.4);font-weight:500;">💸 Gasto</button>' +
+            '<button onclick="openModal(\'income\')" style="padding:0.75rem 1.25rem;border-radius:25px;background:linear-gradient(135deg,#22c55e,#16a34a);color:white;border:none;cursor:pointer;box-shadow:0 4px 15px rgba(34,197,94,0.4);font-weight:500;">💵 Ingreso</button>' +
+            '<button onclick="openRecurringModal()" style="padding:0.75rem 1.25rem;border-radius:25px;background:linear-gradient(135deg,#8b5cf6,#7c3aed);color:white;border:none;cursor:pointer;box-shadow:0 4px 15px rgba(139,92,246,0.4);font-weight:500;">🔄 Recurrente</button>' +
+            '<button onclick="openAssistant()" style="padding:0.75rem 1.25rem;border-radius:25px;background:linear-gradient(135deg,#06b6d4,#0891b2);color:white;border:none;cursor:pointer;box-shadow:0 4px 15px rgba(6,182,212,0.4);font-weight:500;">🤖 Asistente</button>' +
         '</div>' +
         tutorial;
 }
@@ -3215,6 +3377,42 @@ function toggleFabMenu() {
     const menu = document.getElementById('fab-menu');
     if (menu) {
         menu.style.display = menu.style.display === 'none' ? 'flex' : 'none';
+    }
+}
+
+// Abrir modal de gastos recurrentes
+function openRecurringModal() {
+    toggleFabMenu(); // Cerrar menú FAB
+    if (typeof recurringModule !== 'undefined' && recurringModule && typeof recurringModule.openAddModal === 'function') {
+        recurringModule.openAddModal();
+    } else {
+        // Navegar a la sección de recurrentes
+        switchTab('more-recurring');
+        if (typeof showToast === 'function') {
+            showToast('Usa el botón + en la sección de recurrentes', 'info');
+        }
+    }
+}
+
+// Abrir asistente virtual
+function openAssistant() {
+    toggleFabMenu(); // Cerrar menú FAB
+    if (typeof assistantModule !== 'undefined' && assistantModule) {
+        if (typeof assistantModule.openChat === 'function') {
+            assistantModule.openChat();
+        } else if (typeof assistantModule.toggle === 'function') {
+            assistantModule.toggle();
+        } else {
+            // Mostrar el contenedor del asistente
+            const assistantContainer = document.getElementById('assistant-container') || document.querySelector('.assistant-container');
+            if (assistantContainer) {
+                assistantContainer.style.display = 'block';
+            } else if (typeof showToast === 'function') {
+                showToast('Asistente virtual iniciándose...', 'info');
+            }
+        }
+    } else if (typeof showToast === 'function') {
+        showToast('Asistente no disponible en este momento', 'warning');
     }
 }
 
