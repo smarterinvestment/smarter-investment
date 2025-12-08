@@ -3659,17 +3659,22 @@ function openRecurringModal() {
 
 // Mostrar formulario de gasto recurrente
 function showRecurringForm() {
-    const modal = document.getElementById('modal');
-    const modalBody = document.getElementById('modal-body');
-    const modalTitle = document.getElementById('modal-title');
-    
-    if (!modal || !modalBody) {
-        alert('Por favor, ve a la sección "Más" > "Gastos Recurrentes" para agregar un gasto recurrente.');
-        return;
+    // Crear modal propio para recurrentes
+    let recModal = document.getElementById('recurring-modal');
+    if (!recModal) {
+        recModal = document.createElement('div');
+        recModal.id = 'recurring-modal';
+        document.body.appendChild(recModal);
     }
     
-    modalTitle.textContent = '🔄 Nuevo Gasto Recurrente';
-    modalBody.innerHTML = '<form id="recurring-form" onsubmit="event.preventDefault(); saveRecurringExpense();">' +
+    recModal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:10000;padding:1rem;';
+    
+    recModal.innerHTML = '<div style="background:linear-gradient(135deg,rgba(26,35,50,0.98),rgba(13,21,32,0.98));border-radius:1rem;padding:1.5rem;width:100%;max-width:400px;max-height:90vh;overflow-y:auto;border:1px solid rgba(139,92,246,0.3);">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">' +
+            '<h3 style="color:#8b5cf6;margin:0;font-size:1.2rem;">🔄 Nuevo Gasto Recurrente</h3>' +
+            '<button onclick="closeRecurringForm()" style="background:none;border:none;color:white;font-size:1.5rem;cursor:pointer;padding:0;">&times;</button>' +
+        '</div>' +
+        '<form id="recurring-form" onsubmit="event.preventDefault(); saveRecurringExpense();">' +
         '<div class="input-group" style="margin-bottom: 1rem;">' +
             '<label style="display: block; margin-bottom: 0.5rem; color: rgba(255,255,255,0.8);">📝 Descripción</label>' +
             '<input type="text" id="recurring-name" placeholder="Ej: Netflix, Gym, Alquiler..." required style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid rgba(5,191,219,0.3); background: rgba(0,0,0,0.3); color: white;">' +
@@ -3693,17 +3698,25 @@ function showRecurringForm() {
             '<select id="recurring-frequency" required style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid rgba(5,191,219,0.3); background: rgba(0,0,0,0.3); color: white;">' +
                 '<option value="monthly">📅 Mensual</option>' +
                 '<option value="weekly">📆 Semanal</option>' +
+                '<option value="biweekly">📅 Quincenal</option>' +
                 '<option value="yearly">📋 Anual</option>' +
             '</select>' +
         '</div>' +
         '<div class="input-group" style="margin-bottom: 1.5rem;">' +
             '<label style="display: block; margin-bottom: 0.5rem; color: rgba(255,255,255,0.8);">📆 Día del mes (1-31)</label>' +
-            '<input type="number" id="recurring-day" value="1" min="1" max="31" required style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid rgba(5,191,219,0.3); background: rgba(0,0,0,0.3); color: white;">' +
+            '<input type="number" id="recurring-day" value="1" min="1" max="31" required style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid rgba(5,191,219,0.3); background: rgba(0,0,0,0.3); color: white; font-size: 16px;">' +
         '</div>' +
-        '<button type="submit" style="width: 100%; padding: 1rem; border-radius: 8px; background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; border: none; cursor: pointer; font-weight: bold; font-size: 1rem;">✅ Guardar Recurrente</button>' +
-    '</form>';
-    
-    modal.style.display = 'flex';
+        '<div style="display: flex; gap: 0.75rem;">' +
+            '<button type="button" onclick="closeRecurringForm()" style="flex: 1; padding: 1rem; border-radius: 8px; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); cursor: pointer; font-size: 1rem;">Cancelar</button>' +
+            '<button type="submit" style="flex: 1; padding: 1rem; border-radius: 8px; background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; border: none; cursor: pointer; font-weight: bold; font-size: 1rem;">✅ Guardar</button>' +
+        '</div>' +
+    '</form></div>';
+}
+
+// Cerrar modal de recurrentes
+function closeRecurringForm() {
+    var modal = document.getElementById('recurring-modal');
+    if (modal) modal.style.display = 'none';
 }
 
 // Guardar gasto recurrente
@@ -3744,10 +3757,11 @@ async function saveRecurringExpense() {
             });
         }
         
-        closeModal();
+        closeRecurringForm();
         if (typeof showToast === 'function') {
             showToast('Gasto recurrente guardado', 'success');
         } else {
+            alert('✅ Gasto recurrente guardado');
             alert('✅ Gasto recurrente guardado');
         }
         
