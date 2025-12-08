@@ -2931,6 +2931,9 @@ function switchTab(tab) {
             case 'goals':
                 tabContent.innerHTML = typeof renderGoals === 'function' ? renderGoals() : '<p>Goals</p>';
                 break;
+            case 'assistant':
+                tabContent.innerHTML = renderAssistantTab();
+                break;
             case 'more':
                 tabContent.innerHTML = typeof renderMoreSection === 'function' ? renderMoreSection() : '<p>More</p>';
                 break;
@@ -3355,19 +3358,19 @@ function renderMainApp() {
     
     return header + 
         '<div class="tab-content" id="tab-content">' + tabContent + '</div>' +
-        '<nav class="bottom-nav" style="position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:space-around;background:linear-gradient(135deg,rgba(26,35,50,0.98),rgba(13,21,32,0.98));padding:0.75rem 0;border-top:1px solid rgba(5,191,219,0.3);z-index:1000;">' +
-            '<button class="nav-item' + (activeTab === 'dashboard' ? ' active' : '') + '" onclick="switchTab(\'dashboard\')" style="display:flex;flex-direction:column;align-items:center;gap:0.25rem;background:none;border:none;color:' + (activeTab === 'dashboard' ? '#05BFDB' : 'rgba(255,255,255,0.6)') + ';cursor:pointer;padding:0.5rem 1rem;font-size:0.75rem;"><span style="font-size:1.25rem;">🏠</span><span>Inicio</span></button>' +
-            '<button class="nav-item' + (activeTab === 'expenses' ? ' active' : '') + '" onclick="switchTab(\'expenses\')" style="display:flex;flex-direction:column;align-items:center;gap:0.25rem;background:none;border:none;color:' + (activeTab === 'expenses' ? '#05BFDB' : 'rgba(255,255,255,0.6)') + ';cursor:pointer;padding:0.5rem 1rem;font-size:0.75rem;"><span style="font-size:1.25rem;">💰</span><span>Gastos</span></button>' +
-            '<button class="nav-item' + (activeTab === 'budget' ? ' active' : '') + '" onclick="switchTab(\'budget\')" style="display:flex;flex-direction:column;align-items:center;gap:0.25rem;background:none;border:none;color:' + (activeTab === 'budget' ? '#05BFDB' : 'rgba(255,255,255,0.6)') + ';cursor:pointer;padding:0.5rem 1rem;font-size:0.75rem;"><span style="font-size:1.25rem;">📊</span><span>Presupuesto</span></button>' +
-            '<button class="nav-item' + (activeTab === 'goals' ? ' active' : '') + '" onclick="switchTab(\'goals\')" style="display:flex;flex-direction:column;align-items:center;gap:0.25rem;background:none;border:none;color:' + (activeTab === 'goals' ? '#05BFDB' : 'rgba(255,255,255,0.6)') + ';cursor:pointer;padding:0.5rem 1rem;font-size:0.75rem;"><span style="font-size:1.25rem;">🎯</span><span>Metas</span></button>' +
-            '<button class="nav-item' + (activeTab === 'more' ? ' active' : '') + '" onclick="switchTab(\'more\')" style="display:flex;flex-direction:column;align-items:center;gap:0.25rem;background:none;border:none;color:' + (activeTab === 'more' ? '#05BFDB' : 'rgba(255,255,255,0.6)') + ';cursor:pointer;padding:0.5rem 1rem;font-size:0.75rem;"><span style="font-size:1.25rem;">⚙️</span><span>Más</span></button>' +
+        '<nav class="bottom-nav" style="position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:space-around;background:linear-gradient(135deg,rgba(26,35,50,0.98),rgba(13,21,32,0.98));padding:0.5rem 0;border-top:1px solid rgba(5,191,219,0.3);z-index:1000;">' +
+            '<button class="nav-item' + (activeTab === 'dashboard' ? ' active' : '') + '" onclick="switchTab(\'dashboard\')" style="display:flex;flex-direction:column;align-items:center;gap:0.15rem;background:none;border:none;color:' + (activeTab === 'dashboard' ? '#05BFDB' : 'rgba(255,255,255,0.6)') + ';cursor:pointer;padding:0.25rem 0.5rem;font-size:0.65rem;"><span style="font-size:1.1rem;">🏠</span><span>Inicio</span></button>' +
+            '<button class="nav-item' + (activeTab === 'expenses' ? ' active' : '') + '" onclick="switchTab(\'expenses\')" style="display:flex;flex-direction:column;align-items:center;gap:0.15rem;background:none;border:none;color:' + (activeTab === 'expenses' ? '#05BFDB' : 'rgba(255,255,255,0.6)') + ';cursor:pointer;padding:0.25rem 0.5rem;font-size:0.65rem;"><span style="font-size:1.1rem;">💰</span><span>Gastos</span></button>' +
+            '<button class="nav-item' + (activeTab === 'budget' ? ' active' : '') + '" onclick="switchTab(\'budget\')" style="display:flex;flex-direction:column;align-items:center;gap:0.15rem;background:none;border:none;color:' + (activeTab === 'budget' ? '#05BFDB' : 'rgba(255,255,255,0.6)') + ';cursor:pointer;padding:0.25rem 0.5rem;font-size:0.65rem;"><span style="font-size:1.1rem;">📊</span><span>Presupuesto</span></button>' +
+            '<button class="nav-item' + (activeTab === 'goals' ? ' active' : '') + '" onclick="switchTab(\'goals\')" style="display:flex;flex-direction:column;align-items:center;gap:0.15rem;background:none;border:none;color:' + (activeTab === 'goals' ? '#05BFDB' : 'rgba(255,255,255,0.6)') + ';cursor:pointer;padding:0.25rem 0.5rem;font-size:0.65rem;"><span style="font-size:1.1rem;">🎯</span><span>Metas</span></button>' +
+            '<button class="nav-item' + (activeTab === 'assistant' ? ' active' : '') + '" onclick="switchTab(\'assistant\')" style="display:flex;flex-direction:column;align-items:center;gap:0.15rem;background:none;border:none;color:' + (activeTab === 'assistant' ? '#05BFDB' : 'rgba(255,255,255,0.6)') + ';cursor:pointer;padding:0.25rem 0.5rem;font-size:0.65rem;"><span style="font-size:1.1rem;">🤖</span><span>Asistente</span></button>' +
+            '<button class="nav-item' + (activeTab === 'more' ? ' active' : '') + '" onclick="switchTab(\'more\')" style="display:flex;flex-direction:column;align-items:center;gap:0.15rem;background:none;border:none;color:' + (activeTab === 'more' ? '#05BFDB' : 'rgba(255,255,255,0.6)') + ';cursor:pointer;padding:0.25rem 0.5rem;font-size:0.65rem;"><span style="font-size:1.1rem;">⚙️</span><span>Más</span></button>' +
         '</nav>' +
         '<button class="fab" onclick="toggleFabMenu()" style="position:fixed;bottom:90px;right:20px;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#05BFDB,#088395);color:white;font-size:24px;border:none;cursor:pointer;box-shadow:0 4px 15px rgba(5,191,219,0.4);z-index:1001;">+</button>' +
         '<div id="fab-menu" style="display:none;position:fixed;bottom:160px;right:20px;flex-direction:column;gap:0.75rem;z-index:1001;">' +
             '<button onclick="openModal(\'expense\')" style="padding:0.75rem 1.25rem;border-radius:25px;background:linear-gradient(135deg,#ef4444,#dc2626);color:white;border:none;cursor:pointer;box-shadow:0 4px 15px rgba(239,68,68,0.4);font-weight:500;">💸 Gasto</button>' +
             '<button onclick="openModal(\'income\')" style="padding:0.75rem 1.25rem;border-radius:25px;background:linear-gradient(135deg,#22c55e,#16a34a);color:white;border:none;cursor:pointer;box-shadow:0 4px 15px rgba(34,197,94,0.4);font-weight:500;">💵 Ingreso</button>' +
             '<button onclick="openRecurringModal()" style="padding:0.75rem 1.25rem;border-radius:25px;background:linear-gradient(135deg,#8b5cf6,#7c3aed);color:white;border:none;cursor:pointer;box-shadow:0 4px 15px rgba(139,92,246,0.4);font-weight:500;">🔄 Recurrente</button>' +
-            '<button onclick="openAssistant()" style="padding:0.75rem 1.25rem;border-radius:25px;background:linear-gradient(135deg,#06b6d4,#0891b2);color:white;border:none;cursor:pointer;box-shadow:0 4px 15px rgba(6,182,212,0.4);font-weight:500;">🤖 Asistente</button>' +
         '</div>' +
         tutorial;
 }
@@ -3439,3 +3442,309 @@ async function checkAndGenerateRecurringExpenses() {
 // monthNames ya está declarado en línea 416
 
 console.log('✅ Funciones faltantes cargadas');
+
+// ========================================
+// 🤖 ASISTENTE VIRTUAL - TAB
+// ========================================
+function renderAssistantTab() {
+    return '<div style="padding: 1rem; padding-bottom: 100px;">' +
+        '<div class="card" style="text-align: center; padding: 2rem;">' +
+            '<div style="font-size: 4rem; margin-bottom: 1rem;">🤖</div>' +
+            '<h2 style="color: var(--color-primary); margin-bottom: 1rem;">Asistente Financiero AI</h2>' +
+            '<p style="color: rgba(255,255,255,0.7); margin-bottom: 1.5rem;">Tu asesor personal para tomar mejores decisiones financieras</p>' +
+            '<div id="assistant-chat-container" style="background: rgba(0,0,0,0.3); border-radius: 1rem; padding: 1rem; min-height: 300px; max-height: 400px; overflow-y: auto; margin-bottom: 1rem; text-align: left;">' +
+                '<div id="assistant-messages">' +
+                    '<div style="background: rgba(5,191,219,0.2); padding: 0.75rem 1rem; border-radius: 1rem; margin-bottom: 0.5rem; max-width: 85%;">' +
+                        '<strong style="color: #05BFDB;">🤖 Asistente:</strong><br>' +
+                        '<span style="color: rgba(255,255,255,0.9);">¡Hola! Soy tu asistente financiero personal. Puedo ayudarte con:</span><br><br>' +
+                        '<span style="color: rgba(255,255,255,0.8);">• Análisis de tus gastos e ingresos<br>' +
+                        '• Consejos para ahorrar más<br>' +
+                        '• Proyecciones financieras<br>' +
+                        '• Planificación de presupuesto<br>' +
+                        '• Tips de inversión básicos</span><br><br>' +
+                        '<span style="color: rgba(255,255,255,0.9);">¿En qué puedo ayudarte hoy?</span>' +
+                    '</div>' +
+                '</div>' +
+            '</div>' +
+            '<div style="display: flex; gap: 0.5rem;">' +
+                '<input type="text" id="assistant-input" placeholder="Escribe tu pregunta..." style="flex: 1; padding: 0.75rem 1rem; border-radius: 25px; border: 1px solid rgba(5,191,219,0.3); background: rgba(0,0,0,0.3); color: white; font-size: 0.9rem;" onkeypress="if(event.key===\'Enter\')sendAssistantMessage()">' +
+                '<button onclick="sendAssistantMessage()" style="padding: 0.75rem 1.25rem; border-radius: 25px; background: linear-gradient(135deg, #05BFDB, #088395); color: white; border: none; cursor: pointer; font-weight: 500;">Enviar</button>' +
+            '</div>' +
+            '<div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; justify-content: center;">' +
+                '<button onclick="askAssistant(\'¿Cómo van mis finanzas este mes?\')" style="padding: 0.5rem 1rem; border-radius: 20px; background: rgba(5,191,219,0.2); color: #05BFDB; border: 1px solid rgba(5,191,219,0.3); cursor: pointer; font-size: 0.8rem;">💰 ¿Cómo van mis finanzas?</button>' +
+                '<button onclick="askAssistant(\'Dame consejos para ahorrar\')" style="padding: 0.5rem 1rem; border-radius: 20px; background: rgba(34,197,94,0.2); color: #22c55e; border: 1px solid rgba(34,197,94,0.3); cursor: pointer; font-size: 0.8rem;">💡 Consejos de ahorro</button>' +
+                '<button onclick="askAssistant(\'Analiza mis gastos\')" style="padding: 0.5rem 1rem; border-radius: 20px; background: rgba(239,68,68,0.2); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); cursor: pointer; font-size: 0.8rem;">📊 Analizar gastos</button>' +
+            '</div>' +
+        '</div>' +
+    '</div>';
+}
+
+// Enviar mensaje al asistente
+function sendAssistantMessage() {
+    const input = document.getElementById('assistant-input');
+    if (!input || !input.value.trim()) return;
+    
+    const message = input.value.trim();
+    input.value = '';
+    
+    askAssistant(message);
+}
+
+// Preguntar al asistente
+function askAssistant(question) {
+    const messagesContainer = document.getElementById('assistant-messages');
+    if (!messagesContainer) return;
+    
+    // Agregar mensaje del usuario
+    messagesContainer.innerHTML += '<div style="background: rgba(139,92,246,0.2); padding: 0.75rem 1rem; border-radius: 1rem; margin-bottom: 0.5rem; max-width: 85%; margin-left: auto; text-align: right;">' +
+        '<strong style="color: #8b5cf6;">Tú:</strong><br>' +
+        '<span style="color: rgba(255,255,255,0.9);">' + question + '</span>' +
+    '</div>';
+    
+    // Scroll al final
+    const chatContainer = document.getElementById('assistant-chat-container');
+    if (chatContainer) chatContainer.scrollTop = chatContainer.scrollHeight;
+    
+    // Generar respuesta basada en datos
+    setTimeout(function() {
+        const response = generateAssistantResponse(question);
+        messagesContainer.innerHTML += '<div style="background: rgba(5,191,219,0.2); padding: 0.75rem 1rem; border-radius: 1rem; margin-bottom: 0.5rem; max-width: 85%;">' +
+            '<strong style="color: #05BFDB;">🤖 Asistente:</strong><br>' +
+            '<span style="color: rgba(255,255,255,0.9);">' + response + '</span>' +
+        '</div>';
+        if (chatContainer) chatContainer.scrollTop = chatContainer.scrollHeight;
+    }, 500);
+}
+
+// Generar respuesta del asistente basada en datos reales
+function generateAssistantResponse(question) {
+    const totals = typeof calculateTotals === 'function' ? calculateTotals() : { totalIncome: 0, totalExpenses: 0, balance: 0 };
+    const expensesList = typeof expenses !== 'undefined' ? expenses : [];
+    const incomeList = typeof incomeHistory !== 'undefined' ? incomeHistory : [];
+    
+    const totalIncome = totals.totalIncome || 0;
+    const totalExpenses = totals.totalExpenses || 0;
+    const balance = totals.balance || (totalIncome - totalExpenses);
+    const savingsRate = totalIncome > 0 ? ((balance / totalIncome) * 100).toFixed(1) : 0;
+    
+    const q = question.toLowerCase();
+    
+    if (q.includes('finanzas') || q.includes('resumen') || q.includes('cómo van')) {
+        return '📊 <strong>Resumen de tus finanzas:</strong><br><br>' +
+            '💵 Ingresos: <span style="color:#22c55e;">$' + totalIncome.toFixed(2) + '</span><br>' +
+            '💸 Gastos: <span style="color:#ef4444;">$' + totalExpenses.toFixed(2) + '</span><br>' +
+            '💰 Balance: <span style="color:' + (balance >= 0 ? '#22c55e' : '#ef4444') + ';">$' + balance.toFixed(2) + '</span><br>' +
+            '📈 Tasa de ahorro: ' + savingsRate + '%<br><br>' +
+            (balance >= 0 ? '✅ ¡Vas bien! Estás ahorrando dinero.' : '⚠️ Cuidado, estás gastando más de lo que ganas.');
+    }
+    
+    if (q.includes('ahorro') || q.includes('ahorrar') || q.includes('consejos')) {
+        let tips = '💡 <strong>Consejos para ahorrar:</strong><br><br>';
+        if (savingsRate < 10) {
+            tips += '⚠️ Tu tasa de ahorro es baja (' + savingsRate + '%). Te recomiendo:<br>';
+            tips += '• Revisar gastos no esenciales<br>';
+            tips += '• Establecer un presupuesto mensual<br>';
+            tips += '• Usar la regla 50/30/20<br>';
+        } else if (savingsRate < 20) {
+            tips += '👍 Tu tasa de ahorro es aceptable (' + savingsRate + '%). Para mejorar:<br>';
+            tips += '• Automatiza tus ahorros<br>';
+            tips += '• Busca reducir gastos fijos<br>';
+        } else {
+            tips += '🎉 ¡Excelente! Tu tasa de ahorro es muy buena (' + savingsRate + '%).<br>';
+            tips += '• Considera invertir el excedente<br>';
+            tips += '• Mantén un fondo de emergencia<br>';
+        }
+        return tips;
+    }
+    
+    if (q.includes('gastos') || q.includes('analiza') || q.includes('análisis')) {
+        const categories = totals.expensesByCategory || {};
+        let analysis = '📊 <strong>Análisis de gastos:</strong><br><br>';
+        analysis += 'Total de gastos: <span style="color:#ef4444;">$' + totalExpenses.toFixed(2) + '</span><br>';
+        analysis += 'Número de transacciones: ' + expensesList.length + '<br><br>';
+        
+        if (Object.keys(categories).length > 0) {
+            analysis += '<strong>Por categoría:</strong><br>';
+            for (const [cat, amount] of Object.entries(categories)) {
+                const percent = totalExpenses > 0 ? ((amount / totalExpenses) * 100).toFixed(1) : 0;
+                analysis += '• ' + cat + ': $' + amount.toFixed(2) + ' (' + percent + '%)<br>';
+            }
+        }
+        return analysis;
+    }
+    
+    return '🤔 Entiendo tu pregunta. Basándome en tus datos:<br><br>' +
+        '• Tienes ' + expensesList.length + ' gastos registrados<br>' +
+        '• Tienes ' + incomeList.length + ' ingresos registrados<br>' +
+        '• Tu balance actual es de $' + balance.toFixed(2) + '<br><br>' +
+        '¿Hay algo específico que te gustaría saber sobre tus finanzas?';
+}
+
+// ========================================
+// 🔧 FUNCIONES FALTANTES
+// ========================================
+
+// Verificar gastos inusuales
+function checkUnusualExpense(amount) {
+    if (!amount || typeof expenses === 'undefined') return;
+    
+    const expensesList = expenses || [];
+    if (expensesList.length < 3) return; // Necesitamos al menos 3 gastos para comparar
+    
+    const avgExpense = expensesList.reduce(function(sum, e) { return sum + (e.amount || 0); }, 0) / expensesList.length;
+    
+    if (avgExpense > 0 && amount > avgExpense * 3) {
+        console.log('⚠️ Gasto inusualmente alto detectado:', amount);
+        if (typeof showToast === 'function') {
+            showToast('¡Este gasto es inusualmente alto!', 'warning');
+        }
+    }
+}
+
+// Mostrar detalles de categoría en presupuesto
+function showCategoryDetailsBudget(category) {
+    if (!category) return;
+    
+    const expensesList = typeof expenses !== 'undefined' ? expenses : [];
+    const categoryExpenses = expensesList.filter(function(e) { return e.category === category; });
+    const total = categoryExpenses.reduce(function(sum, e) { return sum + (e.amount || 0); }, 0);
+    
+    let details = '📊 Detalles de ' + category + ':\\n\\n';
+    details += 'Total gastado: $' + total.toFixed(2) + '\\n';
+    details += 'Número de gastos: ' + categoryExpenses.length + '\\n\\n';
+    
+    if (categoryExpenses.length > 0) {
+        details += 'Últimos gastos:\\n';
+        categoryExpenses.slice(0, 5).forEach(function(e) {
+            details += '• ' + (e.description || 'Sin descripción') + ': $' + (e.amount || 0).toFixed(2) + '\\n';
+        });
+    }
+    
+    alert(details);
+}
+
+// Abrir modal de gastos recurrentes
+function openRecurringModal() {
+    toggleFabMenu(); // Cerrar menú FAB
+    
+    // Verificar si el módulo existe y tiene el método
+    if (typeof recurringModule !== 'undefined' && recurringModule) {
+        if (typeof recurringModule.openAddModal === 'function') {
+            recurringModule.openAddModal();
+            return;
+        }
+        if (typeof recurringModule.showAddForm === 'function') {
+            recurringModule.showAddForm();
+            return;
+        }
+    }
+    
+    // Si no hay módulo, mostrar formulario propio
+    showRecurringForm();
+}
+
+// Mostrar formulario de gasto recurrente
+function showRecurringForm() {
+    const modal = document.getElementById('modal');
+    const modalBody = document.getElementById('modal-body');
+    const modalTitle = document.getElementById('modal-title');
+    
+    if (!modal || !modalBody) {
+        alert('Por favor, ve a la sección "Más" > "Gastos Recurrentes" para agregar un gasto recurrente.');
+        return;
+    }
+    
+    modalTitle.textContent = '🔄 Nuevo Gasto Recurrente';
+    modalBody.innerHTML = '<form id="recurring-form" onsubmit="event.preventDefault(); saveRecurringExpense();">' +
+        '<div class="input-group" style="margin-bottom: 1rem;">' +
+            '<label style="display: block; margin-bottom: 0.5rem; color: rgba(255,255,255,0.8);">📝 Descripción</label>' +
+            '<input type="text" id="recurring-name" placeholder="Ej: Netflix, Gym, Alquiler..." required style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid rgba(5,191,219,0.3); background: rgba(0,0,0,0.3); color: white;">' +
+        '</div>' +
+        '<div class="input-group" style="margin-bottom: 1rem;">' +
+            '<label style="display: block; margin-bottom: 0.5rem; color: rgba(255,255,255,0.8);">💵 Monto</label>' +
+            '<input type="number" id="recurring-amount" placeholder="0.00" step="0.01" min="0" required style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid rgba(5,191,219,0.3); background: rgba(0,0,0,0.3); color: white;">' +
+        '</div>' +
+        '<div class="input-group" style="margin-bottom: 1rem;">' +
+            '<label style="display: block; margin-bottom: 0.5rem; color: rgba(255,255,255,0.8);">📁 Categoría</label>' +
+            '<select id="recurring-category" required style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid rgba(5,191,219,0.3); background: rgba(0,0,0,0.3); color: white;">' +
+                '<option value="Gastos Esenciales">🏠 Gastos Esenciales</option>' +
+                '<option value="Gastos Discrecionales">🎭 Gastos Discrecionales</option>' +
+                '<option value="Pago Deudas">💳 Pago Deudas</option>' +
+                '<option value="Ahorros">💰 Ahorros</option>' +
+                '<option value="Inversiones">📈 Inversiones</option>' +
+            '</select>' +
+        '</div>' +
+        '<div class="input-group" style="margin-bottom: 1rem;">' +
+            '<label style="display: block; margin-bottom: 0.5rem; color: rgba(255,255,255,0.8);">🔄 Frecuencia</label>' +
+            '<select id="recurring-frequency" required style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid rgba(5,191,219,0.3); background: rgba(0,0,0,0.3); color: white;">' +
+                '<option value="monthly">📅 Mensual</option>' +
+                '<option value="weekly">📆 Semanal</option>' +
+                '<option value="yearly">📋 Anual</option>' +
+            '</select>' +
+        '</div>' +
+        '<div class="input-group" style="margin-bottom: 1.5rem;">' +
+            '<label style="display: block; margin-bottom: 0.5rem; color: rgba(255,255,255,0.8);">📆 Día del mes (1-31)</label>' +
+            '<input type="number" id="recurring-day" value="1" min="1" max="31" required style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid rgba(5,191,219,0.3); background: rgba(0,0,0,0.3); color: white;">' +
+        '</div>' +
+        '<button type="submit" style="width: 100%; padding: 1rem; border-radius: 8px; background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; border: none; cursor: pointer; font-weight: bold; font-size: 1rem;">✅ Guardar Recurrente</button>' +
+    '</form>';
+    
+    modal.style.display = 'flex';
+}
+
+// Guardar gasto recurrente
+async function saveRecurringExpense() {
+    const name = document.getElementById('recurring-name').value;
+    const amount = parseFloat(document.getElementById('recurring-amount').value);
+    const category = document.getElementById('recurring-category').value;
+    const frequency = document.getElementById('recurring-frequency').value;
+    const dayOfMonth = parseInt(document.getElementById('recurring-day').value);
+    
+    if (!name || !amount || amount <= 0) {
+        alert('Por favor completa todos los campos');
+        return;
+    }
+    
+    try {
+        // Intentar usar el módulo de recurrentes
+        if (typeof recurringModule !== 'undefined' && recurringModule && typeof recurringModule.addRecurring === 'function') {
+            await recurringModule.addRecurring({
+                name: name,
+                amount: amount,
+                category: category,
+                frequency: frequency,
+                dayOfMonth: dayOfMonth,
+                active: true
+            });
+        } else if (typeof db !== 'undefined' && typeof currentUser !== 'undefined' && currentUser) {
+            // Guardar directamente en Firebase
+            await db.collection('users').doc(currentUser.uid).collection('recurring').add({
+                name: name,
+                description: name,
+                amount: amount,
+                category: category,
+                frequency: frequency,
+                dayOfMonth: dayOfMonth,
+                active: true,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        }
+        
+        closeModal();
+        if (typeof showToast === 'function') {
+            showToast('Gasto recurrente guardado', 'success');
+        } else {
+            alert('✅ Gasto recurrente guardado');
+        }
+        
+        // Recargar vista si estamos en recurrentes
+        if (typeof activeTab !== 'undefined' && activeTab === 'more-recurring') {
+            switchTab('more-recurring');
+        }
+    } catch (error) {
+        console.error('Error guardando recurrente:', error);
+        alert('Error al guardar: ' + error.message);
+    }
+}
+
+console.log('✅ Funciones adicionales cargadas');
