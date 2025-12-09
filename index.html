@@ -33,6 +33,9 @@
     <!-- CSS Principal -->
     <link rel="stylesheet" href="styles.css">
     
+    <!-- Sistema de Temas -->
+    <link rel="stylesheet" href="themes.css">
+    
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
@@ -46,6 +49,36 @@
     
     <!-- Toastify JS -->
     <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    
+    <!-- Estilos adicionales -->
+    <style>
+        input[type="number"],
+        input[type="text"],
+        input[type="email"],
+        input[type="password"],
+        select {
+            font-size: 16px !important;
+        }
+        body {
+            overscroll-behavior-y: contain;
+        }
+        
+        /* Ocultar botón flotante del asistente */
+        .assistant-float-btn,
+        .floating-assistant-button,
+        .assistant-floating-btn,
+        #assistantFloatBtn,
+        #floating-assistant,
+        .ai-assistant-float,
+        .assistant-fab,
+        [class*="float"][class*="assistant"],
+        [id*="float"][id*="assistant"] {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+        }
+    </style>
 </head>
 <body>
     <div id="app"></div>
@@ -60,26 +93,20 @@
     </div>
     
     <!-- ========================================
-         📦 MÓDULOS CORE (orden importante)
+         📦 MÓDULOS CORE (cargar primero)
          ======================================== -->
     
-    <!-- 1. Configuración y Estado -->
+    <!-- 1. Configuración y Estado (sin auth/db) -->
     <script src="js/config.js"></script>
     
-    <!-- 2. Utilidades -->
-    <script src="js/utils.js"></script>
+    <!-- 2. Internacionalización -->
+    <script src="js/i18n.js"></script>
     
-    <!-- 3. Cálculos Financieros -->
-    <script src="js/calculations.js"></script>
+    <!-- 3. Gestor de Temas -->
+    <script src="js/theme-manager.js"></script>
     
-    <!-- 4. Base de Datos Firebase -->
-    <script src="js/firebase-db.js"></script>
-    
-    <!-- 5. Autenticación -->
-    <script src="js/auth.js"></script>
-    
-    <!-- 6. Modales -->
-    <script src="js/modals.js"></script>
+    <!-- 4. Módulo de Configuración -->
+    <script src="js/settings-module.js"></script>
     
     <!-- ========================================
          📦 MÓDULOS DE FEATURES
@@ -91,7 +118,7 @@
     <script src="reports-module.js"></script>
     
     <!-- ========================================
-         🚀 APP PRINCIPAL (UI y Render)
+         🚀 APP PRINCIPAL (tiene auth y db)
          ======================================== -->
     <script src="app.js"></script>
     
@@ -111,15 +138,18 @@
             });
         }
         
+        // Eliminar botón flotante del asistente
+        function removeFloatingAssistant() {
+            ['.assistant-float-btn', '.floating-assistant-button', '#assistantFloatBtn', '#floating-assistant', '.ai-assistant-float']
+                .forEach(s => document.querySelectorAll(s).forEach(el => el.remove()));
+        }
+        removeFloatingAssistant();
+        setTimeout(removeFloatingAssistant, 1000);
+        setTimeout(removeFloatingAssistant, 3000);
+        new MutationObserver(removeFloatingAssistant).observe(document.body, { childList: true, subtree: true });
+        
         // Log de módulos cargados
-        console.log('📦 Módulos Core:', [
-            'config.js',
-            'utils.js', 
-            'calculations.js',
-            'firebase-db.js',
-            'auth.js',
-            'modals.js'
-        ]);
+        console.log('📦 Módulos Core:', ['config.js', 'i18n.js', 'theme-manager.js', 'settings-module.js']);
     </script>
 </body>
 </html>

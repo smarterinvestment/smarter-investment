@@ -1,0 +1,327 @@
+/* ========================================
+   🎨 SISTEMA DE TEMAS - SMARTER INVESTMENT
+   ======================================== */
+
+/* ========================================
+   TEMA OSCURO (Por defecto)
+   ======================================== */
+:root,
+[data-theme="dark"] {
+    --color-primary: #05BFDB;
+    --color-secondary: #088395;
+    --color-accent: #0A4D68;
+    --color-bg: #000B2E;
+    --color-bg-secondary: #001845;
+    --color-card: #001845;
+    --color-card-hover: #002255;
+    --color-success: #22C55E;
+    --color-danger: #EF4444;
+    --color-warning: #F59E0B;
+    --color-text: #FFFFFF;
+    --color-text-secondary: rgba(255, 255, 255, 0.7);
+    --color-text-muted: rgba(255, 255, 255, 0.5);
+    --color-border: rgba(5, 191, 219, 0.3);
+    --color-glow: rgba(5, 191, 219, 0.4);
+    --gradient-primary: linear-gradient(135deg, #05BFDB, #088395);
+    --gradient-bg: linear-gradient(135deg, #000B2E 0%, #0A4D68 100%);
+    --gradient-card: linear-gradient(135deg, rgba(5, 191, 219, 0.1) 0%, rgba(0, 24, 69, 0.8) 100%);
+    --shadow-card: 0 4px 20px rgba(5, 191, 219, 0.15);
+    --shadow-glow: 0 0 30px rgba(5, 191, 219, 0.3);
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ========================================
+   TEMA ROSA (Para ellas 💖)
+   ======================================== */
+[data-theme="pink"] {
+    --color-primary: #EC4899;
+    --color-secondary: #DB2777;
+    --color-accent: #9D174D;
+    --color-bg: #1F0A1B;
+    --color-bg-secondary: #2D1128;
+    --color-card: #2D1128;
+    --color-card-hover: #3D1838;
+    --color-success: #22C55E;
+    --color-danger: #EF4444;
+    --color-warning: #F59E0B;
+    --color-text: #FFFFFF;
+    --color-text-secondary: rgba(255, 255, 255, 0.7);
+    --color-text-muted: rgba(255, 255, 255, 0.5);
+    --color-border: rgba(236, 72, 153, 0.3);
+    --color-glow: rgba(236, 72, 153, 0.4);
+    --gradient-primary: linear-gradient(135deg, #EC4899, #DB2777);
+    --gradient-bg: linear-gradient(135deg, #1F0A1B 0%, #4A1942 100%);
+    --gradient-card: linear-gradient(135deg, rgba(236, 72, 153, 0.1) 0%, rgba(45, 17, 40, 0.8) 100%);
+    --shadow-card: 0 4px 20px rgba(236, 72, 153, 0.15);
+    --shadow-glow: 0 0 30px rgba(236, 72, 153, 0.3);
+}
+
+/* ========================================
+   TEMA TURQUESA CRISTAL
+   ======================================== */
+[data-theme="turquoise"] {
+    --color-primary: #06B6D4;
+    --color-secondary: #0891B2;
+    --color-accent: #0E7490;
+    --color-bg: #001138;
+    --color-bg-secondary: #0D264F;
+    --color-card: #0D264F;
+    --color-card-hover: #153562;
+    --color-success: #22C55E;
+    --color-danger: #EF4444;
+    --color-warning: #F59E0B;
+    --color-text: #FFFFFF;
+    --color-text-secondary: rgba(255, 255, 255, 0.7);
+    --color-text-muted: rgba(255, 255, 255, 0.5);
+    --color-border: rgba(6, 182, 212, 0.3);
+    --color-glow: rgba(6, 182, 212, 0.4);
+    --gradient-primary: linear-gradient(135deg, #06B6D4, #0891B2);
+    --gradient-bg: linear-gradient(180deg, #001138 0%, #0D264F 50%, #001138 100%);
+    --gradient-card: linear-gradient(135deg, rgba(6, 182, 212, 0.12) 0%, rgba(13, 38, 79, 0.6) 100%);
+    --shadow-card: 0 4px 20px rgba(6, 182, 212, 0.15);
+    --shadow-glow: 0 0 30px rgba(6, 182, 212, 0.3);
+}
+
+/* ========================================
+   TEMA MORADO ELEGANTE
+   ======================================== */
+[data-theme="purple"] {
+    --color-primary: #8B5CF6;
+    --color-secondary: #7C3AED;
+    --color-accent: #6D28D9;
+    --color-bg: #0F0A1E;
+    --color-bg-secondary: #1A1333;
+    --color-card: #1A1333;
+    --color-card-hover: #251D44;
+    --color-success: #22C55E;
+    --color-danger: #EF4444;
+    --color-warning: #F59E0B;
+    --color-text: #FFFFFF;
+    --color-text-secondary: rgba(255, 255, 255, 0.7);
+    --color-text-muted: rgba(255, 255, 255, 0.5);
+    --color-border: rgba(139, 92, 246, 0.3);
+    --color-glow: rgba(139, 92, 246, 0.4);
+    --gradient-primary: linear-gradient(135deg, #8B5CF6, #7C3AED);
+    --gradient-bg: linear-gradient(135deg, #0F0A1E 0%, #2D1B69 100%);
+    --gradient-card: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(26, 19, 51, 0.8) 100%);
+    --shadow-card: 0 4px 20px rgba(139, 92, 246, 0.15);
+    --shadow-glow: 0 0 30px rgba(139, 92, 246, 0.3);
+}
+
+/* ========================================
+   APLICAR VARIABLES A ELEMENTOS
+   ======================================== */
+body {
+    background: var(--gradient-bg) !important;
+    color: var(--color-text);
+    transition: var(--transition);
+}
+
+.card {
+    background: var(--gradient-card) !important;
+    border: 1px solid var(--color-border) !important;
+    box-shadow: var(--shadow-card) !important;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    transition: var(--transition);
+}
+
+.card:hover {
+    background: var(--color-card-hover) !important;
+    border-color: var(--color-primary) !important;
+    box-shadow: var(--shadow-glow) !important;
+    transform: translateY(-2px);
+}
+
+/* Botones primarios */
+.btn-primary,
+button[style*="linear-gradient"] {
+    background: var(--gradient-primary) !important;
+}
+
+/* FAB */
+.fab {
+    background: var(--gradient-primary) !important;
+    box-shadow: var(--shadow-glow) !important;
+}
+
+/* Navegación */
+.bottom-nav {
+    background: linear-gradient(180deg, rgba(var(--color-primary-rgb), 0.1), var(--color-bg-secondary)) !important;
+    border-top: 1px solid var(--color-border) !important;
+}
+
+.nav-item.active {
+    color: var(--color-primary) !important;
+}
+
+/* Inputs */
+input, select, textarea {
+    background: rgba(var(--color-primary-rgb), 0.08) !important;
+    border: 1px solid var(--color-border) !important;
+    color: var(--color-text) !important;
+}
+
+input:focus, select:focus, textarea:focus {
+    border-color: var(--color-primary) !important;
+    box-shadow: 0 0 15px var(--color-glow) !important;
+}
+
+/* Progress bars */
+.progress-bar {
+    background: var(--gradient-primary) !important;
+}
+
+/* Links */
+a {
+    color: var(--color-primary);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar-thumb {
+    background: var(--gradient-primary);
+}
+
+/* ========================================
+   SELECTOR DE TEMA UI
+   ======================================== */
+.theme-selector {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    padding: 1rem;
+}
+
+.theme-option {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 3px solid transparent;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.theme-option:hover {
+    transform: scale(1.1);
+}
+
+.theme-option.active {
+    border-color: white;
+    box-shadow: 0 0 20px currentColor;
+}
+
+.theme-option[data-theme="dark"] {
+    background: linear-gradient(135deg, #05BFDB, #088395);
+}
+
+.theme-option[data-theme="pink"] {
+    background: linear-gradient(135deg, #EC4899, #DB2777);
+}
+
+.theme-option[data-theme="turquoise"] {
+    background: linear-gradient(135deg, #06B6D4, #0891B2);
+}
+
+.theme-option[data-theme="purple"] {
+    background: linear-gradient(135deg, #8B5CF6, #7C3AED);
+}
+
+/* ========================================
+   ANIMACIONES DE TRANSICIÓN DE TEMA
+   ======================================== */
+@keyframes themeChange {
+    0% { opacity: 0.8; transform: scale(0.98); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+body.theme-transitioning {
+    animation: themeChange 0.3s ease;
+}
+
+/* ========================================
+   EFECTOS GLASSMORPHISM MEJORADOS
+   ======================================== */
+.glass-effect {
+    background: var(--gradient-card);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--color-border);
+    box-shadow: 
+        var(--shadow-card),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.glass-effect::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--color-primary), transparent);
+    opacity: 0.5;
+}
+
+/* ========================================
+   ANIMACIONES DE HOVER MEJORADAS
+   ======================================== */
+.card-animated {
+    position: relative;
+    overflow: hidden;
+}
+
+.card-animated::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+        45deg,
+        transparent,
+        rgba(255, 255, 255, 0.03),
+        transparent
+    );
+    transform: rotate(45deg);
+    transition: all 0.5s ease;
+}
+
+.card-animated:hover::after {
+    animation: shimmer 1.5s ease;
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%) rotate(45deg); }
+    100% { transform: translateX(100%) rotate(45deg); }
+}
+
+/* ========================================
+   GLOW EFFECTS
+   ======================================== */
+.glow-on-hover {
+    transition: all 0.3s ease;
+}
+
+.glow-on-hover:hover {
+    box-shadow: 
+        0 0 20px var(--color-glow),
+        0 0 40px var(--color-glow),
+        0 0 60px var(--color-glow);
+}
+
+/* ========================================
+   RESPONSIVE THEME ADJUSTMENTS
+   ======================================== */
+@media (max-width: 480px) {
+    .theme-option {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .theme-selector {
+        gap: 0.5rem;
+    }
+}
