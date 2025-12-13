@@ -102,7 +102,7 @@ const ContributionModal: React.FC<{
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!amount) return;
+    if (!amount || parseFloat(amount) <= 0) return;
     onSubmit(parseFloat(amount));
     setAmount('');
     onClose();
@@ -110,7 +110,10 @@ const ContributionModal: React.FC<{
 
   if (!goal) return null;
 
-  const remaining = goal.targetAmount - goal.currentAmount;
+  // Sanitize values to avoid NaN
+  const targetAmount = Number(goal.targetAmount) || 0;
+  const currentAmount = Number(goal.currentAmount) || 0;
+  const remaining = Math.max(0, targetAmount - currentAmount);
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Añadir Aporte" size="sm">
@@ -118,17 +121,43 @@ const ContributionModal: React.FC<{
         <div className="text-center mb-4">
           <span className="text-4xl">{goal.icon}</span>
           <h3 className="text-lg font-semibold text-white mt-2">{goal.name}</h3>
-          <p className="text-white/50 text-sm">Faltan {formatCurrency(remaining, currency)}</p>
+          <p className="text-white/50 text-sm">
+            {remaining > 0 ? `Faltan ${formatCurrency(remaining, currency)}` : 'Meta completada'}
+          </p>
         </div>
 
-        <Input label="Monto a aportar" type="number" step="0.01" min="0" max={remaining} placeholder="0.00" value={amount} onChange={e => setAmount(e.target.value)} leftIcon={<span>$</span>} required />
+        <Input 
+          label="Monto a aportar" 
+          type="number" 
+          step="0.01" 
+          min="0.01" 
+          placeholder="0.00" 
+          value={amount} 
+          onChange={e => setAmount(e.target.value)} 
+          leftIcon={<span>$</span>} 
+          required 
+        />
 
         <div className="flex gap-2">
-          {[25, 50, 100, remaining].map(preset => (
-            <button key={preset} type="button" onClick={() => setAmount(String(Math.min(preset, remaining)))} className="flex-1 py-2 rounded-lg bg-white/5 text-white/70 text-sm hover:bg-white/10 transition-colors">
-              {preset === remaining ? 'Todo' : formatCurrency(preset, currency, { compact: true })}
+          {[25, 50, 100].map(preset => (
+            <button 
+              key={preset} 
+              type="button" 
+              onClick={() => setAmount(String(preset))} 
+              className="flex-1 py-2 rounded-lg bg-white/5 text-white/70 text-sm hover:bg-white/10 transition-colors"
+            >
+              {formatCurrency(preset, currency, { compact: true })}
             </button>
           ))}
+          {remaining > 0 && (
+            <button 
+              type="button" 
+              onClick={() => setAmount(String(remaining))} 
+              className="flex-1 py-2 rounded-lg bg-white/5 text-white/70 text-sm hover:bg-white/10 transition-colors"
+            >
+              Todo
+            </button>
+          )}
         </div>
 
         <div className="flex gap-3 pt-4">

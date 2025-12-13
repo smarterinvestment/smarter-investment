@@ -19,7 +19,6 @@ import {
   RefreshCw,
   Palette,
   Moon,
-  Sun,
   Heart,
   Sparkles,
 } from 'lucide-react';
@@ -62,12 +61,11 @@ const SIDEBAR_NAV_ITEMS: Array<{
   { id: 'assistant', labelKey: 'assistant', icon: <Bot className="w-5 h-5" /> },
 ];
 
-// Theme Options
+// Theme Options (Dark themes only)
 const THEME_OPTIONS: Array<{ id: Theme; labelKey: string; icon: React.ReactNode; color: string }> = [
   { id: 'dark', labelKey: 'Oscuro (Cyan)', icon: <Moon className="w-4 h-4" />, color: '#05BFDB' },
   { id: 'pink', labelKey: 'Rosado', icon: <Heart className="w-4 h-4" />, color: '#ec4899' },
   { id: 'purple', labelKey: 'Morado', icon: <Sparkles className="w-4 h-4" />, color: '#a855f7' },
-  { id: 'light', labelKey: 'Claro', icon: <Sun className="w-4 h-4" />, color: '#0891b2' },
 ];
 
 // ========================================
@@ -89,10 +87,9 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   
   const unreadCount = notifications.filter(n => !n.isRead).length;
   const themeColors = getThemeColors(theme);
-  const isLight = theme === 'light';
 
   return (
-    <div className={cn('min-h-screen flex flex-col', isLight ? 'bg-slate-50' : '')}>
+    <div className="min-h-screen flex flex-col">
       {/* Floating Particles Background */}
       <FloatingParticles />
 
@@ -106,12 +103,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
 
       {/* Header */}
       <header 
-        className={cn(
-          'sticky top-0 z-40 backdrop-blur-lg border-b safe-top',
-          isLight 
-            ? 'bg-white/80 border-slate-200' 
-            : 'bg-dark-700/80 border-white/10'
-        )}
+        className="sticky top-0 z-40 backdrop-blur-lg border-b safe-top bg-dark-700/80 border-white/10"
       >
         <div className="flex items-center justify-between px-4 py-3">
           {/* Left: Menu & Logo */}
@@ -120,11 +112,11 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               onClick={() => setShowSidebar(true)}
               className={cn(
                 'p-2 rounded-lg transition-colors lg:hidden',
-                isLight ? 'hover:bg-slate-100' : 'hover:bg-white/10'
+                'hover:bg-white/10'
               )}
               aria-label="Abrir menú"
             >
-              <Menu className={cn('w-5 h-5', isLight ? 'text-slate-600' : 'text-white/80')} />
+              <Menu className={cn('w-5 h-5', 'text-white/80')} />
             </button>
             
             {/* Logo with Neon Effect */}
@@ -145,10 +137,10 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             <h1 
               className={cn(
                 'text-lg font-bold hidden sm:block',
-                isLight ? 'text-slate-800' : 'text-white'
+                'text-white'
               )}
               style={{ 
-                textShadow: isLight ? 'none' : `0 0 20px ${themeColors.primary}40` 
+                textShadow: `0 0 20px ${themeColors.primary}40` 
               }}
             >
               Smarter Investment
@@ -163,7 +155,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                 onClick={() => setShowThemeMenu(!showThemeMenu)}
                 className={cn(
                   'p-2 rounded-lg transition-colors',
-                  isLight ? 'hover:bg-slate-100' : 'hover:bg-white/10'
+                  'hover:bg-white/10'
                 )}
                 aria-label="Cambiar tema"
                 style={{ color: themeColors.primary }}
@@ -185,7 +177,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                       exit={{ opacity: 0, y: 10 }}
                       className={cn(
                         'absolute right-0 top-12 w-48 border rounded-xl shadow-xl overflow-hidden z-50',
-                        isLight 
+                        false 
                           ? 'bg-white border-slate-200' 
                           : 'bg-dark-500 border-white/10'
                       )}
@@ -200,8 +192,8 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                           className={cn(
                             'w-full flex items-center gap-3 px-4 py-3 text-left transition-colors',
                             theme === option.id 
-                              ? (isLight ? 'bg-slate-100' : 'bg-white/10') 
-                              : (isLight ? 'hover:bg-slate-50' : 'hover:bg-white/5')
+                              ? ('bg-white/10') 
+                              : ('hover:bg-white/5')
                           )}
                         >
                           <div
@@ -211,7 +203,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                               boxShadow: `0 0 10px ${option.color}60`,
                             }}
                           />
-                          <span className={cn('text-sm', isLight ? 'text-slate-700' : 'text-white/80')}>
+                          <span className={cn('text-sm', 'text-white/80')}>
                             {option.labelKey}
                           </span>
                           {theme === option.id && (
@@ -230,11 +222,11 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               onClick={() => setShowNotifications(!showNotifications)}
               className={cn(
                 'relative p-2 rounded-lg transition-colors',
-                isLight ? 'hover:bg-slate-100' : 'hover:bg-white/10'
+                'hover:bg-white/10'
               )}
               aria-label="Notificaciones"
             >
-              <Bell className={cn('w-5 h-5', isLight ? 'text-slate-600' : 'text-white/80')} />
+              <Bell className={cn('w-5 h-5', 'text-white/80')} />
               {unreadCount > 0 && (
                 <span 
                   className="absolute -top-0.5 -right-0.5 w-5 h-5 flex items-center justify-center text-[10px] font-bold text-white rounded-full"
@@ -274,7 +266,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       <nav 
         className={cn(
           'fixed bottom-0 left-0 right-0 z-40 backdrop-blur-lg border-t safe-bottom lg:hidden',
-          isLight 
+          false 
             ? 'bg-white/95 border-slate-200' 
             : 'bg-dark-700/95 border-white/10'
         )}
@@ -288,7 +280,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                 'flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all min-w-[60px]',
                 activePage === item.id
                   ? ''
-                  : (isLight ? 'text-slate-400 hover:text-slate-600' : 'text-white/50 hover:text-white/80')
+                  : ('text-white/50 hover:text-white/80')
               )}
               style={activePage === item.id ? { 
                 color: themeColors.primary,
@@ -325,7 +317,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               className={cn(
                 'fixed left-0 top-0 bottom-0 w-72 border-r z-50 flex flex-col',
-                isLight 
+                false 
                   ? 'bg-white border-slate-200' 
                   : 'bg-dark-700 border-white/10'
               )}
@@ -333,7 +325,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               {/* User Info */}
               <div className={cn(
                 'p-6 border-b',
-                isLight ? 'border-slate-200' : 'border-white/10'
+                'border-white/10'
               )}>
                 <div className="flex items-center gap-4">
                   <Avatar
@@ -342,10 +334,10 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                     size="lg"
                   />
                   <div className="flex-1 min-w-0">
-                    <p className={cn('font-semibold truncate', isLight ? 'text-slate-800' : 'text-white')}>
+                    <p className={cn('font-semibold truncate', 'text-white')}>
                       {user?.displayName || 'Usuario'}
                     </p>
-                    <p className={cn('text-sm truncate', isLight ? 'text-slate-500' : 'text-white/50')}>
+                    <p className={cn('text-sm truncate', 'text-white/50')}>
                       {user?.email}
                     </p>
                   </div>
@@ -353,10 +345,10 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                     onClick={() => setShowSidebar(false)}
                     className={cn(
                       'p-2 rounded-lg',
-                      isLight ? 'hover:bg-slate-100' : 'hover:bg-white/10'
+                      'hover:bg-white/10'
                     )}
                   >
-                    <X className={cn('w-5 h-5', isLight ? 'text-slate-400' : 'text-white/60')} />
+                    <X className={cn('w-5 h-5', 'text-white/60')} />
                   </button>
                 </div>
               </div>
@@ -375,7 +367,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                         'w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-left',
                         activePage === item.id
                           ? ''
-                          : (isLight 
+                          : (true 
                               ? 'text-slate-600 hover:bg-slate-50 hover:text-slate-800' 
                               : 'text-white/70 hover:bg-white/5 hover:text-white')
                       )}
@@ -390,7 +382,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                   ))}
                   
                   {/* Divider */}
-                  <div className={cn('my-4 border-t', isLight ? 'border-slate-200' : 'border-white/10')} />
+                  <div className={cn('my-4 border-t', 'border-white/10')} />
 
                   {/* Settings */}
                   <button
@@ -402,7 +394,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                       'w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-left',
                       activePage === 'settings'
                         ? ''
-                        : (isLight 
+                        : (true 
                             ? 'text-slate-600 hover:bg-slate-50 hover:text-slate-800' 
                             : 'text-white/70 hover:bg-white/5 hover:text-white')
                     )}
@@ -418,7 +410,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               </nav>
 
               {/* Logout */}
-              <div className={cn('p-4 border-t', isLight ? 'border-slate-200' : 'border-white/10')}>
+              <div className={cn('p-4 border-t', 'border-white/10')}>
                 <button
                   onClick={() => {
                     setShowSidebar(false);
@@ -453,33 +445,33 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               transition={{ type: 'spring', damping: 25 }}
               className={cn(
                 'fixed right-0 top-0 bottom-0 w-full max-w-sm border-l z-50 flex flex-col',
-                isLight 
+                false 
                   ? 'bg-white border-slate-200' 
                   : 'bg-dark-700 border-white/10'
               )}
             >
               <div className={cn(
                 'flex items-center justify-between p-4 border-b',
-                isLight ? 'border-slate-200' : 'border-white/10'
+                'border-white/10'
               )}>
-                <h2 className={cn('text-lg font-bold', isLight ? 'text-slate-800' : 'text-white')}>
+                <h2 className={cn('text-lg font-bold', 'text-white')}>
                   Notificaciones
                 </h2>
                 <button
                   onClick={() => setShowNotifications(false)}
                   className={cn(
                     'p-2 rounded-lg',
-                    isLight ? 'hover:bg-slate-100' : 'hover:bg-white/10'
+                    'hover:bg-white/10'
                   )}
                 >
-                  <X className={cn('w-5 h-5', isLight ? 'text-slate-400' : 'text-white/60')} />
+                  <X className={cn('w-5 h-5', 'text-white/60')} />
                 </button>
               </div>
               <div className="flex-1 overflow-y-auto p-4">
                 {notifications.length === 0 ? (
                   <div className="text-center py-12">
-                    <Bell className={cn('w-12 h-12 mx-auto mb-4', isLight ? 'text-slate-300' : 'text-white/20')} />
-                    <p className={cn(isLight ? 'text-slate-500' : 'text-white/50')}>
+                    <Bell className={cn('w-12 h-12 mx-auto mb-4', 'text-white/20')} />
+                    <p className={cn('text-white/50')}>
                       No tienes notificaciones
                     </p>
                   </div>
@@ -491,7 +483,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                         className={cn(
                           'p-4 rounded-xl border-l-4',
                           notification.isRead 
-                            ? (isLight ? 'bg-slate-50 border-slate-300' : 'bg-white/5 border-white/20')
+                            ? ('bg-white/5 border-white/20')
                             : ''
                         )}
                         style={!notification.isRead ? {
@@ -499,10 +491,10 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                           borderLeftColor: themeColors.primary,
                         } : undefined}
                       >
-                        <p className={cn('font-medium text-sm', isLight ? 'text-slate-800' : 'text-white')}>
+                        <p className={cn('font-medium text-sm', 'text-white')}>
                           {notification.title}
                         </p>
-                        <p className={cn('text-xs mt-1', isLight ? 'text-slate-500' : 'text-white/60')}>
+                        <p className={cn('text-xs mt-1', 'text-white/60')}>
                           {notification.message}
                         </p>
                       </div>

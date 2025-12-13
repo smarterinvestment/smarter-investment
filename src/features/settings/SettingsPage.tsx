@@ -4,7 +4,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
-  User, Bell, Palette, Globe, DollarSign, Shield, Download, Trash2, LogOut, ChevronRight, Moon, Sun, Sparkles, Heart, Check, CreditCard, HelpCircle, Mail
+  User, Bell, Palette, Globe, DollarSign, Shield, Download, Trash2, LogOut, ChevronRight, Moon, Sparkles, Heart, Check, CreditCard, HelpCircle, Mail
 } from 'lucide-react';
 import { useStore, applyTheme, getThemeColors } from '../../stores/useStore';
 import { Card, Button, Input, Select, Modal, Badge, Avatar } from '../../components/ui';
@@ -13,10 +13,9 @@ import type { Theme, Currency, Language } from '../../types';
 
 // Theme options with previews
 const THEMES: Array<{ id: Theme; name: string; description: string; colors: string[]; icon: React.ReactNode }> = [
-  { id: 'dark', name: 'Oscuro (Cyan)', description: 'Tema oscuro con acentos cyan', colors: ['#000B2E', '#001845', '#05BFDB', '#088395'], icon: <Moon className="w-5 h-5" /> },
-  { id: 'pink', name: 'Rosado', description: 'Tema oscuro con acentos rosa', colors: ['#1a0a14', '#2d1025', '#ec4899', '#db2777'], icon: <Heart className="w-5 h-5" /> },
-  { id: 'purple', name: 'Morado', description: 'Tema oscuro con acentos púrpura', colors: ['#0f0a1a', '#1e1433', '#a855f7', '#9333ea'], icon: <Sparkles className="w-5 h-5" /> },
-  { id: 'light', name: 'Claro', description: 'Tema claro para el día', colors: ['#f8fafc', '#e2e8f0', '#05BFDB', '#088395'], icon: <Sun className="w-5 h-5" /> },
+  { id: 'dark', name: 'Oscuro (Cyan)', description: 'Negro con neón cyan', colors: ['#000000', '#051420', '#05BFDB', '#088395'], icon: <Moon className="w-5 h-5" /> },
+  { id: 'pink', name: 'Rosado', description: 'Negro con neón rosa', colors: ['#000000', '#200510', '#ec4899', '#db2777'], icon: <Heart className="w-5 h-5" /> },
+  { id: 'purple', name: 'Morado', description: 'Negro con neón púrpura', colors: ['#000000', '#100520', '#a855f7', '#9333ea'], icon: <Sparkles className="w-5 h-5" /> },
 ];
 
 const CURRENCIES: Array<{ value: Currency; label: string; symbol: string }> = [
