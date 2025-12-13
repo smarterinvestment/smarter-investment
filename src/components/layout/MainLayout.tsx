@@ -66,6 +66,7 @@ const THEME_OPTIONS: Array<{ id: Theme; labelKey: string; icon: React.ReactNode;
   { id: 'dark', labelKey: 'Oscuro (Cyan)', icon: <Moon className="w-4 h-4" />, color: '#05BFDB' },
   { id: 'pink', labelKey: 'Rosado', icon: <Heart className="w-4 h-4" />, color: '#ec4899' },
   { id: 'purple', labelKey: 'Morado', icon: <Sparkles className="w-4 h-4" />, color: '#a855f7' },
+  { id: 'turquoise', labelKey: 'Turquesa', icon: <Sparkles className="w-4 h-4" />, color: '#14b8a6' },
 ];
 
 // ========================================

@@ -1,0 +1,27 @@
+{
+  "name": "Smarter Investment",
+  "short_name": "Smarter",
+  "description": "Tu gestor financiero inteligente con diseño premium fintech",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#05BFDB",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/logo-smarter.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any"
+    },
+    {
+      "src": "/logo-smarter.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any"
+    }
+  ],
+  "categories": ["finance", "productivity"],
+  "lang": "es",
+  "dir": "ltr"
+}

@@ -16,6 +16,7 @@ const THEMES: Array<{ id: Theme; name: string; description: string; colors: stri
   { id: 'dark', name: 'Oscuro (Cyan)', description: 'Negro con neón cyan', colors: ['#000000', '#051420', '#05BFDB', '#088395'], icon: <Moon className="w-5 h-5" /> },
   { id: 'pink', name: 'Rosado', description: 'Negro con neón rosa', colors: ['#000000', '#200510', '#ec4899', '#db2777'], icon: <Heart className="w-5 h-5" /> },
   { id: 'purple', name: 'Morado', description: 'Negro con neón púrpura', colors: ['#000000', '#100520', '#a855f7', '#9333ea'], icon: <Sparkles className="w-5 h-5" /> },
+  { id: 'turquoise', name: 'Turquesa', description: 'Negro con neón turquesa', colors: ['#000000', '#042f2e', '#14b8a6', '#0d9488'], icon: <Sparkles className="w-5 h-5" /> },
 ];
 
 const CURRENCIES: Array<{ value: Currency; label: string; symbol: string }> = [

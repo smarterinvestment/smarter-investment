@@ -458,8 +458,8 @@ export const applyTheme = (theme: Theme) => {
   const body = document.body;
   
   // Remove all theme classes
-  root.classList.remove('dark', 'theme-pink', 'theme-purple');
-  body.classList.remove('bg-gradient-dark', 'bg-gradient-pink', 'bg-gradient-purple');
+  root.classList.remove('dark', 'theme-pink', 'theme-purple', 'theme-turquoise');
+  body.classList.remove('bg-gradient-dark', 'bg-gradient-pink', 'bg-gradient-purple', 'bg-gradient-turquoise');
   
   // All themes are dark with black base
   root.classList.add('dark');
@@ -467,18 +467,22 @@ export const applyTheme = (theme: Theme) => {
   // Apply new theme
   switch (theme) {
     case 'dark':
-      body.style.background = 'radial-gradient(ellipse at center, #062a3a 0%, #000000 50%, #000000 100%)';
+      body.style.background = '#000000';
       break;
     case 'pink':
       root.classList.add('theme-pink');
-      body.style.background = 'radial-gradient(ellipse at center, #3a0620 0%, #000000 50%, #000000 100%)';
+      body.style.background = '#000000';
       break;
     case 'purple':
       root.classList.add('theme-purple');
-      body.style.background = 'radial-gradient(ellipse at center, #1a0630 0%, #000000 50%, #000000 100%)';
+      body.style.background = '#000000';
+      break;
+    case 'turquoise':
+      root.classList.add('theme-turquoise');
+      body.style.background = '#000000';
       break;
     default:
-      body.style.background = 'radial-gradient(ellipse at center, #062a3a 0%, #000000 50%, #000000 100%)';
+      body.style.background = '#000000';
   }
 };
 
@@ -519,6 +523,13 @@ export const getThemeColors = (theme: Theme) => {
         secondary: '#9333ea',
         accent: '#7c3aed',
         glow: 'shadow-glow-purple',
+      };
+    case 'turquoise':
+      return {
+        primary: '#14b8a6',
+        secondary: '#0d9488',
+        accent: '#0f766e',
+        glow: 'shadow-glow-turquoise',
       };
     default:
       return {
