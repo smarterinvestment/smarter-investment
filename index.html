@@ -13,146 +13,94 @@
     <meta name="apple-mobile-web-app-title" content="Smarter">
     
     <!-- Apple Touch Icons -->
-    <link rel="apple-touch-icon" href="ios/180.png">
-    <link rel="apple-touch-icon" sizes="152x152" href="ios/152.png">
-    <link rel="apple-touch-icon" sizes="167x167" href="ios/167.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="ios/180.png">
+    <link rel="apple-touch-icon" href="/ios/180.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="/ios/152.png">
+    <link rel="apple-touch-icon" sizes="167x167" href="/ios/167.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/ios/180.png">
     
     <!-- Favicon -->
-    <link rel="icon" type="image/png" sizes="32x32" href="ios/32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="ios/16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/ios/32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/ios/16.png">
     
     <!-- Manifest -->
-    <link rel="manifest" href="manifest.json">
+    <link rel="manifest" href="/manifest.json">
     
     <title>Smarter Investment 💰🧠</title>
     
-    <!-- Toastify CSS -->
-    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <!-- Preconnect to Firebase -->
+    <link rel="preconnect" href="https://firebaseapp.com">
+    <link rel="preconnect" href="https://googleapis.com">
     
-    <!-- CSS Principal -->
-    <link rel="stylesheet" href="styles.css">
-    
-    <!-- Sistema de Temas -->
-    <link rel="stylesheet" href="themes.css">
-    
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    
-    <!-- Firebase Configuration -->
-    <script src="firebase-init.js"></script>
-    
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    
-    <!-- Toastify JS -->
-    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
-    
-    <!-- Estilos adicionales -->
     <style>
-        input[type="number"],
-        input[type="text"],
-        input[type="email"],
-        input[type="password"],
-        select {
-            font-size: 16px !important;
-        }
-        body {
-            overscroll-behavior-y: contain;
-        }
-        
-        /* Ocultar botón flotante del asistente */
-        .assistant-float-btn,
-        .floating-assistant-button,
-        .assistant-floating-btn,
-        #assistantFloatBtn,
-        #floating-assistant,
-        .ai-assistant-float,
-        .assistant-fab,
-        [class*="float"][class*="assistant"],
-        [id*="float"][id*="assistant"] {
-            display: none !important;
-            visibility: hidden !important;
-            opacity: 0 !important;
-            pointer-events: none !important;
-        }
+      /* Prevent zoom on inputs in iOS */
+      input[type="number"],
+      input[type="text"],
+      input[type="email"],
+      input[type="password"],
+      select,
+      textarea {
+        font-size: 16px !important;
+      }
+      
+      /* Prevent pull-to-refresh */
+      body {
+        overscroll-behavior-y: contain;
+      }
+      
+      /* Initial loader */
+      #initial-loader {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #000B2E 0%, #0A4D68 100%);
+        z-index: 9999;
+        transition: opacity 0.3s ease;
+      }
+      
+      #initial-loader.hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+      
+      .loader-spinner {
+        width: 50px;
+        height: 50px;
+        border: 4px solid rgba(5, 191, 219, 0.2);
+        border-top-color: #05BFDB;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+      
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
     </style>
 </head>
 <body>
-    <div id="app"></div>
-    
-    <!-- Loader Global -->
-    <div id="global-loader" style="display: none;">
-        <div class="loader-backdrop"></div>
-        <div class="loader-spinner">
-            <div class="spinner"></div>
-            <p id="loader-text">Cargando...</p>
-        </div>
+    <!-- Initial Loader -->
+    <div id="initial-loader">
+      <div class="loader-spinner"></div>
     </div>
     
-    <!-- ========================================
-         📦 MÓDULOS CORE (cargar primero)
-         ======================================== -->
+    <!-- React Root -->
+    <div id="root"></div>
     
-    <!-- 1. Configuración y Estado (sin auth/db) -->
-    <script src="js/config.js"></script>
+    <!-- Main Script -->
+    <script type="module" src="/src/main.tsx"></script>
     
-    <!-- 2. Internacionalización -->
-    <script src="js/i18n.js"></script>
-    
-    <!-- 3. Gestor de Temas -->
-    <script src="js/theme-manager.js"></script>
-    
-    <!-- 4. Módulo de Configuración -->
-    <script src="js/settings-module.js"></script>
-    
-    <!-- ========================================
-         📦 MÓDULOS DE FEATURES
-         ======================================== -->
-    <script src="notifications-module.js"></script>
-    <script src="recurring-expenses-module.js"></script>
-    <script src="comparison-module.js"></script>
-    <script src="assistant-module.js"></script>
-    <script src="reports-module.js"></script>
-    
-    <!-- ========================================
-         🚀 APP PRINCIPAL (tiene auth y db)
-         ======================================== -->
-    <script src="app.js"></script>
-    
-    <!-- ========================================
-         🔧 PARCHES Y FIXES
-         ======================================== -->
-    <script src="modal-fix.js"></script>
-    
-    <!-- Integración de Configuración (Temas, Idiomas, Monedas) -->
-    <script src="settings-integration.js"></script>
-    
-    <!-- Service Worker -->
+    <!-- Hide loader when React is ready -->
     <script>
-        // Registrar Service Worker
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./service-worker.js')
-                    .then(reg => console.log('✅ Service Worker registrado:', reg.scope))
-                    .catch(err => console.log('⚠️ Service Worker error:', err));
-            });
-        }
-        
-        // Eliminar botón flotante del asistente
-        function removeFloatingAssistant() {
-            ['.assistant-float-btn', '.floating-assistant-button', '#assistantFloatBtn', '#floating-assistant', '.ai-assistant-float']
-                .forEach(s => document.querySelectorAll(s).forEach(el => el.remove()));
-        }
-        removeFloatingAssistant();
-        setTimeout(removeFloatingAssistant, 1000);
-        setTimeout(removeFloatingAssistant, 3000);
-        new MutationObserver(removeFloatingAssistant).observe(document.body, { childList: true, subtree: true });
-        
-        // Log de módulos cargados
-        console.log('📦 Módulos Core:', ['config.js', 'i18n.js', 'theme-manager.js', 'settings-module.js']);
+      window.addEventListener('load', () => {
+        setTimeout(() => {
+          const loader = document.getElementById('initial-loader');
+          if (loader) {
+            loader.classList.add('hidden');
+            setTimeout(() => loader.remove(), 300);
+          }
+        }, 500);
+      });
     </script>
 </body>
 </html>

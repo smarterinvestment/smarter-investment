@@ -1,0 +1,506 @@
+/* ============================================
+   🎨 SMARTER INVESTMENT - MAIN STYLES
+   ============================================ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ========================================
+   BASE STYLES
+   ======================================== */
+@layer base {
+  :root {
+    /* Default Theme (Cyan) */
+    --color-primary: #05BFDB;
+    --color-secondary: #088395;
+    --color-accent: #0A4D68;
+    --color-bg: #000B2E;
+    --color-card: #001845;
+    --color-success: #22C55E;
+    --color-danger: #EF4444;
+    --color-warning: #F59E0B;
+  }
+
+  /* Pink Theme */
+  .theme-pink {
+    --color-primary: #ec4899;
+    --color-secondary: #db2777;
+    --color-accent: #be185d;
+    --color-bg: #1a0a14;
+    --color-card: #2d1025;
+  }
+
+  /* Purple Theme */
+  .theme-purple {
+    --color-primary: #a855f7;
+    --color-secondary: #9333ea;
+    --color-accent: #7c3aed;
+    --color-bg: #0f0a1a;
+    --color-card: #1e1433;
+  }
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, var(--color-bg) 0%, var(--color-accent) 100%);
+    color: #FFFFFF;
+    min-height: 100vh;
+    line-height: 1.6;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-primary);
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-secondary);
+  }
+
+  /* Selection */
+  ::selection {
+    background: var(--color-primary);
+    color: white;
+  }
+
+  /* Focus outline */
+  *:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  /* Prevent zoom on iOS inputs */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="date"],
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* ========================================
+   COMPONENT STYLES
+   ======================================== */
+@layer components {
+  /* Card */
+  .card {
+    @apply bg-dark-500/80 backdrop-blur-lg rounded-2xl p-6;
+    @apply border border-white/10;
+    @apply transition-all duration-300;
+  }
+
+  .card-hover:hover {
+    @apply transform -translate-y-1;
+    @apply shadow-card-hover;
+    @apply border-primary-500/30;
+  }
+
+  /* Buttons */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2;
+    @apply px-4 py-2.5 rounded-xl font-semibold;
+    @apply transition-all duration-300;
+    @apply focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-dark-700;
+  }
+
+  .btn-primary {
+    @apply bg-gradient-to-r from-primary-500 to-secondary-500;
+    @apply text-white shadow-glow;
+    @apply hover:shadow-glow-lg hover:-translate-y-0.5;
+    @apply active:translate-y-0;
+    @apply focus-visible:ring-primary-500;
+  }
+
+  .btn-secondary {
+    @apply bg-white/10 text-white;
+    @apply border border-white/20;
+    @apply hover:bg-white/20 hover:border-white/30;
+    @apply focus-visible:ring-white/50;
+  }
+
+  .btn-danger {
+    @apply bg-danger-500/20 text-danger-400;
+    @apply border border-danger-500/30;
+    @apply hover:bg-danger-500/30;
+    @apply focus-visible:ring-danger-500;
+  }
+
+  .btn-ghost {
+    @apply bg-transparent text-white/70;
+    @apply hover:bg-white/10 hover:text-white;
+  }
+
+  /* Input */
+  .input {
+    @apply w-full px-4 py-3 rounded-xl;
+    @apply bg-dark-700/60 border-2 border-white/10;
+    @apply text-white placeholder-white/40;
+    @apply transition-all duration-300;
+    @apply focus:border-primary-500 focus:ring-0;
+    @apply focus:shadow-[0_0_0_3px_rgba(5,191,219,0.2)];
+  }
+
+  .input-error {
+    @apply border-danger-500 focus:border-danger-500;
+    @apply focus:shadow-[0_0_0_3px_rgba(239,68,68,0.2)];
+  }
+
+  /* Label */
+  .label {
+    @apply block mb-2 text-sm font-semibold text-white/90;
+  }
+
+  /* Badge */
+  .badge {
+    @apply inline-flex items-center gap-1 px-2.5 py-1;
+    @apply text-xs font-semibold rounded-full;
+  }
+
+  .badge-success {
+    @apply bg-success-500/20 text-success-400;
+  }
+
+  .badge-warning {
+    @apply bg-warning-500/20 text-warning-400;
+  }
+
+  .badge-danger {
+    @apply bg-danger-500/20 text-danger-400;
+  }
+
+  .badge-primary {
+    @apply bg-primary-500/20 text-primary-400;
+  }
+
+  /* Stat Card */
+  .stat-card {
+    @apply card p-4;
+    @apply flex flex-col gap-2;
+  }
+
+  .stat-value {
+    @apply text-2xl font-bold text-white;
+  }
+
+  .stat-label {
+    @apply text-sm text-white/60;
+  }
+
+  .stat-change {
+    @apply text-xs font-semibold;
+  }
+
+  .stat-change-up {
+    @apply text-success-400;
+  }
+
+  .stat-change-down {
+    @apply text-danger-400;
+  }
+
+  /* Navigation */
+  .nav-item {
+    @apply flex flex-col items-center gap-1 p-2;
+    @apply text-white/60 transition-all duration-200;
+    @apply hover:text-white;
+  }
+
+  .nav-item-active {
+    @apply text-primary-400;
+  }
+
+  /* Modal */
+  .modal-backdrop {
+    @apply fixed inset-0 bg-black/60 backdrop-blur-sm z-50;
+  }
+
+  .modal-content {
+    @apply bg-gradient-to-b from-dark-500 to-dark-700;
+    @apply rounded-2xl border border-white/10;
+    @apply shadow-2xl max-h-[90vh] overflow-auto;
+  }
+
+  /* Empty State */
+  .empty-state {
+    @apply flex flex-col items-center justify-center py-12 text-center;
+  }
+
+  .empty-state-icon {
+    @apply text-6xl mb-4 opacity-50;
+  }
+
+  .empty-state-title {
+    @apply text-xl font-semibold text-white/80 mb-2;
+  }
+
+  .empty-state-description {
+    @apply text-white/50 max-w-xs;
+  }
+}
+
+/* ========================================
+   UTILITY CLASSES
+   ======================================== */
+@layer utilities {
+  /* Glass effect */
+  .glass {
+    @apply bg-white/5 backdrop-blur-lg;
+    @apply border border-white/10;
+  }
+
+  /* Gradient text */
+  .gradient-text {
+    @apply bg-gradient-to-r from-primary-400 to-secondary-400;
+    @apply bg-clip-text text-transparent;
+  }
+
+  /* Pink theme gradient text */
+  .theme-pink .gradient-text {
+    @apply from-pink-400 to-pink-600;
+  }
+
+  /* Purple theme gradient text */
+  .theme-purple .gradient-text {
+    @apply from-purple-400 to-purple-600;
+  }
+
+  /* Truncate lines */
+  .line-clamp-1 {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* Safe area padding for mobile */
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+
+  .safe-top {
+    padding-top: env(safe-area-inset-top, 0);
+  }
+
+  /* Hide scrollbar */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* Shimmer loading effect */
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.05) 0%,
+      rgba(255, 255, 255, 0.1) 50%,
+      rgba(255, 255, 255, 0.05) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+  }
+
+  /* Pulse glow */
+  .pulse-glow {
+    animation: pulseGlow 2s infinite;
+  }
+
+  /* Smooth appearance */
+  .appear {
+    animation: fadeInUp 0.4s ease-out;
+  }
+}
+
+/* ========================================
+   THEME-SPECIFIC OVERRIDES
+   ======================================== */
+
+/* Pink Theme */
+.theme-pink {
+  .btn-primary {
+    @apply from-pink-500 to-pink-600;
+    @apply shadow-glow-pink;
+    @apply hover:shadow-[0_0_40px_rgba(236,72,153,0.4)];
+  }
+
+  .input:focus {
+    @apply border-pink-500;
+    @apply shadow-[0_0_0_3px_rgba(236,72,153,0.2)];
+  }
+
+  .nav-item-active {
+    @apply text-pink-400;
+  }
+
+  .badge-primary {
+    @apply bg-pink-500/20 text-pink-400;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #ec4899;
+  }
+}
+
+/* Purple Theme */
+.theme-purple {
+  .btn-primary {
+    @apply from-purple-500 to-purple-600;
+    @apply shadow-glow-purple;
+    @apply hover:shadow-[0_0_40px_rgba(168,85,247,0.4)];
+  }
+
+  .input:focus {
+    @apply border-purple-500;
+    @apply shadow-[0_0_0_3px_rgba(168,85,247,0.2)];
+  }
+
+  .nav-item-active {
+    @apply text-purple-400;
+  }
+
+  .badge-primary {
+    @apply bg-purple-500/20 text-purple-400;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #a855f7;
+  }
+}
+
+/* ========================================
+   ANIMATIONS
+   ======================================== */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(5, 191, 219, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(5, 191, 219, 0.6);
+  }
+}
+
+/* Pink pulse glow */
+.theme-pink .pulse-glow {
+  animation-name: pulseGlowPink;
+}
+
+@keyframes pulseGlowPink {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(236, 72, 153, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(236, 72, 153, 0.6);
+  }
+}
+
+/* Purple pulse glow */
+.theme-purple .pulse-glow {
+  animation-name: pulseGlowPurple;
+}
+
+@keyframes pulseGlowPurple {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(168, 85, 247, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(168, 85, 247, 0.6);
+  }
+}
+
+/* ========================================
+   RESPONSIVE UTILITIES
+   ======================================== */
+@media (max-width: 640px) {
+  .container {
+    @apply px-4;
+  }
+}
+
+/* ========================================
+   PRINT STYLES
+   ======================================== */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+}
