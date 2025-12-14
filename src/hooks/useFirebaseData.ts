@@ -100,6 +100,10 @@ export const useFirebaseData = () => {
 export const useTransactions = () => {
   const { expenses, incomes, addTransaction, updateTransaction, deleteTransaction } = useStore();
 
+  // Ensure arrays are never undefined
+  const safeExpenses = Array.isArray(expenses) ? expenses : [];
+  const safeIncomes = Array.isArray(incomes) ? incomes : [];
+
   const add = async (transaction: any) => {
     try {
       const id = await transactionService.add(transaction);
@@ -132,9 +136,9 @@ export const useTransactions = () => {
   };
 
   return {
-    expenses,
-    incomes,
-    all: [...expenses, ...incomes].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
+    expenses: safeExpenses,
+    incomes: safeIncomes,
+    all: [...safeExpenses, ...safeIncomes].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
     add,
     update,
     remove,
@@ -180,6 +184,9 @@ export const useBudgets = () => {
 export const useGoals = () => {
   const { goals, addGoal, updateGoal, deleteGoal, addContribution } = useStore();
 
+  // Ensure array is never undefined
+  const safeGoals = Array.isArray(goals) ? goals : [];
+
   const add = async (goal: any) => {
     try {
       const id = await goalService.add(goal);
@@ -222,9 +229,9 @@ export const useGoals = () => {
   };
 
   return {
-    goals,
-    activeGoals: goals.filter(g => !g.isCompleted),
-    completedGoals: goals.filter(g => g.isCompleted),
+    goals: safeGoals,
+    activeGoals: safeGoals.filter(g => !g.isCompleted),
+    completedGoals: safeGoals.filter(g => g.isCompleted),
     add,
     update,
     remove,
@@ -237,6 +244,9 @@ export const useGoals = () => {
 // ============================================
 export const useRecurring = () => {
   const { recurringTransactions, addRecurring, updateRecurring, deleteRecurring } = useStore();
+
+  // Ensure array is never undefined
+  const safeRecurring = Array.isArray(recurringTransactions) ? recurringTransactions : [];
 
   const add = async (recurring: any) => {
     console.log('🔄 useRecurring.add called with:', recurring);
@@ -279,8 +289,8 @@ export const useRecurring = () => {
   };
 
   return {
-    recurring: recurringTransactions,
-    active: recurringTransactions.filter(r => r.isActive),
+    recurring: safeRecurring,
+    active: safeRecurring.filter(r => r.isActive),
     add,
     update,
     remove,
@@ -292,6 +302,9 @@ export const useRecurring = () => {
 // ============================================
 export const useNotifications = () => {
   const { notifications, addNotification, markNotificationRead, markAllNotificationsRead } = useStore();
+
+  // Ensure array is never undefined
+  const safeNotifications = Array.isArray(notifications) ? notifications : [];
 
   const markAsRead = async (id: string) => {
     try {
@@ -312,9 +325,9 @@ export const useNotifications = () => {
   };
 
   return {
-    notifications,
-    unread: notifications.filter(n => !n.isRead),
-    unreadCount: notifications.filter(n => !n.isRead).length,
+    notifications: safeNotifications,
+    unread: safeNotifications.filter(n => !n.isRead),
+    unreadCount: safeNotifications.filter(n => !n.isRead).length,
     markAsRead,
     markAllAsRead,
   };

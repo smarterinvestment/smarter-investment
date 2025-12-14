@@ -193,16 +193,18 @@ export const useStore = create<Store>()(
       // =====================================
       setExpenses: (expenses) =>
         set((state) => {
-          state.expenses = expenses;
+          state.expenses = Array.isArray(expenses) ? expenses : [];
         }),
 
       setIncomes: (incomes) =>
         set((state) => {
-          state.incomes = incomes;
+          state.incomes = Array.isArray(incomes) ? incomes : [];
         }),
 
       addTransaction: (transaction) =>
         set((state) => {
+          if (!Array.isArray(state.expenses)) state.expenses = [];
+          if (!Array.isArray(state.incomes)) state.incomes = [];
           if (transaction.type === 'expense') {
             state.expenses.unshift(transaction);
           } else {
@@ -212,6 +214,8 @@ export const useStore = create<Store>()(
 
       updateTransaction: (id, updates) =>
         set((state) => {
+          if (!Array.isArray(state.expenses)) state.expenses = [];
+          if (!Array.isArray(state.incomes)) state.incomes = [];
           const expenseIndex = state.expenses.findIndex((e) => e.id === id);
           if (expenseIndex !== -1) {
             state.expenses[expenseIndex] = { ...state.expenses[expenseIndex], ...updates };
@@ -225,6 +229,8 @@ export const useStore = create<Store>()(
 
       deleteTransaction: (id, type) =>
         set((state) => {
+          if (!Array.isArray(state.expenses)) state.expenses = [];
+          if (!Array.isArray(state.incomes)) state.incomes = [];
           if (type === 'expense') {
             state.expenses = state.expenses.filter((e) => e.id !== id);
           } else {
@@ -242,7 +248,7 @@ export const useStore = create<Store>()(
 
       setBudgetDetails: (budgets) =>
         set((state) => {
-          state.budgetDetails = budgets;
+          state.budgetDetails = Array.isArray(budgets) ? budgets : [];
         }),
 
       updateBudget: (category, amount) =>
@@ -260,16 +266,18 @@ export const useStore = create<Store>()(
       // =====================================
       setGoals: (goals) =>
         set((state) => {
-          state.goals = goals;
+          state.goals = Array.isArray(goals) ? goals : [];
         }),
 
       addGoal: (goal) =>
         set((state) => {
+          if (!Array.isArray(state.goals)) state.goals = [];
           state.goals.unshift(goal);
         }),
 
       updateGoal: (id, updates) =>
         set((state) => {
+          if (!Array.isArray(state.goals)) state.goals = [];
           const index = state.goals.findIndex((g) => g.id === id);
           if (index !== -1) {
             state.goals[index] = { ...state.goals[index], ...updates };
@@ -278,11 +286,13 @@ export const useStore = create<Store>()(
 
       deleteGoal: (id) =>
         set((state) => {
+          if (!Array.isArray(state.goals)) state.goals = [];
           state.goals = state.goals.filter((g) => g.id !== id);
         }),
 
       addContribution: (goalId, amount) =>
         set((state) => {
+          if (!Array.isArray(state.goals)) state.goals = [];
           const goal = state.goals.find((g) => g.id === goalId);
           if (goal) {
             goal.currentAmount += amount;
@@ -298,16 +308,18 @@ export const useStore = create<Store>()(
       // =====================================
       setRecurringTransactions: (recurring) =>
         set((state) => {
-          state.recurringTransactions = recurring;
+          state.recurringTransactions = Array.isArray(recurring) ? recurring : [];
         }),
 
       addRecurring: (recurring) =>
         set((state) => {
+          if (!Array.isArray(state.recurringTransactions)) state.recurringTransactions = [];
           state.recurringTransactions.unshift(recurring);
         }),
 
       updateRecurring: (id, updates) =>
         set((state) => {
+          if (!Array.isArray(state.recurringTransactions)) state.recurringTransactions = [];
           const index = state.recurringTransactions.findIndex((r) => r.id === id);
           if (index !== -1) {
             state.recurringTransactions[index] = {
@@ -319,6 +331,7 @@ export const useStore = create<Store>()(
 
       deleteRecurring: (id) =>
         set((state) => {
+          if (!Array.isArray(state.recurringTransactions)) state.recurringTransactions = [];
           state.recurringTransactions = state.recurringTransactions.filter(
             (r) => r.id !== id
           );
@@ -329,16 +342,18 @@ export const useStore = create<Store>()(
       // =====================================
       setNotifications: (notifications) =>
         set((state) => {
-          state.notifications = notifications;
+          state.notifications = Array.isArray(notifications) ? notifications : [];
         }),
 
       addNotification: (notification) =>
         set((state) => {
+          if (!Array.isArray(state.notifications)) state.notifications = [];
           state.notifications.unshift(notification);
         }),
 
       markNotificationRead: (id) =>
         set((state) => {
+          if (!Array.isArray(state.notifications)) state.notifications = [];
           const notification = state.notifications.find((n) => n.id === id);
           if (notification) {
             notification.isRead = true;
@@ -347,6 +362,7 @@ export const useStore = create<Store>()(
 
       markAllNotificationsRead: () =>
         set((state) => {
+          if (!Array.isArray(state.notifications)) state.notifications = [];
           state.notifications.forEach((n) => {
             n.isRead = true;
           });
@@ -354,6 +370,7 @@ export const useStore = create<Store>()(
 
       deleteNotification: (id) =>
         set((state) => {
+          if (!Array.isArray(state.notifications)) state.notifications = [];
           state.notifications = state.notifications.filter((n) => n.id !== id);
         }),
 

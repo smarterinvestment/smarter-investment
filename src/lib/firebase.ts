@@ -1,5 +1,6 @@
 // ============================================
 // 🔥 FIREBASE CONFIGURATION
+// Including FCM for Push Notifications
 // ============================================
 import { initializeApp } from 'firebase/app';
 import { 
@@ -15,6 +16,7 @@ import {
   CACHE_SIZE_UNLIMITED 
 } from 'firebase/firestore';
 import { getAnalytics, isSupported } from 'firebase/analytics';
+import { getMessaging, getToken, onMessage, type Messaging } from 'firebase/messaging';
 
 // Firebase configuration from environment variables
 const firebaseConfig = {
@@ -26,6 +28,9 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
+
+// VAPID key for web push (generate in Firebase Console > Cloud Messaging)
+const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY || '';
 
 // Validate config
 const validateConfig = () => {
@@ -45,6 +50,7 @@ let app;
 let auth;
 let db;
 let analytics = null;
+let messaging: Messaging | null = null;
 
 try {
   if (validateConfig()) {
@@ -60,6 +66,16 @@ try {
           console.log('📊 Analytics initialized');
         }
       });
+    }
+    
+    // Initialize FCM (only in browser with service worker support)
+    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+      try {
+        messaging = getMessaging(app);
+        console.log('🔔 FCM initialized');
+      } catch (err) {
+        console.warn('⚠️ FCM not available:', err);
+      }
     }
     
     // Enable offline persistence
@@ -88,6 +104,70 @@ try {
   console.error('❌ Firebase initialization error:', error);
 }
 
+// ============================================
+// FCM PUSH NOTIFICATION HELPERS
+// ============================================
+
+/**
+ * Request permission and get FCM token
+ */
+export const requestNotificationPermission = async (): Promise<string | null> => {
+  if (!messaging) {
+    console.warn('FCM not initialized');
+    return null;
+  }
+
+  try {
+    const permission = await Notification.requestPermission();
+    
+    if (permission === 'granted') {
+      console.log('✅ Notification permission granted');
+      
+      // Get FCM token
+      const token = await getToken(messaging, { vapidKey: VAPID_KEY });
+      
+      if (token) {
+        console.log('🔑 FCM Token:', token.substring(0, 20) + '...');
+        return token;
+      }
+    } else {
+      console.warn('❌ Notification permission denied');
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error getting FCM token:', error);
+    return null;
+  }
+};
+
+/**
+ * Listen for foreground messages
+ */
+export const onForegroundMessage = (callback: (payload: any) => void) => {
+  if (!messaging) return () => {};
+  
+  return onMessage(messaging, (payload) => {
+    console.log('📬 Foreground message received:', payload);
+    callback(payload);
+  });
+};
+
+/**
+ * Show local notification (for foreground messages)
+ */
+export const showLocalNotification = (title: string, body: string, icon?: string) => {
+  if ('Notification' in window && Notification.permission === 'granted') {
+    new Notification(title, {
+      body,
+      icon: icon || '/logo-smarter.jpg',
+      badge: '/logo-smarter.jpg',
+      tag: 'smarter-notification',
+      renotify: true,
+    });
+  }
+};
+
 // Auth state observer helper
 export const onAuthChange = (callback: (user: FirebaseUser | null) => void) => {
   return onAuthStateChanged(auth, callback);
@@ -99,7 +179,7 @@ export const getCurrentUser = (): FirebaseUser | null => {
 };
 
 // Export instances
-export { app, auth, db, analytics };
+export { app, auth, db, analytics, messaging };
 
 // Export types
 export type { FirebaseUser };
