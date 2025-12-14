@@ -1,111 +1,145 @@
 // ============================================
-// 🤖 ASSISTANT PAGE - AI CHAT
+// 🤖 ASSISTANT PAGE - AI CHAT WITH REAL CLAUDE
+// Uses Anthropic Claude API for intelligent responses
 // ============================================
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bot, Send, User, Sparkles, Lightbulb, TrendingUp, PiggyBank, Target, X, Loader2 } from 'lucide-react';
+import { Bot, Send, Sparkles, X, Loader2, AlertCircle, CheckCircle, Zap } from 'lucide-react';
 import { useStore, getThemeColors } from '../../stores/useStore';
-import { Card, Button, Avatar } from '../../components/ui';
+import { Card, Button, Avatar, Badge } from '../../components/ui';
 import { cn } from '../../utils/cn';
 import { formatCurrency } from '../../utils/financial';
+import { claudeService } from '../../services/claudeService';
+import { notificationService, type SmartAlert } from '../../services/notificationService';
 import type { ChatMessage, QuickAction } from '../../types';
 
 // Quick Actions
 const QUICK_ACTIONS: QuickAction[] = [
-  { id: '1', icon: '💡', label: 'Consejos de ahorro', message: '¿Qué consejos me das para ahorrar más dinero?' },
-  { id: '2', icon: '📊', label: 'Analizar gastos', message: 'Analiza mis gastos de este mes y dame recomendaciones' },
-  { id: '3', icon: '🎯', label: 'Alcanzar metas', message: '¿Cómo puedo alcanzar mis metas de ahorro más rápido?' },
-  { id: '4', icon: '💰', label: 'Reducir gastos', message: '¿En qué categorías podría reducir mis gastos?' },
-  { id: '5', icon: '📈', label: 'Mejorar finanzas', message: '¿Cómo puedo mejorar mi salud financiera?' },
-  { id: '6', icon: '🏠', label: 'Presupuesto', message: '¿Cómo debería distribuir mi presupuesto mensual?' },
+  { id: '1', icon: '💡', label: 'Consejos de ahorro', message: '¿Qué consejos personalizados me das para ahorrar más dinero?' },
+  { id: '2', icon: '📊', label: 'Analizar gastos', message: 'Analiza mis gastos de este mes y dame recomendaciones específicas' },
+  { id: '3', icon: '🎯', label: 'Mis metas', message: '¿Cómo van mis metas de ahorro y cómo puedo alcanzarlas más rápido?' },
+  { id: '4', icon: '💰', label: 'Reducir gastos', message: '¿En qué categorías específicas podría reducir mis gastos?' },
+  { id: '5', icon: '📈', label: 'Proyección', message: 'Si sigo así, ¿cómo estarán mis finanzas en 3 meses?' },
+  { id: '6', icon: '🏠', label: 'Presupuesto ideal', message: '¿Cómo debería distribuir mi presupuesto mensual según mis ingresos?' },
 ];
 
-// Knowledge base for offline responses
-const KNOWLEDGE_BASE: Record<string, string> = {
-  'ahorro': 'Para ahorrar más dinero te recomiendo:\n\n1. **Regla 50/30/20**: Destina 50% a necesidades, 30% a deseos y 20% al ahorro.\n2. **Automatiza**: Programa transferencias automáticas a tu cuenta de ahorros.\n3. **Revisa suscripciones**: Cancela las que no uses.\n4. **Cocina en casa**: Reduce gastos en restaurantes.\n5. **Compara precios**: Antes de comprar, busca ofertas.',
-  'gastos': 'Para controlar tus gastos:\n\n1. **Registra todo**: Anota cada gasto, por pequeño que sea.\n2. **Establece límites**: Define presupuestos por categoría.\n3. **Usa efectivo**: Limita el uso de tarjetas.\n4. **Espera 24h**: Antes de compras impulsivas, espera un día.\n5. **Revisa semanalmente**: Analiza tus gastos cada semana.',
-  'metas': 'Para alcanzar tus metas de ahorro:\n\n1. **Sé específico**: Define montos y fechas exactas.\n2. **Divide en pequeñas metas**: Es más motivador.\n3. **Visualiza el progreso**: Usa gráficos y porcentajes.\n4. **Celebra logros**: Prémiate al alcanzar hitos.\n5. **Ajusta si es necesario**: Sé flexible con los plazos.',
-  'presupuesto': 'Distribución sugerida del presupuesto:\n\n• **Vivienda**: 25-35%\n• **Transporte**: 10-15%\n• **Alimentación**: 10-15%\n• **Servicios**: 5-10%\n• **Ahorro**: 15-20%\n• **Entretenimiento**: 5-10%\n• **Personal**: 5-10%\n• **Emergencias**: 5-10%',
-  'default': '¡Hola! Soy tu asistente financiero. Puedo ayudarte con:\n\n• 💡 Consejos de ahorro\n• 📊 Análisis de gastos\n• 🎯 Estrategias para metas\n• 💰 Presupuestos\n• 📈 Mejora de finanzas\n\n¿En qué puedo ayudarte hoy?',
-};
-
-// Generate response based on user message and financial data
-const generateResponse = (message: string, financialContext: any): string => {
-  const lowerMessage = message.toLowerCase();
-  
-  // Check for keywords
-  if (lowerMessage.includes('ahorro') || lowerMessage.includes('ahorrar') || lowerMessage.includes('guardar')) {
-    return KNOWLEDGE_BASE['ahorro'];
-  }
-  if (lowerMessage.includes('gasto') || lowerMessage.includes('gastar') || lowerMessage.includes('reducir')) {
-    const topCategory = financialContext.topCategories?.[0];
-    let response = KNOWLEDGE_BASE['gastos'];
-    if (topCategory) {
-      response += `\n\n📊 **Dato**: Tu mayor gasto este mes es en "${topCategory.category}" con ${formatCurrency(topCategory.amount, 'USD')} (${topCategory.percentage.toFixed(1)}% del total).`;
-    }
-    return response;
-  }
-  if (lowerMessage.includes('meta') || lowerMessage.includes('objetivo') || lowerMessage.includes('alcanzar')) {
-    return KNOWLEDGE_BASE['metas'];
-  }
-  if (lowerMessage.includes('presupuesto') || lowerMessage.includes('distribuir') || lowerMessage.includes('organizar')) {
-    return KNOWLEDGE_BASE['presupuesto'];
-  }
-  if (lowerMessage.includes('analiz') || lowerMessage.includes('recomend')) {
-    const { totalIncome, totalExpenses, savingsRate } = financialContext;
-    let analysis = `📊 **Análisis de este mes**:\n\n`;
-    analysis += `• Ingresos: ${formatCurrency(totalIncome, 'USD')}\n`;
-    analysis += `• Gastos: ${formatCurrency(totalExpenses, 'USD')}\n`;
-    analysis += `• Tasa de ahorro: ${savingsRate.toFixed(1)}%\n\n`;
-    
-    if (savingsRate >= 20) {
-      analysis += `✅ ¡Excelente! Estás ahorrando más del 20%. Sigue así.`;
-    } else if (savingsRate >= 10) {
-      analysis += `⚠️ Tu tasa de ahorro está en ${savingsRate.toFixed(1)}%. Intenta llegar al 20% reduciendo gastos no esenciales.`;
-    } else if (savingsRate >= 0) {
-      analysis += `🔴 Tu tasa de ahorro es baja (${savingsRate.toFixed(1)}%). Revisa tus gastos y establece presupuestos más estrictos.`;
-    } else {
-      analysis += `⚠️ ¡Atención! Estás gastando más de lo que ganas. Necesitas revisar urgentemente tus gastos.`;
-    }
-    return analysis;
-  }
-  if (lowerMessage.includes('hola') || lowerMessage.includes('ayuda') || lowerMessage.includes('qué puedes')) {
-    return KNOWLEDGE_BASE['default'];
-  }
-  
-  // Default response with context
-  return `Gracias por tu mensaje. Basándome en tus finanzas actuales:\n\n• Tu balance este mes es ${formatCurrency(financialContext.balance, 'USD')}\n• Tu tasa de ahorro es ${financialContext.savingsRate.toFixed(1)}%\n\n¿Te gustaría que te dé consejos específicos sobre algún tema? Puedo ayudarte con ahorro, gastos, metas o presupuestos.`;
-};
-
 export const AssistantPage: React.FC = () => {
-  const { user, expenses, incomes, goals, theme, setActivePage } = useStore();
+  const { user, expenses, incomes, goals, budgets, theme, currency, setActivePage } = useStore();
   const themeColors = getThemeColors(theme);
 
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: '0',
-      role: 'assistant',
-      content: `¡Hola${user?.displayName ? ` ${user.displayName.split(' ')[0]}` : ''}! 👋\n\nSoy tu asistente financiero personal. Estoy aquí para ayudarte a:\n\n• 💡 Mejorar tus hábitos de ahorro\n• 📊 Analizar tus gastos\n• 🎯 Alcanzar tus metas financieras\n• 💰 Crear presupuestos efectivos\n\n¿En qué puedo ayudarte hoy?`,
-      timestamp: new Date(),
-    },
-  ]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [smartAlerts, setSmartAlerts] = useState<SmartAlert[]>([]);
+  const [showAlerts, setShowAlerts] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Calculate financial context
-  const financialContext = {
-    totalIncome: incomes.reduce((sum, i) => sum + i.amount, 0),
-    totalExpenses: expenses.reduce((sum, e) => sum + e.amount, 0),
-    balance: incomes.reduce((sum, i) => sum + i.amount, 0) - expenses.reduce((sum, e) => sum + e.amount, 0),
-    savingsRate: incomes.reduce((sum, i) => sum + i.amount, 0) > 0
-      ? ((incomes.reduce((sum, i) => sum + i.amount, 0) - expenses.reduce((sum, e) => sum + e.amount, 0)) / incomes.reduce((sum, i) => sum + i.amount, 0)) * 100
-      : 0,
-    topCategories: Object.entries(expenses.reduce((acc, e) => { acc[e.category] = (acc[e.category] || 0) + e.amount; return acc; }, {} as Record<string, number>))
-      .map(([category, amount]) => ({ category, amount, percentage: (amount / expenses.reduce((sum, e) => sum + e.amount, 0)) * 100 }))
-      .sort((a, b) => b.amount - a.amount),
-    activeGoals: goals.filter(g => !g.isCompleted).length,
-  };
+  // Calculate financial context for AI
+  const financialContext = useMemo(() => {
+    const totalIncome = incomes.reduce((sum, i) => sum + i.amount, 0);
+    const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
+    const balance = totalIncome - totalExpenses;
+    const savingsRate = totalIncome > 0 ? (balance / totalIncome) * 100 : 0;
+
+    // Top categories
+    const categoryTotals: Record<string, number> = {};
+    expenses.forEach(e => {
+      categoryTotals[e.category] = (categoryTotals[e.category] || 0) + e.amount;
+    });
+    
+    const topCategories = Object.entries(categoryTotals)
+      .map(([category, amount]) => ({
+        category,
+        amount,
+        percentage: totalExpenses > 0 ? (amount / totalExpenses) * 100 : 0
+      }))
+      .sort((a, b) => b.amount - a.amount);
+
+    // Budget status
+    const budgetStatus = budgets.map(budget => {
+      const spent = categoryTotals[budget.category] || 0;
+      return {
+        category: budget.category,
+        limit: budget.limit,
+        spent,
+        percentage: budget.limit > 0 ? (spent / budget.limit) * 100 : 0
+      };
+    });
+
+    // Goals status
+    const goalsStatus = goals.map(goal => ({
+      name: goal.name,
+      target: Number(goal.targetAmount) || 0,
+      current: Number(goal.currentAmount) || 0,
+      progress: (Number(goal.targetAmount) || 0) > 0 
+        ? ((Number(goal.currentAmount) || 0) / (Number(goal.targetAmount) || 0)) * 100 
+        : 0,
+      deadline: goal.deadline
+    }));
+
+    // Recent transactions
+    const recentTransactions = [...expenses, ...incomes]
+      .sort((a, b) => {
+        const dateA = a.date instanceof Date ? a.date : new Date(a.date);
+        const dateB = b.date instanceof Date ? b.date : new Date(b.date);
+        return dateB.getTime() - dateA.getTime();
+      })
+      .slice(0, 10)
+      .map(tx => ({
+        description: tx.description,
+        amount: tx.amount,
+        category: tx.category,
+        type: tx.type,
+        date: (tx.date instanceof Date ? tx.date : new Date(tx.date)).toLocaleDateString('es')
+      }));
+
+    return {
+      totalIncome,
+      totalExpenses,
+      balance,
+      savingsRate,
+      topCategories,
+      budgets: budgetStatus,
+      goals: goalsStatus,
+      recentTransactions,
+      monthlyTrend: [],
+      currency,
+      userName: user?.displayName?.split(' ')[0]
+    };
+  }, [expenses, incomes, goals, budgets, currency, user]);
+
+  // Generate smart alerts on load
+  useEffect(() => {
+    const alerts = notificationService.getAllSmartAlerts(
+      expenses,
+      incomes,
+      budgets,
+      goals,
+      currency
+    );
+    setSmartAlerts(alerts);
+  }, [expenses, incomes, budgets, goals, currency]);
+
+  // Initial greeting message
+  useEffect(() => {
+    const greeting = `¡Hola${user?.displayName ? ` ${user.displayName.split(' ')[0]}` : ''}! 👋
+
+Soy tu asistente financiero personal con **inteligencia artificial**. Puedo analizar tus datos reales y darte consejos personalizados.
+
+**Tu resumen rápido:**
+• Balance: ${formatCurrency(financialContext.balance, currency)}
+• Tasa de ahorro: ${financialContext.savingsRate.toFixed(1)}%
+• Metas activas: ${goals.filter(g => !g.isCompleted).length}
+
+¿En qué puedo ayudarte hoy?`;
+
+    setMessages([{
+      id: '0',
+      role: 'assistant',
+      content: greeting,
+      timestamp: new Date(),
+    }]);
+  }, []);
 
   // Scroll to bottom when new messages arrive
   useEffect(() => {
@@ -126,21 +160,41 @@ export const AssistantPage: React.FC = () => {
     setMessages((prev) => [...prev, userMessage]);
     setInput('');
     setIsTyping(true);
+    setShowAlerts(false);
 
-    // Simulate AI thinking delay
-    await new Promise((resolve) => setTimeout(resolve, 1000 + Math.random() * 1000));
+    try {
+      // Get conversation history for context
+      const conversationHistory = messages.map(m => ({
+        role: m.role as 'user' | 'assistant',
+        content: m.content
+      }));
 
-    // Generate response
-    const response = generateResponse(messageText, financialContext);
+      // Generate response using Claude
+      const response = await claudeService.generateResponse(
+        messageText,
+        financialContext,
+        conversationHistory
+      );
 
-    // Add assistant message
-    const assistantMessage: ChatMessage = {
-      id: (Date.now() + 1).toString(),
-      role: 'assistant',
-      content: response,
-      timestamp: new Date(),
-    };
-    setMessages((prev) => [...prev, assistantMessage]);
+      // Add assistant message
+      const assistantMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: response,
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, assistantMessage]);
+    } catch (error) {
+      console.error('Error generating response:', error);
+      const errorMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: 'Lo siento, hubo un error al procesar tu mensaje. Por favor intenta de nuevo.',
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    }
+
     setIsTyping(false);
   };
 
@@ -148,26 +202,117 @@ export const AssistantPage: React.FC = () => {
     handleSend(action.message);
   };
 
+  const handleAlertAction = (alert: SmartAlert) => {
+    if (alert.actionPage) {
+      setActivePage(alert.actionPage as any);
+    }
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'high': return 'border-danger-500/50 bg-danger-500/10';
+      case 'medium': return 'border-warning-500/50 bg-warning-500/10';
+      default: return 'border-success-500/50 bg-success-500/10';
+    }
+  };
+
+  const getPriorityIcon = (priority: string) => {
+    switch (priority) {
+      case 'high': return <AlertCircle className="w-5 h-5 text-danger-400" />;
+      case 'medium': return <Zap className="w-5 h-5 text-warning-400" />;
+      default: return <CheckCircle className="w-5 h-5 text-success-400" />;
+    }
+  };
+
   return (
     <div className="flex flex-col h-[calc(100vh-180px)] lg:h-[calc(100vh-140px)]">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center">
+          <div 
+            className="w-12 h-12 rounded-2xl flex items-center justify-center"
+            style={{ 
+              background: `linear-gradient(135deg, ${themeColors.primary}, ${themeColors.secondary})`,
+              boxShadow: `0 0 20px ${themeColors.primary}40`
+            }}
+          >
             <Bot className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-white">Asistente Financiero</h1>
+            <h1 className="text-xl font-bold text-white flex items-center gap-2">
+              Asistente IA
+              <Badge variant="primary" className="text-xs">Claude</Badge>
+            </h1>
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-success-500 animate-pulse" />
-              <span className="text-sm text-white/50">En línea</span>
+              <span className="text-sm text-white/50">Conectado</span>
             </div>
           </div>
         </div>
-        <Button variant="ghost" size="sm" onClick={() => setActivePage('dashboard')}>
-          <X className="w-5 h-5" />
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" onClick={() => setShowAlerts(!showAlerts)}>
+            <Sparkles className="w-5 h-5" />
+            {smartAlerts.filter(a => a.priority === 'high').length > 0 && (
+              <span className="ml-1 w-2 h-2 rounded-full bg-danger-500" />
+            )}
+          </Button>
+        </div>
       </div>
+
+      {/* Smart Alerts Panel */}
+      <AnimatePresence>
+        {showAlerts && smartAlerts.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="mb-4 overflow-hidden"
+          >
+            <Card className="p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold text-white flex items-center gap-2">
+                  <Sparkles className="w-4 h-4" style={{ color: themeColors.primary }} />
+                  Alertas Inteligentes
+                </h3>
+                <button 
+                  onClick={() => setShowAlerts(false)}
+                  className="text-white/50 hover:text-white"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {smartAlerts.slice(0, 5).map((alert, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    className={cn(
+                      'p-3 rounded-xl border cursor-pointer transition-all hover:scale-[1.02]',
+                      getPriorityColor(alert.priority)
+                    )}
+                    onClick={() => handleAlertAction(alert)}
+                  >
+                    <div className="flex items-start gap-3">
+                      {getPriorityIcon(alert.priority)}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-white text-sm">{alert.title}</p>
+                        <p className="text-xs text-white/60 mt-0.5 line-clamp-2">{alert.message}</p>
+                      </div>
+                      {alert.actionLabel && (
+                        <span className="text-xs px-2 py-1 rounded-full bg-white/10 text-white/70 whitespace-nowrap">
+                          {alert.actionLabel}
+                        </span>
+                      )}
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Messages */}
       <Card className="flex-1 overflow-hidden flex flex-col" padding="none">
@@ -182,7 +327,12 @@ export const AssistantPage: React.FC = () => {
                 className={cn('flex gap-3', message.role === 'user' && 'flex-row-reverse')}
               >
                 {message.role === 'assistant' ? (
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center flex-shrink-0">
+                  <div 
+                    className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+                    style={{ 
+                      background: `linear-gradient(135deg, ${themeColors.primary}, ${themeColors.secondary})`,
+                    }}
+                  >
                     <Bot className="w-4 h-4 text-white" />
                   </div>
                 ) : (
@@ -190,15 +340,25 @@ export const AssistantPage: React.FC = () => {
                 )}
                 <div
                   className={cn(
-                    'max-w-[80%] rounded-2xl px-4 py-3',
+                    'max-w-[85%] rounded-2xl px-4 py-3',
                     message.role === 'assistant'
                       ? 'bg-white/10 rounded-tl-sm'
-                      : 'bg-primary-500/20 rounded-tr-sm'
+                      : 'rounded-tr-sm'
                   )}
+                  style={message.role === 'user' ? {
+                    background: `${themeColors.primary}20`,
+                    borderColor: `${themeColors.primary}30`
+                  } : {}}
                 >
-                  <p className="text-white whitespace-pre-wrap text-sm leading-relaxed">
-                    {message.content}
-                  </p>
+                  <div 
+                    className="text-white text-sm leading-relaxed"
+                    dangerouslySetInnerHTML={{ 
+                      __html: message.content
+                        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                        .replace(/\n/g, '<br/>')
+                        .replace(/•/g, '&bull;')
+                    }}
+                  />
                   <p className="text-xs text-white/30 mt-2">
                     {message.timestamp.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}
                   </p>
@@ -214,14 +374,20 @@ export const AssistantPage: React.FC = () => {
               animate={{ opacity: 1 }}
               className="flex gap-3"
             >
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center">
+              <div 
+                className="w-8 h-8 rounded-full flex items-center justify-center"
+                style={{ 
+                  background: `linear-gradient(135deg, ${themeColors.primary}, ${themeColors.secondary})`,
+                }}
+              >
                 <Bot className="w-4 h-4 text-white" />
               </div>
               <div className="bg-white/10 rounded-2xl rounded-tl-sm px-4 py-3">
-                <div className="flex gap-1">
-                  <span className="w-2 h-2 rounded-full bg-white/50 animate-bounce" style={{ animationDelay: '0ms' }} />
-                  <span className="w-2 h-2 rounded-full bg-white/50 animate-bounce" style={{ animationDelay: '150ms' }} />
-                  <span className="w-2 h-2 rounded-full bg-white/50 animate-bounce" style={{ animationDelay: '300ms' }} />
+                <div className="flex gap-1 items-center">
+                  <span className="text-xs text-white/50 mr-2">Analizando</span>
+                  <span className="w-2 h-2 rounded-full animate-bounce" style={{ backgroundColor: themeColors.primary, animationDelay: '0ms' }} />
+                  <span className="w-2 h-2 rounded-full animate-bounce" style={{ backgroundColor: themeColors.primary, animationDelay: '150ms' }} />
+                  <span className="w-2 h-2 rounded-full animate-bounce" style={{ backgroundColor: themeColors.primary, animationDelay: '300ms' }} />
                 </div>
               </div>
             </motion.div>
@@ -233,13 +399,13 @@ export const AssistantPage: React.FC = () => {
         {/* Quick Actions */}
         {messages.length <= 2 && (
           <div className="p-4 border-t border-white/10">
-            <p className="text-xs text-white/50 mb-3">Sugerencias rápidas:</p>
+            <p className="text-xs text-white/50 mb-3">Pregúntame sobre:</p>
             <div className="flex flex-wrap gap-2">
               {QUICK_ACTIONS.slice(0, 4).map((action) => (
                 <button
                   key={action.id}
                   onClick={() => handleQuickAction(action)}
-                  className="flex items-center gap-2 px-3 py-2 rounded-full bg-white/5 hover:bg-white/10 transition-colors text-sm text-white/70 hover:text-white"
+                  className="flex items-center gap-2 px-3 py-2 rounded-full bg-white/5 hover:bg-white/10 transition-all text-sm text-white/70 hover:text-white border border-white/10 hover:border-white/20"
                 >
                   <span>{action.icon}</span>
                   <span>{action.label}</span>
@@ -259,14 +425,27 @@ export const AssistantPage: React.FC = () => {
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Escribe tu mensaje..."
-              className="flex-1 px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/40 focus:border-primary-500 focus:ring-0 transition-colors"
+              placeholder="Escribe tu pregunta financiera..."
+              className="flex-1 px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/40 focus:outline-none transition-colors"
+              style={{ 
+                borderColor: input ? `${themeColors.primary}50` : undefined 
+              }}
               disabled={isTyping}
             />
-            <Button type="submit" disabled={!input.trim() || isTyping} className="px-4">
+            <Button 
+              type="submit" 
+              disabled={!input.trim() || isTyping} 
+              className="px-4"
+              style={{
+                background: `linear-gradient(135deg, ${themeColors.primary}, ${themeColors.secondary})`,
+              }}
+            >
               {isTyping ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
             </Button>
           </form>
+          <p className="text-xs text-white/30 mt-2 text-center">
+            Powered by Claude AI • Tus datos están seguros
+          </p>
         </div>
       </Card>
     </div>
