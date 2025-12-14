@@ -143,43 +143,15 @@ export const Card: React.FC<CardProps> = ({
   return (
     <div
       className={cn(
-        'relative rounded-2xl backdrop-blur-lg overflow-hidden',
+        'card relative rounded-2xl backdrop-blur-lg overflow-hidden',
         'transition-all duration-300',
         paddings[padding],
         onClick && 'cursor-pointer',
         className
       )}
-      style={{
-        background: 'linear-gradient(145deg, var(--color-card-start), var(--color-card-end))',
-        border: '2px solid var(--neon-border)',
-        boxShadow: hover ? 'var(--neon-glow)' : 'none',
-      }}
       onClick={onClick}
-      onMouseEnter={(e) => {
-        if (hover) {
-          e.currentTarget.style.borderColor = 'var(--neon-border-hover)';
-          e.currentTarget.style.boxShadow = 'var(--neon-glow-intense)';
-          e.currentTarget.style.transform = 'translateY(-2px)';
-        }
-      }}
-      onMouseLeave={(e) => {
-        if (hover) {
-          e.currentTarget.style.borderColor = 'var(--neon-border)';
-          e.currentTarget.style.boxShadow = 'var(--neon-glow)';
-          e.currentTarget.style.transform = 'translateY(0)';
-        }
-      }}
     >
-      {/* Neon inner glow effect */}
-      {neon && (
-        <div 
-          className="absolute top-0 right-0 w-32 h-32 -mr-16 -mt-16 rounded-full pointer-events-none"
-          style={{
-            background: 'radial-gradient(circle, rgba(var(--color-primary-rgb), 0.15) 0%, transparent 70%)',
-          }}
-        />
-      )}
-      <div className="relative z-10">{children}</div>
+      {children}
     </div>
   );
 };
@@ -246,14 +218,9 @@ export const Modal: React.FC<ModalProps> = ({
             exit="exit"
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
             className={cn(
-              'relative w-full rounded-2xl max-h-[90vh] overflow-auto',
+              'card relative w-full rounded-2xl max-h-[90vh] overflow-auto',
               sizes[size]
             )}
-            style={{
-              background: 'linear-gradient(145deg, var(--color-card-start), var(--color-card-end))',
-              border: '2px solid var(--neon-border)',
-              boxShadow: 'var(--neon-glow-intense), 0 25px 50px rgba(0, 0, 0, 0.5)',
-            }}
           >
             {/* Header */}
             {(title || showClose) && (

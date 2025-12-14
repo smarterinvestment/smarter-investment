@@ -41,9 +41,9 @@ const BOTTOM_NAV_ITEMS: Array<{
 }> = [
   { id: 'dashboard', labelKey: 'home', icon: <Home className="w-5 h-5" /> },
   { id: 'transactions', labelKey: 'transactions', icon: <ArrowLeftRight className="w-5 h-5" /> },
-  { id: 'budgets', labelKey: 'budgets', icon: <PiggyBank className="w-5 h-5" /> },
   { id: 'goals', labelKey: 'goals', icon: <Target className="w-5 h-5" /> },
-  { id: 'reports', labelKey: 'reports', icon: <BarChart3 className="w-5 h-5" /> },
+  { id: 'assistant', labelKey: 'assistant', icon: <Bot className="w-5 h-5" /> },
+  { id: 'more', labelKey: 'more', icon: <Menu className="w-5 h-5" /> },
 ];
 
 // Sidebar Navigation (all items)
@@ -59,6 +59,7 @@ const SIDEBAR_NAV_ITEMS: Array<{
   { id: 'reports', labelKey: 'reports', icon: <BarChart3 className="w-5 h-5" /> },
   { id: 'recurring', labelKey: 'recurring', icon: <RefreshCw className="w-5 h-5" /> },
   { id: 'assistant', labelKey: 'assistant', icon: <Bot className="w-5 h-5" /> },
+  { id: 'more', labelKey: 'more', icon: <Menu className="w-5 h-5" /> },
 ];
 
 // Theme Options (Dark themes only)

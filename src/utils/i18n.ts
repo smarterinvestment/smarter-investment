@@ -18,6 +18,7 @@ const translations = {
       assistant: 'Asistente',
       recurring: 'Recurrentes',
       settings: 'Configuración',
+      more: 'Más',
     },
     common: {
       add: 'Añadir',
@@ -135,6 +136,7 @@ const translations = {
       assistant: 'Assistant',
       recurring: 'Recurring',
       settings: 'Settings',
+      more: 'More',
     },
     common: {
       add: 'Add',

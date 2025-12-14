@@ -16,6 +16,7 @@ import { ReportsPage } from './features/reports/ReportsPage';
 import { SettingsPage } from './features/settings/SettingsPage';
 import { AssistantPage } from './features/assistant/AssistantPage';
 import { RecurringPage } from './features/recurring/RecurringPage';
+import { MorePage } from './features/more/MorePage';
 import { Toaster } from 'react-hot-toast';
 
 // Page Components Map
@@ -28,6 +29,7 @@ const PAGE_COMPONENTS: Record<string, React.FC> = {
   settings: SettingsPage,
   assistant: AssistantPage,
   recurring: RecurringPage,
+  more: MorePage,
 };
 
 // ============================================
@@ -39,7 +41,7 @@ const PremiumLoadingScreen: React.FC<{ theme: string }> = ({ theme }) => {
     switch (theme) {
       case 'pink':
         return {
-          bg: 'radial-gradient(ellipse at center, #2d1025 0%, #1a0a14 50%, #0d0509 100%)',
+          bg: 'radial-gradient(ellipse at center, #2d1025 0%, #1a0a14 50%, #000000 100%)',
           neonColor: '#ec4899',
           neonGlow: '#ff69b4',
           glowIntense: 'rgba(236, 72, 153, 0.8)',
@@ -49,7 +51,7 @@ const PremiumLoadingScreen: React.FC<{ theme: string }> = ({ theme }) => {
         };
       case 'purple':
         return {
-          bg: 'radial-gradient(ellipse at center, #2d1b4e 0%, #1a1033 50%, #0a0612 100%)',
+          bg: 'radial-gradient(ellipse at center, #2d1b4e 0%, #1a1033 50%, #000000 100%)',
           neonColor: '#a855f7',
           neonGlow: '#c084fc',
           glowIntense: 'rgba(168, 85, 247, 0.8)',
@@ -57,19 +59,19 @@ const PremiumLoadingScreen: React.FC<{ theme: string }> = ({ theme }) => {
           glowSoft: 'rgba(168, 85, 247, 0.2)',
           particleColor: 'rgba(168, 85, 247, 0.6)',
         };
-      case 'light':
+      case 'turquoise':
         return {
-          bg: 'radial-gradient(ellipse at center, #e0f2fe 0%, #f0f9ff 50%, #f8fafc 100%)',
-          neonColor: '#0891b2',
-          neonGlow: '#06b6d4',
-          glowIntense: 'rgba(8, 145, 178, 0.6)',
-          glowMedium: 'rgba(8, 145, 178, 0.3)',
-          glowSoft: 'rgba(8, 145, 178, 0.15)',
-          particleColor: 'rgba(8, 145, 178, 0.5)',
+          bg: 'radial-gradient(ellipse at center, #042f2e 0%, #021a19 50%, #000000 100%)',
+          neonColor: '#14b8a6',
+          neonGlow: '#2dd4bf',
+          glowIntense: 'rgba(20, 184, 166, 0.8)',
+          glowMedium: 'rgba(20, 184, 166, 0.4)',
+          glowSoft: 'rgba(20, 184, 166, 0.2)',
+          particleColor: 'rgba(20, 184, 166, 0.6)',
         };
       default: // dark/cyan
         return {
-          bg: 'radial-gradient(ellipse at center, #0A4D68 0%, #001845 50%, #000B2E 100%)',
+          bg: 'radial-gradient(ellipse at center, #062a3a 0%, #011520 50%, #000000 100%)',
           neonColor: '#05BFDB',
           neonGlow: '#00fff7',
           glowIntense: 'rgba(5, 191, 219, 0.8)',
@@ -81,7 +83,6 @@ const PremiumLoadingScreen: React.FC<{ theme: string }> = ({ theme }) => {
   };
 
   const styles = getThemeStyles();
-  const isLight = theme === 'light';
 
   return (
     <div 
@@ -178,10 +179,8 @@ const PremiumLoadingScreen: React.FC<{ theme: string }> = ({ theme }) => {
         <h1 
           className="mt-8 text-2xl md:text-3xl font-bold tracking-wide"
           style={{
-            color: isLight ? '#0f172a' : '#ffffff',
-            textShadow: isLight 
-              ? 'none' 
-              : `0 0 20px ${styles.neonColor}, 0 0 40px ${styles.glowMedium}`,
+            color: '#ffffff',
+            textShadow: `0 0 20px ${styles.neonColor}, 0 0 40px ${styles.glowMedium}`,
           }}
         >
           Smarter Investment
@@ -214,7 +213,7 @@ const PremiumLoadingScreen: React.FC<{ theme: string }> = ({ theme }) => {
         {/* Loading Text */}
         <p 
           className="mt-4 text-sm animate-pulse"
-          style={{ color: isLight ? '#64748b' : 'rgba(255,255,255,0.6)' }}
+          style={{ color: 'rgba(255,255,255,0.6)' }}
         >
           Cargando...
         </p>

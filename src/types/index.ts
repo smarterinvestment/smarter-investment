@@ -308,7 +308,8 @@ export type Page =
   | 'reports'
   | 'settings'
   | 'assistant'
-  | 'recurring';
+  | 'recurring'
+  | 'more';
 
 export interface Modal {
   id: string;
