@@ -19,10 +19,11 @@ const BudgetForm: React.FC<{
   onSubmit: (category: string, amount: number) => void;
 }> = ({ isOpen, onClose, category: initialCategory, amount: initialAmount, onSubmit }) => {
   const { budgets } = useStore();
+  const safeBudgets = budgets || {};
   const [category, setCategory] = useState(initialCategory || '');
   const [amount, setAmount] = useState(initialAmount?.toString() || '');
 
-  const availableCategories = DEFAULT_EXPENSE_CATEGORIES.filter(cat => !budgets[cat.name] || cat.name === initialCategory);
+  const availableCategories = DEFAULT_EXPENSE_CATEGORIES.filter(cat => !safeBudgets[cat.name] || cat.name === initialCategory);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,26 +74,30 @@ export const BudgetsPage: React.FC = () => {
   const [editingBudget, setEditingBudget] = useState<{ category: string; amount: number } | null>(null);
   const [deletingBudget, setDeletingBudget] = useState<string | null>(null);
 
-  const monthlyExpenses = useMemo(() => filterByMonth(expenses), [expenses]);
+  // Safe arrays
+  const safeExpenses = Array.isArray(expenses) ? expenses : [];
+  const safeBudgets = budgets || {};
+
+  const monthlyExpenses = useMemo(() => filterByMonth(safeExpenses), [safeExpenses]);
   const expensesByCategory = useMemo(() => groupByCategory(monthlyExpenses), [monthlyExpenses]);
 
   const budgetStatus = useMemo(() => {
-    return Object.entries(budgets).map(([category, budget]) => {
+    return Object.entries(safeBudgets).map(([category, budget]) => {
       const spent = expensesByCategory[category] || 0;
       const percentage = budget > 0 ? (spent / budget) * 100 : 0;
       const remaining = budget - spent;
       const status = percentage >= 100 ? 'exceeded' : percentage >= 85 ? 'critical' : percentage >= 70 ? 'warning' : 'safe';
       return { category, budget, spent, percentage, remaining, status };
     }).sort((a, b) => b.percentage - a.percentage);
-  }, [budgets, expensesByCategory]);
+  }, [safeBudgets, expensesByCategory]);
 
   const summary = useMemo(() => {
-    const totalBudget = Object.values(budgets).reduce((sum, b) => sum + b, 0);
+    const totalBudget = Object.values(safeBudgets).reduce((sum, b) => sum + b, 0);
     const totalSpent = budgetStatus.reduce((sum, b) => sum + b.spent, 0);
     const overBudgetCount = budgetStatus.filter(b => b.status === 'exceeded').length;
     const warningCount = budgetStatus.filter(b => b.status === 'critical' || b.status === 'warning').length;
     return { totalBudget, totalSpent, totalRemaining: totalBudget - totalSpent, overBudgetCount, warningCount };
-  }, [budgets, budgetStatus]);
+  }, [safeBudgets, budgetStatus]);
 
   const handleSave = (category: string, amount: number) => updateBudget(category, amount);
   const handleDelete = () => { if (deletingBudget) { deleteBudget(deletingBudget); setDeletingBudget(null); } };
@@ -101,11 +106,11 @@ export const BudgetsPage: React.FC = () => {
   const getStatusIcon = (status: string) => status === 'exceeded' ? '🔴' : status === 'critical' ? '🟠' : status === 'warning' ? '🟡' : '🟢';
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Presupuestos</h1>
-          <p className="text-white/60 mt-1">{Object.keys(budgets).length} categorías configuradas</p>
+          <h1 className="text-2xl font-bold text-white">💰 Presupuestos</h1>
+          <p className="text-white/60 mt-1">{Object.keys(safeBudgets).length} categorías configuradas</p>
         </div>
         <Button leftIcon={<Plus className="w-4 h-4" />} onClick={() => setShowForm(true)}>Nuevo</Button>
       </div>

@@ -452,6 +452,42 @@ export const DashboardPage: React.FC = () => {
   const [showQuickAdd, setShowQuickAdd] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Safe arrays
+  const safeExpenses = Array.isArray(expenses) ? expenses : [];
+  const safeIncomes = Array.isArray(incomes) ? incomes : [];
+  const safeRecurring = Array.isArray(recurringTransactions) ? recurringTransactions : [];
+  const safeGoals = Array.isArray(goals) ? goals : [];
+  const safeBudgets = budgets || {};
+
+  // Calculate recurring totals for current month
+  const recurringTotals = useMemo(() => {
+    const activeRecurring = safeRecurring.filter(r => r.isActive);
+    let monthlyIncome = 0;
+    let monthlyExpense = 0;
+
+    activeRecurring.forEach(r => {
+      const amount = Number(r.amount) || 0;
+      let monthlyAmount = amount;
+
+      // Convert to monthly equivalent
+      switch (r.frequency) {
+        case 'daily': monthlyAmount = amount * 30; break;
+        case 'weekly': monthlyAmount = amount * 4; break;
+        case 'biweekly': monthlyAmount = amount * 2; break;
+        case 'monthly': monthlyAmount = amount; break;
+        case 'yearly': monthlyAmount = amount / 12; break;
+      }
+
+      if (r.type === 'income') {
+        monthlyIncome += monthlyAmount;
+      } else {
+        monthlyExpense += monthlyAmount;
+      }
+    });
+
+    return { monthlyIncome, monthlyExpense };
+  }, [safeRecurring]);
+
   const handleQuickAdd = async (data: Partial<Transaction>) => {
     setIsSubmitting(true);
     try {
@@ -472,27 +508,35 @@ export const DashboardPage: React.FC = () => {
     }
   };
 
-  const summary = useMemo(
-    () => calculateFinancialSummary(expenses, incomes),
-    [expenses, incomes]
-  );
+  // Include recurring in summary
+  const summary = useMemo(() => {
+    const baseSummary = calculateFinancialSummary(safeExpenses, safeIncomes);
+    return {
+      ...baseSummary,
+      totalIncome: baseSummary.totalIncome + recurringTotals.monthlyIncome,
+      totalExpenses: baseSummary.totalExpenses + recurringTotals.monthlyExpense,
+      balance: baseSummary.balance + recurringTotals.monthlyIncome - recurringTotals.monthlyExpense,
+      recurringIncome: recurringTotals.monthlyIncome,
+      recurringExpense: recurringTotals.monthlyExpense,
+    };
+  }, [safeExpenses, safeIncomes, recurringTotals]);
 
   const budgetAlerts = useMemo(
-    () => getBudgetAlerts(budgets, expenses),
-    [budgets, expenses]
+    () => getBudgetAlerts(safeBudgets, safeExpenses),
+    [safeBudgets, safeExpenses]
   );
 
   const recentTransactions = useMemo(() => {
     const all = [
-      ...expenses.map(e => ({ ...e, type: 'expense' as const })),
-      ...incomes.map(i => ({ ...i, type: 'income' as const })),
+      ...safeExpenses.map(e => ({ ...e, type: 'expense' as const })),
+      ...safeIncomes.map(i => ({ ...i, type: 'income' as const })),
     ]
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
       .slice(0, 5);
     return all;
-  }, [expenses, incomes]);
+  }, [safeExpenses, safeIncomes]);
 
-  const activeGoals = goals.filter(g => !g.isCompleted).slice(0, 3);
+  const activeGoals = safeGoals.filter(g => !g.isCompleted).slice(0, 3);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -536,8 +580,8 @@ export const DashboardPage: React.FC = () => {
           totalBalance={summary.balance}
           changePercent={summary.trendPercentage}
           currency={currency}
-          expenses={expenses}
-          incomes={incomes}
+          expenses={safeExpenses}
+          incomes={safeIncomes}
           theme={theme}
         />
       </motion.div>
