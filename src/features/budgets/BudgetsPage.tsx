@@ -1,13 +1,15 @@
 // ============================================
-// 💰 BUDGETS PAGE - COMPLETE
+// 💰 BUDGETS PAGE - WITH FIREBASE
 // ============================================
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, Edit2, Trash2, AlertTriangle, TrendingUp, TrendingDown, PiggyBank, BarChart2 } from 'lucide-react';
 import { useStore, getThemeColors } from '../../stores/useStore';
+import { useBudgets } from '../../hooks/useFirebaseData';
 import { Card, Button, Input, Modal, Badge, EmptyState, ProgressBar } from '../../components/ui';
 import { cn } from '../../utils/cn';
 import { formatCurrency, filterByMonth, groupByCategory } from '../../utils/financial';
+import { showSuccess, showError } from '../../lib/errorHandler';
 import { DEFAULT_EXPENSE_CATEGORIES } from '../../types';
 
 // Budget Form Component
@@ -67,12 +69,14 @@ const BudgetForm: React.FC<{
 };
 
 export const BudgetsPage: React.FC = () => {
-  const { expenses, budgets, currency, theme, updateBudget, deleteBudget } = useStore();
+  const { expenses, currency, theme } = useStore();
+  const { budgets, update: updateBudget, remove: deleteBudget } = useBudgets();
   const themeColors = getThemeColors(theme);
 
   const [showForm, setShowForm] = useState(false);
   const [editingBudget, setEditingBudget] = useState<{ category: string; amount: number } | null>(null);
   const [deletingBudget, setDeletingBudget] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Safe arrays
   const safeExpenses = Array.isArray(expenses) ? expenses : [];
@@ -99,8 +103,33 @@ export const BudgetsPage: React.FC = () => {
     return { totalBudget, totalSpent, totalRemaining: totalBudget - totalSpent, overBudgetCount, warningCount };
   }, [safeBudgets, budgetStatus]);
 
-  const handleSave = (category: string, amount: number) => updateBudget(category, amount);
-  const handleDelete = () => { if (deletingBudget) { deleteBudget(deletingBudget); setDeletingBudget(null); } };
+  const handleSave = async (category: string, amount: number) => {
+    setIsSubmitting(true);
+    try {
+      await updateBudget(category, amount);
+      showSuccess(editingBudget ? 'Presupuesto actualizado' : 'Presupuesto creado');
+      setShowForm(false);
+      setEditingBudget(null);
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deletingBudget) return;
+    setIsSubmitting(true);
+    try {
+      await deleteBudget(deletingBudget);
+      showSuccess('Presupuesto eliminado');
+      setDeletingBudget(null);
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
   
   const getStatusColor = (status: string) => status === 'exceeded' || status === 'critical' ? 'danger' : status === 'warning' ? 'warning' : 'success';
   const getStatusIcon = (status: string) => status === 'exceeded' ? '🔴' : status === 'critical' ? '🟠' : status === 'warning' ? '🟡' : '🟢';
@@ -179,11 +208,14 @@ export const BudgetsPage: React.FC = () => {
 
       <BudgetForm isOpen={showForm} onClose={() => { setShowForm(false); setEditingBudget(null); }} category={editingBudget?.category} amount={editingBudget?.amount} onSubmit={handleSave} />
 
-      <Modal isOpen={!!deletingBudget} onClose={() => setDeletingBudget(null)} title="Eliminar" size="sm">
+      <Modal isOpen={!!deletingBudget} onClose={() => setDeletingBudget(null)} title="🗑️ Eliminar" size="sm">
         <div className="text-center">
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-danger-500/20 flex items-center justify-center"><Trash2 className="w-8 h-8 text-danger-400" /></div>
           <p className="text-white/80 mb-6">¿Eliminar presupuesto de "{deletingBudget}"?</p>
-          <div className="flex gap-3"><Button variant="secondary" onClick={() => setDeletingBudget(null)} fullWidth>Cancelar</Button><Button variant="danger" onClick={handleDelete} fullWidth>Eliminar</Button></div>
+          <div className="flex gap-3">
+            <Button variant="secondary" onClick={() => setDeletingBudget(null)} fullWidth disabled={isSubmitting}>Cancelar</Button>
+            <Button variant="danger" onClick={handleDelete} fullWidth isLoading={isSubmitting}>Eliminar</Button>
+          </div>
         </div>
       </Modal>
     </div>

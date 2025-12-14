@@ -5,6 +5,7 @@ import {
   collection,
   doc,
   addDoc,
+  setDoc,
   updateDoc,
   deleteDoc,
   getDocs,
@@ -115,7 +116,8 @@ export const budgetService = {
     if (snapshot.exists()) {
       await updateDoc(budgetRef, { [category]: amount });
     } else {
-      await addDoc(collection(db, 'users', userId, 'settings'), { [category]: amount });
+      // Use setDoc with merge to create document if not exists
+      await setDoc(budgetRef, { [category]: amount }, { merge: true });
     }
   },
 
