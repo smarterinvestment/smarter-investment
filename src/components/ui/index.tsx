@@ -31,6 +31,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       fullWidth = false,
       className,
       disabled,
+      style,
       ...props
     },
     ref
@@ -38,18 +39,46 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     const theme = useStore((state) => state.theme);
     const colors = getThemeColors(theme);
 
-    const variants = {
-      primary: `bg-gradient-to-r from-[${colors.primary}] to-[${colors.secondary}] text-white ${colors.glow} hover:shadow-lg`,
-      secondary: 'bg-white/10 text-white border border-white/20 hover:bg-white/20',
-      danger: 'bg-danger-500/20 text-danger-400 border border-danger-500/30 hover:bg-danger-500/30',
-      ghost: 'bg-transparent text-white/70 hover:bg-white/10 hover:text-white',
-      outline: 'bg-transparent border-2 border-primary-500 text-primary-400 hover:bg-primary-500/10',
-    };
-
     const sizes = {
       sm: 'px-3 py-1.5 text-sm',
       md: 'px-4 py-2.5 text-base',
       lg: 'px-6 py-3 text-lg',
+    };
+
+    const getVariantStyles = () => {
+      switch (variant) {
+        case 'primary':
+          return {
+            background: `linear-gradient(135deg, ${colors.primary} 0%, ${colors.secondary} 100%)`,
+            color: 'white',
+            boxShadow: `0 0 20px ${colors.primary}60, 0 4px 15px rgba(0, 0, 0, 0.3)`,
+          };
+        case 'secondary':
+          return {
+            background: 'rgba(255, 255, 255, 0.1)',
+            color: 'white',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+          };
+        case 'danger':
+          return {
+            background: 'rgba(239, 68, 68, 0.2)',
+            color: '#f87171',
+            border: '1px solid rgba(239, 68, 68, 0.3)',
+          };
+        case 'ghost':
+          return {
+            background: 'transparent',
+            color: 'rgba(255, 255, 255, 0.7)',
+          };
+        case 'outline':
+          return {
+            background: 'transparent',
+            color: colors.primary,
+            border: `2px solid ${colors.primary}`,
+          };
+        default:
+          return {};
+      }
     };
 
     return (
@@ -59,11 +88,12 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           'inline-flex items-center justify-center gap-2 font-semibold rounded-xl',
           'transition-all duration-300 focus-visible:ring-2 focus-visible:ring-offset-2',
           'disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none',
-          variants[variant],
+          'hover:scale-105 active:scale-95',
           sizes[size],
           fullWidth && 'w-full',
           className
         )}
+        style={{ ...getVariantStyles(), ...style }}
         disabled={disabled || isLoading}
         {...props}
       >
@@ -84,7 +114,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 Button.displayName = 'Button';
 
 // ========================================
-// CARD
+// CARD - THEME AWARE WITH NEON EFFECTS
 // ========================================
 interface CardProps {
   children: ReactNode;
@@ -92,14 +122,16 @@ interface CardProps {
   hover?: boolean;
   padding?: 'none' | 'sm' | 'md' | 'lg';
   onClick?: () => void;
+  neon?: boolean;
 }
 
 export const Card: React.FC<CardProps> = ({
   children,
   className,
-  hover = false,
+  hover = true,
   padding = 'md',
   onClick,
+  neon = true,
 }) => {
   const paddings = {
     none: '',
@@ -111,16 +143,43 @@ export const Card: React.FC<CardProps> = ({
   return (
     <div
       className={cn(
-        'bg-dark-500/80 backdrop-blur-lg rounded-2xl',
-        'border border-white/10',
+        'relative rounded-2xl backdrop-blur-lg overflow-hidden',
         'transition-all duration-300',
-        hover && 'hover:-translate-y-1 hover:shadow-card-hover hover:border-primary-500/30 cursor-pointer',
         paddings[padding],
+        onClick && 'cursor-pointer',
         className
       )}
+      style={{
+        background: 'linear-gradient(145deg, var(--color-card-start), var(--color-card-end))',
+        border: '2px solid var(--neon-border)',
+        boxShadow: hover ? 'var(--neon-glow)' : 'none',
+      }}
       onClick={onClick}
+      onMouseEnter={(e) => {
+        if (hover) {
+          e.currentTarget.style.borderColor = 'var(--neon-border-hover)';
+          e.currentTarget.style.boxShadow = 'var(--neon-glow-intense)';
+          e.currentTarget.style.transform = 'translateY(-2px)';
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (hover) {
+          e.currentTarget.style.borderColor = 'var(--neon-border)';
+          e.currentTarget.style.boxShadow = 'var(--neon-glow)';
+          e.currentTarget.style.transform = 'translateY(0)';
+        }
+      }}
     >
-      {children}
+      {/* Neon inner glow effect */}
+      {neon && (
+        <div 
+          className="absolute top-0 right-0 w-32 h-32 -mr-16 -mt-16 rounded-full pointer-events-none"
+          style={{
+            background: 'radial-gradient(circle, rgba(var(--color-primary-rgb), 0.15) 0%, transparent 70%)',
+          }}
+        />
+      )}
+      <div className="relative z-10">{children}</div>
     </div>
   );
 };
@@ -175,7 +234,7 @@ export const Modal: React.FC<ModalProps> = ({
             initial="hidden"
             animate="visible"
             exit="exit"
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
             onClick={onClose}
           />
 
@@ -187,16 +246,21 @@ export const Modal: React.FC<ModalProps> = ({
             exit="exit"
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
             className={cn(
-              'relative w-full',
-              'bg-gradient-to-b from-dark-500 to-dark-700',
-              'rounded-2xl border border-white/10 shadow-2xl',
-              'max-h-[90vh] overflow-auto',
+              'relative w-full rounded-2xl max-h-[90vh] overflow-auto',
               sizes[size]
             )}
+            style={{
+              background: 'linear-gradient(145deg, var(--color-card-start), var(--color-card-end))',
+              border: '2px solid var(--neon-border)',
+              boxShadow: 'var(--neon-glow-intense), 0 25px 50px rgba(0, 0, 0, 0.5)',
+            }}
           >
             {/* Header */}
             {(title || showClose) && (
-              <div className="flex items-center justify-between p-6 border-b border-white/10">
+              <div 
+                className="flex items-center justify-between p-6"
+                style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}
+              >
                 {title && (
                   <h2 className="text-xl font-bold text-white">{title}</h2>
                 )}
@@ -526,26 +590,30 @@ export const Badge: React.FC<BadgeProps> = ({
 };
 
 // ========================================
-// PROGRESS BAR
+// PROGRESS BAR - THEME AWARE
 // ========================================
 interface ProgressBarProps {
   value: number;
   max?: number;
-  variant?: 'default' | 'success' | 'warning' | 'danger';
+  variant?: 'default' | 'success' | 'warning' | 'danger' | 'primary';
   size?: 'sm' | 'md' | 'lg';
   showLabel?: boolean;
   className?: string;
+  color?: string;
 }
 
 export const ProgressBar: React.FC<ProgressBarProps> = ({
   value,
   max = 100,
-  variant = 'default',
+  variant = 'primary',
   size = 'md',
   showLabel = false,
   className,
+  color,
 }) => {
-  const percentage = Math.min((value / max) * 100, 100);
+  const theme = useStore((state) => state.theme);
+  const themeColors = getThemeColors(theme);
+  const percentage = Math.min(Math.max((value / max) * 100, 0), 100);
 
   const getVariant = () => {
     if (variant !== 'default') return variant;
@@ -554,11 +622,16 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
     return 'success';
   };
 
-  const colors = {
-    default: 'bg-primary-500',
-    success: 'bg-success-500',
-    warning: 'bg-warning-500',
-    danger: 'bg-danger-500',
+  const getColor = () => {
+    if (color) return color;
+    const v = getVariant();
+    switch (v) {
+      case 'success': return '#22C55E';
+      case 'warning': return '#F59E0B';
+      case 'danger': return '#EF4444';
+      case 'primary':
+      default: return themeColors.primary;
+    }
   };
 
   const heights = {
@@ -567,20 +640,26 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
     lg: 'h-3',
   };
 
+  const finalColor = getColor();
+
   return (
     <div className={className}>
       {showLabel && (
         <div className="flex justify-between mb-1 text-sm">
-          <span className="text-white/60">{value.toFixed(0)}</span>
+          <span className="text-white/60">{isNaN(value) ? '0' : value.toFixed(0)}</span>
           <span className="text-white/40">{max}</span>
         </div>
       )}
       <div className={cn('w-full bg-white/10 rounded-full overflow-hidden', heights[size])}>
         <motion.div
           initial={{ width: 0 }}
-          animate={{ width: `${percentage}%` }}
+          animate={{ width: `${isNaN(percentage) ? 0 : percentage}%` }}
           transition={{ duration: 0.5, ease: 'easeOut' }}
-          className={cn('h-full rounded-full', colors[getVariant()])}
+          className={cn('h-full rounded-full')}
+          style={{ 
+            background: `linear-gradient(90deg, ${finalColor}, ${finalColor}dd)`,
+            boxShadow: `0 0 10px ${finalColor}60`
+          }}
         />
       </div>
     </div>

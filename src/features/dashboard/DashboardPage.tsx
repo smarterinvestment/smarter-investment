@@ -687,19 +687,23 @@ export const DashboardPage: React.FC = () => {
             ) : (
               <div className="space-y-4">
                 {activeGoals.map((goal) => {
-                  const progress = (goal.currentAmount / goal.targetAmount) * 100;
+                  const targetAmount = Number(goal.targetAmount) || 0;
+                  const currentAmount = Number(goal.currentAmount) || 0;
+                  const progress = targetAmount > 0 ? (currentAmount / targetAmount) * 100 : 0;
+                  const safeProgress = isNaN(progress) ? 0 : Math.min(Math.max(progress, 0), 100);
+                  
                   return (
                     <div key={goal.id} className="p-3 rounded-xl bg-white/5">
                       <div className="flex items-center justify-between mb-2">
                         <span className="font-medium text-white">{goal.icon} {goal.name}</span>
                         <span className="text-sm" style={{ color: themeColors.primary }}>
-                          {progress.toFixed(0)}%
+                          {safeProgress.toFixed(0)}%
                         </span>
                       </div>
-                      <ProgressBar progress={progress} size="sm" />
+                      <ProgressBar value={safeProgress} max={100} size="sm" />
                       <div className="flex justify-between mt-2 text-xs text-white/50">
-                        <span>{formatCurrency(goal.currentAmount, currency)}</span>
-                        <span>{formatCurrency(goal.targetAmount, currency)}</span>
+                        <span>{formatCurrency(currentAmount, currency)}</span>
+                        <span>{formatCurrency(targetAmount, currency)}</span>
                       </div>
                     </div>
                   );
