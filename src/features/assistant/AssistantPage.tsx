@@ -1,32 +1,32 @@
 // ============================================
-// 🤖 ASSISTANT PAGE - SMART AI ASSISTANT
-// Intelligent responses with financial analysis
+// 🤖 ASSISTANT PAGE v20 - INTELLIGENT FINANCIAL ADVISOR
+// Real-time analysis with smart responses
 // ============================================
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bot, Send, Sparkles, X, Loader2, AlertCircle, CheckCircle, Zap, TrendingUp, TrendingDown, PiggyBank, Target, RefreshCw } from 'lucide-react';
+import { Bot, Send, Sparkles, AlertCircle, Loader2, TrendingUp, TrendingDown, Target, PiggyBank, RefreshCw, Lightbulb } from 'lucide-react';
 import { useStore, getThemeColors } from '../../stores/useStore';
 import { Card, Button, Badge } from '../../components/ui';
 import { cn } from '../../utils/cn';
 import { formatCurrency } from '../../utils/financial';
 import type { ChatMessage } from '../../types';
 
-// Quick Actions
+// Quick Actions with smart queries
 const QUICK_ACTIONS = [
-  { id: '1', icon: '💡', label: 'Consejos', message: '¿Qué consejos me das para ahorrar más?' },
-  { id: '2', icon: '📊', label: 'Analizar', message: 'Analiza mis gastos de este mes' },
-  { id: '3', icon: '🎯', label: 'Metas', message: '¿Cómo van mis metas de ahorro?' },
-  { id: '4', icon: '💰', label: 'Reducir', message: '¿Dónde puedo reducir gastos?' },
-  { id: '5', icon: '📈', label: 'Proyección', message: '¿Cómo estarán mis finanzas en 3 meses?' },
-  { id: '6', icon: '🏠', label: 'Presupuesto', message: '¿Cómo distribuir mi presupuesto?' },
+  { id: '1', icon: '📊', label: 'Mi Resumen', message: 'Dame un resumen completo de mis finanzas' },
+  { id: '2', icon: '💡', label: 'Consejos', message: 'Dame consejos personalizados para mejorar mis finanzas' },
+  { id: '3', icon: '🎯', label: 'Metas', message: 'Analiza el progreso de mis metas de ahorro' },
+  { id: '4', icon: '💰', label: 'Gastos', message: 'Analiza mis gastos y dónde puedo ahorrar' },
+  { id: '5', icon: '📈', label: 'Proyección', message: 'Proyecta mis finanzas a 6 meses' },
+  { id: '6', icon: '⚠️', label: 'Alertas', message: 'Muéstrame alertas y problemas en mis finanzas' },
 ];
 
-// Smart Alert Types
+// Smart Alert Type
 interface SmartAlert {
-  type: 'warning' | 'success' | 'info' | 'danger';
+  type: 'danger' | 'warning' | 'success' | 'info';
+  icon: string;
   title: string;
   message: string;
-  icon: string;
 }
 
 export const AssistantPage: React.FC = () => {
@@ -46,351 +46,424 @@ export const AssistantPage: React.FC = () => {
   const safeBudgets = budgets || {};
   const safeRecurring = Array.isArray(recurringTransactions) ? recurringTransactions : [];
 
-  // Calculate financial context
-  const financialContext = useMemo(() => {
-    const totalIncome = safeIncomes.reduce((sum, i) => sum + i.amount, 0);
-    const totalExpenses = safeExpenses.reduce((sum, e) => sum + e.amount, 0);
-    
-    // Add recurring to totals
+  // Calculate comprehensive financial context
+  const ctx = useMemo(() => {
+    // Current month filter
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+    const monthExpenses = safeExpenses.filter(e => e.date >= monthStart);
+    const monthIncomes = safeIncomes.filter(i => i.date >= monthStart);
+
+    // Previous month for comparison
+    const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().split('T')[0];
+    const prevMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0).toISOString().split('T')[0];
+    const prevExpenses = safeExpenses.filter(e => e.date >= prevMonthStart && e.date <= prevMonthEnd);
+    const prevIncomes = safeIncomes.filter(i => i.date >= prevMonthStart && i.date <= prevMonthEnd);
+
+    // Base totals
+    const baseIncome = monthIncomes.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+    const baseExpenses = monthExpenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+    const prevIncome = prevIncomes.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+    const prevExpense = prevExpenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+
+    // Recurring (monthly equivalent)
     const activeRecurring = safeRecurring.filter(r => r.isActive);
-    const monthlyRecurringIncome = activeRecurring
-      .filter(r => r.type === 'income')
-      .reduce((sum, r) => {
-        const mult = r.frequency === 'daily' ? 30 : r.frequency === 'weekly' ? 4 : r.frequency === 'biweekly' ? 2 : r.frequency === 'yearly' ? 1/12 : 1;
-        return sum + r.amount * mult;
-      }, 0);
-    const monthlyRecurringExpense = activeRecurring
-      .filter(r => r.type === 'expense')
-      .reduce((sum, r) => {
-        const mult = r.frequency === 'daily' ? 30 : r.frequency === 'weekly' ? 4 : r.frequency === 'biweekly' ? 2 : r.frequency === 'yearly' ? 1/12 : 1;
-        return sum + r.amount * mult;
-      }, 0);
-
-    const adjustedIncome = totalIncome + monthlyRecurringIncome;
-    const adjustedExpenses = totalExpenses + monthlyRecurringExpense;
-    const balance = adjustedIncome - adjustedExpenses;
-    const savingsRate = adjustedIncome > 0 ? (balance / adjustedIncome) * 100 : 0;
-
-    // Top categories
-    const categoryTotals: Record<string, number> = {};
-    safeExpenses.forEach(e => {
-      categoryTotals[e.category] = (categoryTotals[e.category] || 0) + e.amount;
+    let recurringIncome = 0, recurringExpense = 0;
+    activeRecurring.forEach(r => {
+      const mult = r.frequency === 'daily' ? 30 : r.frequency === 'weekly' ? 4 : r.frequency === 'biweekly' ? 2 : r.frequency === 'yearly' ? 1/12 : 1;
+      if (r.type === 'income') recurringIncome += r.amount * mult;
+      else recurringExpense += r.amount * mult;
     });
-    
+
+    const totalIncome = baseIncome + recurringIncome;
+    const totalExpenses = baseExpenses + recurringExpense;
+    const balance = totalIncome - totalExpenses;
+    const savingsRate = totalIncome > 0 ? (balance / totalIncome) * 100 : 0;
+
+    // Category breakdown
+    const categoryTotals: Record<string, number> = {};
+    monthExpenses.forEach(e => {
+      categoryTotals[e.category] = (categoryTotals[e.category] || 0) + (Number(e.amount) || 0);
+    });
     const topCategories = Object.entries(categoryTotals)
-      .map(([category, amount]) => ({
-        category,
-        amount,
-        percentage: adjustedExpenses > 0 ? (amount / adjustedExpenses) * 100 : 0
-      }))
+      .map(([category, amount]) => ({ category, amount, percentage: totalExpenses > 0 ? (amount / totalExpenses) * 100 : 0 }))
       .sort((a, b) => b.amount - a.amount);
 
     // Budget status
     const budgetStatus = Object.entries(safeBudgets).map(([category, limit]) => {
       const spent = categoryTotals[category] || 0;
-      return {
-        category,
-        limit,
-        spent,
-        percentage: limit > 0 ? (spent / limit) * 100 : 0
-      };
+      return { category, limit, spent, percentage: limit > 0 ? (spent / limit) * 100 : 0 };
     });
+    const exceededBudgets = budgetStatus.filter(b => b.percentage >= 100);
+    const warningBudgets = budgetStatus.filter(b => b.percentage >= 80 && b.percentage < 100);
 
-    // Goals status
-    const goalsStatus = safeGoals.map(goal => ({
-      name: goal.name,
-      target: Number(goal.targetAmount) || 0,
-      current: Number(goal.currentAmount) || 0,
-      progress: (Number(goal.targetAmount) || 0) > 0 
-        ? ((Number(goal.currentAmount) || 0) / (Number(goal.targetAmount) || 0)) * 100 
-        : 0,
-      deadline: goal.deadline
+    // Goals progress
+    const goalsStatus = safeGoals.map(g => ({
+      name: g.name,
+      target: Number(g.targetAmount) || 0,
+      current: Number(g.currentAmount) || 0,
+      progress: (Number(g.targetAmount) || 0) > 0 ? ((Number(g.currentAmount) || 0) / (Number(g.targetAmount) || 0)) * 100 : 0,
+      remaining: Math.max(0, (Number(g.targetAmount) || 0) - (Number(g.currentAmount) || 0)),
     }));
+    const activeGoals = goalsStatus.filter(g => g.progress < 100);
+    const completedGoals = goalsStatus.filter(g => g.progress >= 100);
+
+    // Month-over-month comparison
+    const expenseChange = prevExpense > 0 ? ((baseExpenses - prevExpense) / prevExpense) * 100 : 0;
+    const incomeChange = prevIncome > 0 ? ((baseIncome - prevIncome) / prevIncome) * 100 : 0;
+
+    // Total budget
+    const totalBudget = Object.values(safeBudgets).reduce((sum, b) => sum + b, 0);
+    const totalBudgetSpent = budgetStatus.reduce((sum, b) => sum + b.spent, 0);
+    const budgetUsage = totalBudget > 0 ? (totalBudgetSpent / totalBudget) * 100 : 0;
 
     return {
-      totalIncome: adjustedIncome,
-      totalExpenses: adjustedExpenses,
-      balance,
-      savingsRate,
-      topCategories,
-      budgets: budgetStatus,
-      goals: goalsStatus,
-      recurringIncome: monthlyRecurringIncome,
-      recurringExpense: monthlyRecurringExpense,
-      currency,
+      totalIncome, totalExpenses, balance, savingsRate,
+      baseIncome, baseExpenses, recurringIncome, recurringExpense,
+      topCategories, budgetStatus, exceededBudgets, warningBudgets,
+      goalsStatus, activeGoals, completedGoals,
+      expenseChange, incomeChange,
+      totalBudget, totalBudgetSpent, budgetUsage,
+      transactionCount: monthExpenses.length + monthIncomes.length,
+      avgDailyExpense: monthExpenses.length > 0 ? baseExpenses / now.getDate() : 0,
     };
-  }, [safeExpenses, safeIncomes, safeGoals, safeBudgets, safeRecurring, currency]);
+  }, [safeExpenses, safeIncomes, safeGoals, safeBudgets, safeRecurring]);
 
   // Generate smart alerts
   const smartAlerts = useMemo((): SmartAlert[] => {
     const alerts: SmartAlert[] = [];
-    const { savingsRate, budgets, goals, topCategories, balance } = financialContext;
+    const fmt = (n: number) => formatCurrency(n, currency);
 
-    // Savings rate alerts
-    if (savingsRate < 0) {
+    // Balance alerts
+    if (ctx.balance < 0) {
       alerts.push({
         type: 'danger',
-        title: '⚠️ Gastos superan ingresos',
-        message: `Este mes estás gastando más de lo que ganas (${formatCurrency(Math.abs(balance), currency)})`,
-        icon: '🔴'
+        icon: '🚨',
+        title: 'Déficit Financiero',
+        message: `Estás gastando ${fmt(Math.abs(ctx.balance))} más de lo que ganas este mes.`,
       });
-    } else if (savingsRate < 10) {
+    } else if (ctx.savingsRate < 10) {
       alerts.push({
         type: 'warning',
-        title: '💡 Ahorro bajo',
-        message: `Tu tasa de ahorro es ${savingsRate.toFixed(1)}%. Intenta llegar al 20%`,
-        icon: '🟡'
+        icon: '⚠️',
+        title: 'Ahorro Bajo',
+        message: `Solo estás ahorrando ${ctx.savingsRate.toFixed(1)}%. La meta es 20%.`,
       });
-    } else if (savingsRate >= 20) {
+    } else if (ctx.savingsRate >= 20) {
       alerts.push({
         type: 'success',
-        title: '🎉 ¡Excelente ahorro!',
-        message: `Estás ahorrando ${savingsRate.toFixed(1)}% de tus ingresos`,
-        icon: '🟢'
+        icon: '🎉',
+        title: '¡Excelente Ahorro!',
+        message: `Estás ahorrando ${ctx.savingsRate.toFixed(1)}% de tus ingresos.`,
       });
     }
 
     // Budget alerts
-    budgets.forEach(b => {
-      if (b.percentage >= 100) {
-        alerts.push({
-          type: 'danger',
-          title: `🔴 ${b.category} excedido`,
-          message: `Has gastado ${formatCurrency(b.spent, currency)} de ${formatCurrency(b.limit, currency)}`,
-          icon: '🔴'
-        });
-      } else if (b.percentage >= 80) {
-        alerts.push({
-          type: 'warning',
-          title: `🟡 ${b.category} casi agotado`,
-          message: `${b.percentage.toFixed(0)}% usado`,
-          icon: '🟡'
-        });
-      }
+    ctx.exceededBudgets.forEach(b => {
+      alerts.push({
+        type: 'danger',
+        icon: '🔴',
+        title: `Presupuesto Excedido: ${b.category}`,
+        message: `Gastaste ${fmt(b.spent)} de ${fmt(b.limit)} (${b.percentage.toFixed(0)}%)`,
+      });
     });
 
-    // Goal progress
-    goals.forEach(g => {
-      if (g.progress >= 100) {
-        alerts.push({
-          type: 'success',
-          title: `🏆 ¡Meta alcanzada!`,
-          message: `"${g.name}" completada`,
-          icon: '🏆'
-        });
-      } else if (g.progress >= 75) {
-        alerts.push({
-          type: 'info',
-          title: `🚀 Meta casi lista`,
-          message: `"${g.name}" al ${g.progress.toFixed(0)}%`,
-          icon: '🚀'
-        });
-      }
+    // Goal achievements
+    ctx.completedGoals.forEach(g => {
+      alerts.push({
+        type: 'success',
+        icon: '🏆',
+        title: `¡Meta Completada!`,
+        message: `"${g.name}" - ${fmt(g.current)}`,
+      });
     });
+
+    // Expense increase warning
+    if (ctx.expenseChange > 20) {
+      alerts.push({
+        type: 'warning',
+        icon: '📈',
+        title: 'Gastos en Aumento',
+        message: `Tus gastos aumentaron ${ctx.expenseChange.toFixed(0)}% vs mes anterior.`,
+      });
+    }
 
     return alerts.slice(0, 5);
-  }, [financialContext, currency]);
+  }, [ctx, currency]);
+
+  // Intelligent response generator
+  const generateResponse = (userMessage: string): string => {
+    const msg = userMessage.toLowerCase();
+    const fmt = (n: number) => formatCurrency(n, currency);
+
+    // RESUMEN COMPLETO
+    if (msg.includes('resumen') || msg.includes('situación') || msg.includes('cómo estoy') || msg.includes('como estoy')) {
+      let response = `## 📊 Tu Resumen Financiero\n\n`;
+      response += `**💰 Balance del Mes:**\n`;
+      response += `• Ingresos: ${fmt(ctx.totalIncome)}\n`;
+      response += `• Gastos: ${fmt(ctx.totalExpenses)}\n`;
+      response += `• Balance: ${fmt(ctx.balance)} ${ctx.balance >= 0 ? '✅' : '❌'}\n`;
+      response += `• Tasa de ahorro: ${ctx.savingsRate.toFixed(1)}%\n\n`;
+
+      if (ctx.recurringIncome > 0 || ctx.recurringExpense > 0) {
+        response += `**🔄 Transacciones Fijas (mensual):**\n`;
+        response += `• Ingresos fijos: ${fmt(ctx.recurringIncome)}\n`;
+        response += `• Gastos fijos: ${fmt(ctx.recurringExpense)}\n\n`;
+      }
+
+      if (ctx.totalBudget > 0) {
+        response += `**📋 Presupuesto:**\n`;
+        response += `• Uso: ${fmt(ctx.totalBudgetSpent)} de ${fmt(ctx.totalBudget)} (${ctx.budgetUsage.toFixed(0)}%)\n`;
+        response += `• Disponible: ${fmt(ctx.totalBudget - ctx.totalBudgetSpent)}\n`;
+        if (ctx.exceededBudgets.length > 0) {
+          response += `• ⚠️ ${ctx.exceededBudgets.length} categoría(s) excedida(s)\n`;
+        }
+        response += '\n';
+      }
+
+      if (ctx.activeGoals.length > 0) {
+        response += `**🎯 Metas Activas:** ${ctx.activeGoals.length}\n`;
+        ctx.activeGoals.slice(0, 3).forEach(g => {
+          response += `• ${g.name}: ${g.progress.toFixed(0)}% (${fmt(g.current)}/${fmt(g.target)})\n`;
+        });
+      }
+
+      return response;
+    }
+
+    // CONSEJOS PERSONALIZADOS
+    if (msg.includes('consejo') || msg.includes('mejorar') || msg.includes('tips') || msg.includes('ayuda')) {
+      let response = `## 💡 Consejos Personalizados\n\n`;
+
+      // Basado en tasa de ahorro
+      if (ctx.savingsRate < 0) {
+        response += `**🚨 Prioridad Urgente: Reducir Gastos**\n`;
+        response += `Estás en déficit de ${fmt(Math.abs(ctx.balance))}. Acciones:\n`;
+        response += `1. Revisa gastos no esenciales inmediatamente\n`;
+        response += `2. Cancela suscripciones innecesarias\n`;
+        response += `3. Reduce ${ctx.topCategories[0]?.category || 'tu mayor gasto'} un 30%\n\n`;
+      } else if (ctx.savingsRate < 10) {
+        response += `**⚠️ Aumentar Ahorro**\n`;
+        const needed = ctx.totalIncome * 0.2 - ctx.balance;
+        response += `Para llegar al 20% recomendado, necesitas ahorrar ${fmt(needed)} más.\n\n`;
+        response += `**Sugerencias:**\n`;
+        if (ctx.topCategories.length > 0) {
+          const top = ctx.topCategories[0];
+          response += `• Reduce ${top.category} (${top.percentage.toFixed(0)}% de gastos): ahorra ${fmt(top.amount * 0.2)}\n`;
+        }
+      } else if (ctx.savingsRate >= 20) {
+        response += `**✅ ¡Vas muy bien!**\n`;
+        response += `Tu ahorro del ${ctx.savingsRate.toFixed(1)}% es excelente.\n\n`;
+        response += `**Siguiente nivel:**\n`;
+        response += `• Considera invertir tu excedente de ${fmt(ctx.balance)}\n`;
+        response += `• Aumenta aportes a tus metas\n`;
+        response += `• Crea un fondo de emergencia (3-6 meses de gastos)\n\n`;
+      }
+
+      // Consejos de presupuesto
+      if (ctx.exceededBudgets.length > 0) {
+        response += `**📋 Presupuestos a Ajustar:**\n`;
+        ctx.exceededBudgets.forEach(b => {
+          response += `• ${b.category}: excedido por ${fmt(b.spent - b.limit)}\n`;
+        });
+      }
+
+      return response;
+    }
+
+    // ANÁLISIS DE GASTOS
+    if (msg.includes('gasto') || msg.includes('gastar') || msg.includes('analiz') || msg.includes('donde') || msg.includes('dónde')) {
+      let response = `## 💸 Análisis de Gastos\n\n`;
+      response += `**Total gastado este mes:** ${fmt(ctx.totalExpenses)}\n`;
+      response += `**Promedio diario:** ${fmt(ctx.avgDailyExpense)}\n\n`;
+
+      if (ctx.topCategories.length > 0) {
+        response += `**Top 5 Categorías:**\n`;
+        ctx.topCategories.slice(0, 5).forEach((cat, i) => {
+          const emoji = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣'][i];
+          response += `${emoji} **${cat.category}**: ${fmt(cat.amount)} (${cat.percentage.toFixed(1)}%)\n`;
+        });
+        response += '\n';
+
+        const top = ctx.topCategories[0];
+        if (top && top.percentage > 30) {
+          response += `**💡 Observación:** ${top.category} representa el ${top.percentage.toFixed(0)}% de tus gastos. `;
+          response += `Si reduces un 20%, ahorras ${fmt(top.amount * 0.2)}/mes.\n`;
+        }
+      }
+
+      // Comparación con mes anterior
+      if (Math.abs(ctx.expenseChange) > 5) {
+        response += `\n**📈 vs Mes Anterior:** `;
+        if (ctx.expenseChange > 0) {
+          response += `Gastos ↑ ${ctx.expenseChange.toFixed(0)}% (gastando más)\n`;
+        } else {
+          response += `Gastos ↓ ${Math.abs(ctx.expenseChange).toFixed(0)}% (¡bien hecho!)\n`;
+        }
+      }
+
+      return response;
+    }
+
+    // METAS
+    if (msg.includes('meta') || msg.includes('objetivo') || msg.includes('ahorro') || msg.includes('progreso')) {
+      let response = `## 🎯 Estado de Metas\n\n`;
+
+      if (ctx.goalsStatus.length === 0) {
+        response += `No tienes metas configuradas.\n\n`;
+        response += `**¿Por qué crear metas?**\n`;
+        response += `• Te mantienen motivado\n`;
+        response += `• Miden tu progreso\n`;
+        response += `• Dan propósito a tu ahorro\n\n`;
+        response += `Ve a **Metas** para crear tu primera meta.`;
+        return response;
+      }
+
+      // Completadas
+      if (ctx.completedGoals.length > 0) {
+        response += `**🏆 Metas Completadas (${ctx.completedGoals.length}):**\n`;
+        ctx.completedGoals.forEach(g => {
+          response += `• ✅ ${g.name}: ${fmt(g.current)}\n`;
+        });
+        response += '\n';
+      }
+
+      // En progreso
+      if (ctx.activeGoals.length > 0) {
+        response += `**📈 En Progreso (${ctx.activeGoals.length}):**\n`;
+        ctx.activeGoals.forEach(g => {
+          const emoji = g.progress >= 75 ? '🟢' : g.progress >= 50 ? '🟡' : '🔴';
+          response += `${emoji} **${g.name}**\n`;
+          response += `   Progreso: ${g.progress.toFixed(0)}% (${fmt(g.current)}/${fmt(g.target)})\n`;
+          response += `   Falta: ${fmt(g.remaining)}\n`;
+          if (g.remaining > 0 && ctx.balance > 0) {
+            const monthsNeeded = Math.ceil(g.remaining / ctx.balance);
+            response += `   A este ritmo: ~${monthsNeeded} mes(es)\n`;
+          }
+          response += '\n';
+        });
+      }
+
+      return response;
+    }
+
+    // PROYECCIÓN
+    if (msg.includes('proyec') || msg.includes('futuro') || msg.includes('6 meses') || msg.includes('predicción')) {
+      let response = `## 📈 Proyección Financiera\n\n`;
+      response += `**Basado en tu balance mensual de ${fmt(ctx.balance)}:**\n\n`;
+
+      if (ctx.balance > 0) {
+        response += `**Proyección de Ahorro:**\n`;
+        response += `• En 3 meses: +${fmt(ctx.balance * 3)}\n`;
+        response += `• En 6 meses: +${fmt(ctx.balance * 6)}\n`;
+        response += `• En 1 año: +${fmt(ctx.balance * 12)}\n\n`;
+
+        if (ctx.activeGoals.length > 0) {
+          response += `**Tiempo estimado para metas:**\n`;
+          ctx.activeGoals.slice(0, 3).forEach(g => {
+            if (g.remaining > 0) {
+              const months = Math.ceil(g.remaining / ctx.balance);
+              response += `• ${g.name}: ~${months} mes(es)\n`;
+            }
+          });
+        }
+      } else {
+        response += `⚠️ **Alerta:** Con un déficit de ${fmt(Math.abs(ctx.balance))}/mes:\n\n`;
+        response += `• En 3 meses: -${fmt(Math.abs(ctx.balance) * 3)}\n`;
+        response += `• En 6 meses: -${fmt(Math.abs(ctx.balance) * 6)}\n\n`;
+        response += `**Necesitas reducir gastos urgentemente.**\n`;
+      }
+
+      return response;
+    }
+
+    // ALERTAS
+    if (msg.includes('alerta') || msg.includes('problema') || msg.includes('crítico')) {
+      let response = `## ⚠️ Alertas y Problemas\n\n`;
+
+      if (smartAlerts.length === 0) {
+        response += `✅ **¡Todo en orden!** No hay alertas críticas.\n\n`;
+        response += `Tu situación financiera es estable.`;
+        return response;
+      }
+
+      smartAlerts.forEach(alert => {
+        const typeIcon = alert.type === 'danger' ? '🔴' : alert.type === 'warning' ? '🟡' : alert.type === 'success' ? '🟢' : 'ℹ️';
+        response += `${typeIcon} **${alert.title}**\n`;
+        response += `   ${alert.message}\n\n`;
+      });
+
+      return response;
+    }
+
+    // PRESUPUESTO
+    if (msg.includes('presupuesto') || msg.includes('límite') || msg.includes('budget')) {
+      let response = `## 📋 Estado de Presupuestos\n\n`;
+
+      if (ctx.totalBudget === 0) {
+        response += `No tienes presupuestos configurados.\n\n`;
+        response += `**Recomendación (Regla 50/30/20):**\n`;
+        const income = ctx.totalIncome || 1000;
+        response += `• Necesidades (50%): ${fmt(income * 0.5)}\n`;
+        response += `• Deseos (30%): ${fmt(income * 0.3)}\n`;
+        response += `• Ahorro (20%): ${fmt(income * 0.2)}\n`;
+        return response;
+      }
+
+      response += `**Resumen:**\n`;
+      response += `• Total presupuestado: ${fmt(ctx.totalBudget)}\n`;
+      response += `• Usado: ${fmt(ctx.totalBudgetSpent)} (${ctx.budgetUsage.toFixed(0)}%)\n`;
+      response += `• Disponible: ${fmt(ctx.totalBudget - ctx.totalBudgetSpent)}\n\n`;
+
+      response += `**Por Categoría:**\n`;
+      ctx.budgetStatus.forEach(b => {
+        const status = b.percentage >= 100 ? '🔴' : b.percentage >= 80 ? '🟡' : '🟢';
+        response += `${status} **${b.category}**: ${fmt(b.spent)}/${fmt(b.limit)} (${b.percentage.toFixed(0)}%)\n`;
+      });
+
+      return response;
+    }
+
+    // DEFAULT - Resumen rápido
+    return `## 📊 Tu Situación Actual\n\n` +
+      `• **Ingresos:** ${fmt(ctx.totalIncome)}\n` +
+      `• **Gastos:** ${fmt(ctx.totalExpenses)}\n` +
+      `• **Balance:** ${fmt(ctx.balance)} ${ctx.balance >= 0 ? '✅' : '❌'}\n` +
+      `• **Tasa de ahorro:** ${ctx.savingsRate.toFixed(1)}%\n` +
+      `• **Metas activas:** ${ctx.activeGoals.length}\n\n` +
+      `**¿Qué quieres saber?**\n` +
+      `• "Dame consejos" - Tips personalizados\n` +
+      `• "Analiza mis gastos" - Desglose detallado\n` +
+      `• "Cómo van mis metas" - Progreso de ahorro\n` +
+      `• "Muestra alertas" - Problemas detectados`;
+  };
 
   // Scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Add welcome message
+  // Welcome message
   useEffect(() => {
     if (messages.length === 0) {
+      const welcomeMsg = `¡Hola${user?.displayName ? ` ${user.displayName.split(' ')[0]}` : ''}! 👋\n\n` +
+        `Soy tu **asesor financiero inteligente**. Analizo tus datos en tiempo real.\n\n` +
+        `**Tu resumen rápido:**\n` +
+        `• Balance: ${formatCurrency(ctx.balance, currency)}\n` +
+        `• Tasa de ahorro: ${ctx.savingsRate.toFixed(1)}%\n` +
+        `• Metas activas: ${ctx.activeGoals.length}\n\n` +
+        `¿En qué te puedo ayudar?`;
+
       setMessages([{
         id: '1',
         role: 'assistant',
-        content: `¡Hola${user?.displayName ? ` ${user.displayName.split(' ')[0]}` : ''}! 👋\n\nSoy tu asistente financiero personal. Analizo tus datos en tiempo real para darte consejos personalizados.\n\n**Tu resumen rápido:**\n• Balance: ${formatCurrency(financialContext.balance, currency)}\n• Tasa de ahorro: ${financialContext.savingsRate.toFixed(1)}%\n• Metas activas: ${financialContext.goals.filter(g => g.progress < 100).length}\n\n¿En qué te puedo ayudar hoy?`,
+        content: welcomeMsg,
         timestamp: new Date(),
       }]);
     }
   }, []);
 
-  // Generate AI response
-  const generateResponse = (userMessage: string): string => {
-    const ctx = financialContext;
-    const msg = userMessage.toLowerCase();
-    const fmt = (n: number) => formatCurrency(n, currency);
-
-    // Análisis de gastos
-    if (msg.includes('gasto') || msg.includes('gastar') || msg.includes('analiz')) {
-      let response = `📊 **Análisis de gastos:**\n\n`;
-      response += `• Total gastado: **${fmt(ctx.totalExpenses)}**\n`;
-      response += `• Balance: **${fmt(ctx.balance)}**\n\n`;
-      
-      if (ctx.topCategories.length > 0) {
-        response += `**Top categorías:**\n`;
-        ctx.topCategories.slice(0, 5).forEach((cat, i) => {
-          const emoji = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣'][i];
-          response += `${emoji} ${cat.category}: ${fmt(cat.amount)} (${cat.percentage.toFixed(1)}%)\n`;
-        });
-        
-        const top = ctx.topCategories[0];
-        if (top && top.percentage > 30) {
-          response += `\n💡 **Consejo:** ${top.category} representa ${top.percentage.toFixed(0)}% de tus gastos. Considera establecer un límite mensual para esta categoría.`;
-        }
-      } else {
-        response += `No tienes gastos registrados aún. ¡Empieza a registrar tus transacciones!`;
-      }
-      
-      return response;
-    }
-
-    // Consejos de ahorro
-    if (msg.includes('ahorro') || msg.includes('ahorrar') || msg.includes('consejo')) {
-      let response = `💰 **Consejos de ahorro personalizados:**\n\n`;
-      response += `Tu tasa de ahorro actual: **${ctx.savingsRate.toFixed(1)}%**\n\n`;
-      
-      if (ctx.savingsRate >= 20) {
-        response += `✅ ¡Excelente! Estás por encima del 20% recomendado.\n\n`;
-        response += `**Siguiente nivel:**\n`;
-        response += `• Considera invertir tu excedente\n`;
-        response += `• Aumenta tus metas de ahorro\n`;
-        response += `• Crea un fondo de emergencia de 6 meses\n`;
-      } else if (ctx.savingsRate >= 10) {
-        const needed = ctx.totalIncome * 0.2 - ctx.balance;
-        response += `⚠️ Estás cerca, pero puedes mejorar.\n\n`;
-        response += `**Para llegar al 20%:**\n`;
-        response += `• Necesitas ahorrar ${fmt(needed)} más al mes\n`;
-        if (ctx.topCategories[0]) {
-          response += `• Reduce ${ctx.topCategories[0].category} un 15% = ${fmt(ctx.topCategories[0].amount * 0.15)}\n`;
-        }
-      } else if (ctx.savingsRate > 0) {
-        response += `🔴 Tu ahorro es bajo. Aquí hay acciones concretas:\n\n`;
-        ctx.topCategories.slice(0, 3).forEach(cat => {
-          response += `• ${cat.category}: Reduce 20% → Ahorras ${fmt(cat.amount * 0.2)}/mes\n`;
-        });
-      } else {
-        response += `⚠️ **Alerta:** Estás gastando más de lo que ganas.\n\n`;
-        response += `**Pasos urgentes:**\n`;
-        response += `1. Revisa gastos no esenciales\n`;
-        response += `2. Cancela suscripciones innecesarias\n`;
-        response += `3. Establece un presupuesto estricto\n`;
-      }
-      
-      return response;
-    }
-
-    // Metas
-    if (msg.includes('meta') || msg.includes('objetivo')) {
-      if (ctx.goals.length === 0) {
-        return `🎯 **No tienes metas configuradas**\n\nCrear metas te ayuda a:\n• Mantener motivación\n• Medir progreso\n• Ahorrar con propósito\n\n¡Ve a la sección de Metas y crea tu primera meta!`;
-      }
-      
-      let response = `🎯 **Estado de tus metas:**\n\n`;
-      ctx.goals.forEach(goal => {
-        const emoji = goal.progress >= 75 ? '🟢' : goal.progress >= 50 ? '🟡' : '🔴';
-        response += `${emoji} **${goal.name}**\n`;
-        response += `   Progreso: ${goal.progress.toFixed(0)}% (${fmt(goal.current)}/${fmt(goal.target)})\n`;
-        
-        if (goal.target > goal.current) {
-          const remaining = goal.target - goal.current;
-          const monthlyNeeded = remaining / 6;
-          response += `   Para lograrla en 6 meses: ${fmt(monthlyNeeded)}/mes\n`;
-        }
-        response += '\n';
-      });
-      
-      return response;
-    }
-
-    // Presupuesto
-    if (msg.includes('presupuesto') || msg.includes('distribuir')) {
-      if (ctx.budgets.length === 0) {
-        const income = ctx.totalIncome || 1000;
-        return `📋 **Presupuesto sugerido (Regla 50/30/20):**\n\n` +
-          `Con ingresos de ${fmt(income)}:\n\n` +
-          `**🏠 Necesidades (50%):** ${fmt(income * 0.5)}\n` +
-          `• Vivienda, servicios, comida, transporte\n\n` +
-          `**🎭 Deseos (30%):** ${fmt(income * 0.3)}\n` +
-          `• Entretenimiento, restaurantes, compras\n\n` +
-          `**💰 Ahorro (20%):** ${fmt(income * 0.2)}\n` +
-          `• Emergencias, metas, inversiones\n\n` +
-          `Ve a Presupuestos para configurar tus límites.`;
-      }
-      
-      let response = `📋 **Estado de tus presupuestos:**\n\n`;
-      ctx.budgets.forEach(budget => {
-        const emoji = budget.percentage >= 100 ? '🔴' : budget.percentage >= 80 ? '🟡' : '🟢';
-        response += `${emoji} **${budget.category}**\n`;
-        response += `   ${fmt(budget.spent)} / ${fmt(budget.limit)} (${budget.percentage.toFixed(0)}%)\n`;
-        if (budget.limit > budget.spent) {
-          response += `   Disponible: ${fmt(budget.limit - budget.spent)}\n`;
-        }
-        response += '\n';
-      });
-      
-      return response;
-    }
-
-    // Proyección
-    if (msg.includes('proyec') || msg.includes('futuro') || msg.includes('3 meses')) {
-      const monthlyBalance = ctx.balance;
-      const projection3m = monthlyBalance * 3;
-      const projection6m = monthlyBalance * 6;
-      const projection12m = monthlyBalance * 12;
-      
-      let response = `📈 **Proyección financiera:**\n\n`;
-      response += `Balance mensual actual: ${fmt(monthlyBalance)}\n\n`;
-      
-      if (monthlyBalance > 0) {
-        response += `**Si sigues así:**\n`;
-        response += `• En 3 meses: +${fmt(projection3m)}\n`;
-        response += `• En 6 meses: +${fmt(projection6m)}\n`;
-        response += `• En 1 año: +${fmt(projection12m)}\n\n`;
-        
-        response += `**💡 Consejo:** `;
-        if (ctx.savingsRate < 20) {
-          response += `Aumenta tu ahorro al 20% y podrías acumular ${fmt(ctx.totalIncome * 0.2 * 12)} en un año.`;
-        } else {
-          response += `¡Vas muy bien! Considera invertir parte de tu ahorro.`;
-        }
-      } else {
-        response += `⚠️ **Alerta:** Estás perdiendo ${fmt(Math.abs(monthlyBalance))}/mes\n\n`;
-        response += `En 3 meses habrás perdido: ${fmt(Math.abs(projection3m))}\n\n`;
-        response += `**Es urgente tomar acción:**\n`;
-        response += `1. Reduce gastos innecesarios\n`;
-        response += `2. Busca ingresos adicionales\n`;
-        response += `3. Revisa tus suscripciones\n`;
-      }
-      
-      return response;
-    }
-
-    // Recurrentes
-    if (msg.includes('recurr') || msg.includes('fijo') || msg.includes('mensual')) {
-      const { recurringIncome, recurringExpense } = ctx;
-      let response = `🔄 **Transacciones recurrentes:**\n\n`;
-      response += `• Ingresos fijos: ${fmt(recurringIncome)}/mes\n`;
-      response += `• Gastos fijos: ${fmt(recurringExpense)}/mes\n`;
-      response += `• Balance fijo: ${fmt(recurringIncome - recurringExpense)}/mes\n\n`;
-      
-      if (recurringExpense > recurringIncome * 0.5) {
-        response += `⚠️ Tus gastos fijos son más del 50% de tus ingresos. Intenta reducirlos.`;
-      } else {
-        response += `✅ Tus gastos fijos están en un nivel saludable.`;
-      }
-      
-      return response;
-    }
-
-    // Default response
-    return `📊 **Tu resumen financiero:**\n\n` +
-      `• Ingresos: ${fmt(ctx.totalIncome)}\n` +
-      `• Gastos: ${fmt(ctx.totalExpenses)}\n` +
-      `• Balance: ${fmt(ctx.balance)}\n` +
-      `• Tasa de ahorro: ${ctx.savingsRate.toFixed(1)}%\n\n` +
-      `¿Qué te gustaría saber? Puedo ayudarte con:\n` +
-      `• 📊 Análisis de gastos\n` +
-      `• 💰 Consejos de ahorro\n` +
-      `• 🎯 Estado de metas\n` +
-      `• 📋 Presupuestos\n` +
-      `• 📈 Proyecciones`;
-  };
-
-  // Handle send message
+  // Handle send
   const handleSend = async () => {
     if (!input.trim() || isTyping) return;
 
@@ -405,11 +478,9 @@ export const AssistantPage: React.FC = () => {
     setInput('');
     setIsTyping(true);
 
-    // Simulate typing delay
-    await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 1200));
+    await new Promise(resolve => setTimeout(resolve, 600 + Math.random() * 800));
 
     const response = generateResponse(userMessage.content);
-
     const assistantMessage: ChatMessage = {
       id: (Date.now() + 1).toString(),
       role: 'assistant',
@@ -421,43 +492,51 @@ export const AssistantPage: React.FC = () => {
     setIsTyping(false);
   };
 
-  // Handle quick action
-  const handleQuickAction = (action: typeof QUICK_ACTIONS[0]) => {
-    setInput(action.message);
-    setTimeout(() => {
-      const event = { key: 'Enter' } as React.KeyboardEvent;
-      handleSend();
-    }, 100);
+  // Render message with markdown-like formatting
+  const renderMessage = (content: string) => {
+    return content.split('\n').map((line, i) => {
+      if (line.startsWith('## ')) {
+        return <h3 key={i} className="text-lg font-bold text-white mt-2 mb-2">{line.replace('## ', '')}</h3>;
+      }
+      if (line.startsWith('**') && line.endsWith('**')) {
+        return <p key={i} className="font-bold text-white mt-2">{line.replace(/\*\*/g, '')}</p>;
+      }
+      if (line.includes('**')) {
+        const parts = line.split('**');
+        return (
+          <p key={i} className="text-white/90">
+            {parts.map((part, j) => j % 2 === 1 ? <strong key={j} className="text-white">{part}</strong> : part)}
+          </p>
+        );
+      }
+      if (line.startsWith('• ') || line.startsWith('- ')) {
+        return <p key={i} className="text-white/80 ml-2">{line}</p>;
+      }
+      if (line.trim() === '') return <br key={i} />;
+      return <p key={i} className="text-white/80">{line}</p>;
+    });
   };
 
   return (
     <div className="h-[calc(100vh-180px)] flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-1 justify-center">
           <div 
             className="w-12 h-12 rounded-2xl flex items-center justify-center"
-            style={{ 
-              background: `linear-gradient(135deg, ${themeColors.primary}, ${themeColors.secondary})`,
-              boxShadow: `0 0 20px ${themeColors.primary}40`
-            }}
+            style={{ background: `linear-gradient(135deg, ${themeColors.primary}, ${themeColors.secondary})`, boxShadow: `0 0 20px ${themeColors.primary}40` }}
           >
             <Bot className="w-6 h-6 text-white" />
           </div>
-          <div>
+          <div className="text-center">
             <h1 className="text-xl font-bold text-white flex items-center gap-2">
-              Asistente Financiero
+              Asesor Financiero
               <Sparkles className="w-5 h-5" style={{ color: themeColors.primary }} />
             </h1>
-            <p className="text-sm text-white/60">Tu asesor personal con IA</p>
+            <p className="text-sm text-white/60">Análisis inteligente en tiempo real</p>
           </div>
         </div>
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() => setShowAlerts(!showAlerts)}
-          leftIcon={<AlertCircle className="w-4 h-4" />}
-        >
+        <Button variant="secondary" size="sm" onClick={() => setShowAlerts(!showAlerts)} leftIcon={<AlertCircle className="w-4 h-4" />}>
           {smartAlerts.length}
         </Button>
       </div>
@@ -465,26 +544,14 @@ export const AssistantPage: React.FC = () => {
       {/* Smart Alerts */}
       <AnimatePresence>
         {showAlerts && smartAlerts.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="mb-4 space-y-2 overflow-hidden"
-          >
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="mb-4 space-y-2">
             {smartAlerts.slice(0, 3).map((alert, i) => (
-              <motion.div
-                key={i}
-                initial={{ x: -20, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ delay: i * 0.1 }}
-                className={cn(
-                  'p-3 rounded-xl border flex items-center gap-3',
+              <motion.div key={i} initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: i * 0.1 }}
+                className={cn('p-3 rounded-xl border flex items-center gap-3',
                   alert.type === 'danger' && 'bg-danger-500/10 border-danger-500/30',
                   alert.type === 'warning' && 'bg-warning-500/10 border-warning-500/30',
                   alert.type === 'success' && 'bg-success-500/10 border-success-500/30',
-                  alert.type === 'info' && 'bg-primary-500/10 border-primary-500/30',
-                )}
-              >
+                  alert.type === 'info' && 'bg-primary-500/10 border-primary-500/30')}>
                 <span className="text-xl">{alert.icon}</span>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-white text-sm">{alert.title}</p>
@@ -496,54 +563,19 @@ export const AssistantPage: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* Chat Messages */}
+      {/* Chat Area */}
       <Card className="flex-1 overflow-hidden flex flex-col">
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {messages.map((msg) => (
-            <motion.div
-              key={msg.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className={cn(
-                'flex gap-3',
-                msg.role === 'user' && 'justify-end'
-              )}
-            >
+            <motion.div key={msg.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={cn('flex gap-3', msg.role === 'user' && 'justify-end')}>
               {msg.role === 'assistant' && (
-                <div 
-                  className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{ backgroundColor: `${themeColors.primary}20` }}
-                >
+                <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${themeColors.primary}20` }}>
                   <Bot className="w-4 h-4" style={{ color: themeColors.primary }} />
                 </div>
               )}
-              <div
-                className={cn(
-                  'max-w-[80%] p-3 rounded-2xl whitespace-pre-wrap',
-                  msg.role === 'user'
-                    ? 'bg-white/10 text-white rounded-br-md'
-                    : 'bg-white/5 text-white/90 rounded-bl-md'
-                )}
-                style={msg.role === 'user' ? { 
-                  background: `linear-gradient(135deg, ${themeColors.primary}30, ${themeColors.secondary}30)` 
-                } : {}}
-              >
-                {msg.content.split('\n').map((line, i) => {
-                  if (line.startsWith('**') && line.endsWith('**')) {
-                    return <p key={i} className="font-bold text-white">{line.replace(/\*\*/g, '')}</p>;
-                  }
-                  if (line.includes('**')) {
-                    const parts = line.split('**');
-                    return (
-                      <p key={i}>
-                        {parts.map((part, j) => 
-                          j % 2 === 1 ? <strong key={j} className="text-white">{part}</strong> : part
-                        )}
-                      </p>
-                    );
-                  }
-                  return <p key={i}>{line}</p>;
-                })}
+              <div className={cn('max-w-[85%] p-3 rounded-2xl', msg.role === 'user' ? 'rounded-br-md' : 'bg-white/5 rounded-bl-md')}
+                style={msg.role === 'user' ? { background: `linear-gradient(135deg, ${themeColors.primary}30, ${themeColors.secondary}30)` } : {}}>
+                {renderMessage(msg.content)}
               </div>
               {msg.role === 'user' && (
                 <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
@@ -552,41 +584,29 @@ export const AssistantPage: React.FC = () => {
               )}
             </motion.div>
           ))}
-          
           {isTyping && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="flex gap-3"
-            >
-              <div 
-                className="w-8 h-8 rounded-xl flex items-center justify-center"
-                style={{ backgroundColor: `${themeColors.primary}20` }}
-              >
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-3">
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${themeColors.primary}20` }}>
                 <Bot className="w-4 h-4" style={{ color: themeColors.primary }} />
               </div>
               <div className="bg-white/5 p-3 rounded-2xl rounded-bl-md">
                 <div className="flex gap-1">
-                  <span className="w-2 h-2 bg-white/50 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                  <span className="w-2 h-2 bg-white/50 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                  <span className="w-2 h-2 bg-white/50 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                  {[0, 1, 2].map(i => (
+                    <span key={i} className="w-2 h-2 bg-white/50 rounded-full animate-bounce" style={{ animationDelay: `${i * 150}ms` }} />
+                  ))}
                 </div>
               </div>
             </motion.div>
           )}
-          
           <div ref={messagesEndRef} />
         </div>
 
         {/* Quick Actions */}
         <div className="p-3 border-t border-white/10">
           <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-            {QUICK_ACTIONS.map((action) => (
-              <button
-                key={action.id}
-                onClick={() => handleQuickAction(action)}
-                className="flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-all text-sm"
-              >
+            {QUICK_ACTIONS.map(action => (
+              <button key={action.id} onClick={() => { setInput(action.message); setTimeout(handleSend, 100); }}
+                className="flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-all text-sm">
                 <span>{action.icon}</span>
                 <span>{action.label}</span>
               </button>
@@ -597,28 +617,10 @@ export const AssistantPage: React.FC = () => {
         {/* Input */}
         <div className="p-3 border-t border-white/10">
           <div className="flex gap-2">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-              placeholder="Escribe tu pregunta..."
-              className="flex-1 px-4 py-3 rounded-xl bg-white/5 border-2 border-white/10 text-white placeholder-white/40 focus:border-white/30 focus:outline-none transition-colors"
-              disabled={isTyping}
-            />
-            <Button
-              onClick={handleSend}
-              disabled={!input.trim() || isTyping}
-              className="px-4"
-              style={{ 
-                background: `linear-gradient(135deg, ${themeColors.primary}, ${themeColors.secondary})`,
-              }}
-            >
-              {isTyping ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                <Send className="w-5 h-5" />
-              )}
+            <input type="text" value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSend()}
+              placeholder="Pregunta sobre tus finanzas..." className="flex-1 px-4 py-3 rounded-xl bg-white/5 border-2 border-white/10 text-white placeholder-white/40 focus:border-white/30 focus:outline-none" disabled={isTyping} />
+            <Button onClick={handleSend} disabled={!input.trim() || isTyping} className="px-4" style={{ background: `linear-gradient(135deg, ${themeColors.primary}, ${themeColors.secondary})` }}>
+              {isTyping ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
             </Button>
           </div>
         </div>
