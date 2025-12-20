@@ -1,18 +1,18 @@
 // ============================================
-// 📊 REPORTS PAGE v20 - COMPLETE WITH FILTERS
-// Period filters, chart type selectors, full data integration
+// 📊 REPORTS PAGE v21 - Complete with Filters
+// Period filters, chart types, full data integration
 // ============================================
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { 
   BarChart2, TrendingUp, TrendingDown, PieChart, Calendar, 
-  ArrowUpRight, ArrowDownRight, Target, Activity, LineChart,
-  RefreshCw, DollarSign, Percent
+  ArrowUpRight, ArrowDownRight, Target, Activity, Filter,
+  RefreshCw, DollarSign, Percent, Wallet, CreditCard
 } from 'lucide-react';
 import { 
   AreaChart, Area, BarChart, Bar, PieChart as RechartsPie, Pie, Cell, 
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, 
-  LineChart as RechartsLine, Line, RadialBarChart, RadialBar
+  LineChart, Line
 } from 'recharts';
 import { useStore, getThemeColors } from '../../stores/useStore';
 import { Card, Button, Badge } from '../../components/ui';
@@ -33,9 +33,9 @@ const PERIOD_OPTIONS = [
 
 // Chart type options
 const CHART_TYPES = [
-  { value: 'bar', label: 'Barras', icon: <BarChart2 className="w-4 h-4" /> },
-  { value: 'line', label: 'Línea', icon: <LineChart className="w-4 h-4" /> },
-  { value: 'area', label: 'Área', icon: <Activity className="w-4 h-4" /> },
+  { value: 'bar', label: 'Barras', icon: BarChart2 },
+  { value: 'line', label: 'Línea', icon: Activity },
+  { value: 'area', label: 'Área', icon: TrendingUp },
 ];
 
 // Custom Tooltip
@@ -56,346 +56,331 @@ const CustomTooltip = ({ active, payload, label, currency }: any) => {
 };
 
 export const ReportsPage: React.FC = () => {
-  const { expenses, incomes, budgets, goals, recurringTransactions, currency, theme } = useStore();
+  const { expenses, incomes, goals, budgets, recurringTransactions, theme, currency } = useStore();
   const themeColors = getThemeColors(theme);
 
-  const [period, setPeriod] = useState('month');
-  const [chartType, setChartType] = useState<'bar' | 'line' | 'area'>('bar');
+  const [selectedPeriod, setSelectedPeriod] = useState('month');
+  const [chartType, setChartType] = useState('bar');
 
-  // Safe arrays - CRITICAL for preventing errors
+  // Safe arrays
   const safeExpenses = Array.isArray(expenses) ? expenses : [];
   const safeIncomes = Array.isArray(incomes) ? incomes : [];
-  const safeBudgets = budgets || {};
   const safeGoals = Array.isArray(goals) ? goals : [];
+  const safeBudgets = budgets || {};
   const safeRecurring = Array.isArray(recurringTransactions) ? recurringTransactions : [];
 
   // Get period config
-  const periodConfig = PERIOD_OPTIONS.find(p => p.value === period) || PERIOD_OPTIONS[3];
+  const periodConfig = PERIOD_OPTIONS.find(p => p.value === selectedPeriod) || PERIOD_OPTIONS[3];
 
   // Filter data by period
   const filteredData = useMemo(() => {
-    const days = periodConfig.days;
+    const now = new Date();
     const fromDate = new Date();
-    fromDate.setDate(fromDate.getDate() - days);
-    fromDate.setHours(0, 0, 0, 0);
-    const fromStr = fromDate.toISOString().split('T')[0];
+    fromDate.setDate(fromDate.getDate() - periodConfig.days);
 
-    return {
-      expenses: safeExpenses.filter(e => e.date >= fromStr),
-      incomes: safeIncomes.filter(i => i.date >= fromStr),
-    };
-  }, [safeExpenses, safeIncomes, periodConfig.days]);
-
-  // Calculate recurring monthly equivalents
-  const recurringTotals = useMemo(() => {
-    const activeRecurring = safeRecurring.filter(r => r.isActive);
-    let monthlyIncome = 0;
-    let monthlyExpense = 0;
-
-    activeRecurring.forEach(r => {
-      const mult = r.frequency === 'daily' ? 30 : r.frequency === 'weekly' ? 4 : 
-                   r.frequency === 'biweekly' ? 2 : r.frequency === 'yearly' ? 1/12 : 1;
-      const monthly = r.amount * mult;
-      if (r.type === 'income') monthlyIncome += monthly;
-      else monthlyExpense += monthly;
+    const filteredExpenses = safeExpenses.filter(e => {
+      const date = new Date(e.date);
+      return date >= fromDate && date <= now;
     });
 
-    // Scale to period
-    const periodRatio = periodConfig.days / 30;
-    return {
-      income: monthlyIncome * periodRatio,
-      expense: monthlyExpense * periodRatio,
-    };
+    const filteredIncomes = safeIncomes.filter(i => {
+      const date = new Date(i.date);
+      return date >= fromDate && date <= now;
+    });
+
+    return { expenses: filteredExpenses, incomes: filteredIncomes };
+  }, [safeExpenses, safeIncomes, periodConfig.days]);
+
+  // Calculate recurring for period
+  const recurringTotals = useMemo(() => {
+    let income = 0;
+    let expense = 0;
+
+    safeRecurring.forEach(r => {
+      if (!r.isActive) return;
+      
+      let monthlyAmount = Number(r.amount) || 0;
+      
+      // Convert to monthly equivalent
+      switch (r.frequency) {
+        case 'daily': monthlyAmount *= 30; break;
+        case 'weekly': monthlyAmount *= 4; break;
+        case 'biweekly': monthlyAmount *= 2; break;
+        case 'yearly': monthlyAmount /= 12; break;
+      }
+
+      // Scale to period
+      const periodRatio = periodConfig.days / 30;
+      const periodAmount = monthlyAmount * periodRatio;
+
+      if (r.type === 'income') {
+        income += periodAmount;
+      } else {
+        expense += periodAmount;
+      }
+    });
+
+    return { income, expense };
   }, [safeRecurring, periodConfig.days]);
 
-  // Calculate totals including recurring
+  // Calculate totals
   const totals = useMemo(() => {
     const baseIncome = filteredData.incomes.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
-    const baseExpenses = filteredData.expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
-    
+    const baseExpense = filteredData.expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+
     const totalIncome = baseIncome + recurringTotals.income;
-    const totalExpenses = baseExpenses + recurringTotals.expense;
-    const balance = totalIncome - totalExpenses;
+    const totalExpense = baseExpense + recurringTotals.expense;
+    const balance = totalIncome - totalExpense;
     const savingsRate = totalIncome > 0 ? (balance / totalIncome) * 100 : 0;
 
-    return { totalIncome, totalExpenses, balance, savingsRate, baseIncome, baseExpenses };
+    return { totalIncome, totalExpense, balance, savingsRate, baseIncome, baseExpense };
   }, [filteredData, recurringTotals]);
 
   // Category breakdown
   const categoryData = useMemo(() => {
-    const catTotals: Record<string, number> = {};
-    filteredData.expenses.forEach(e => {
-      catTotals[e.category] = (catTotals[e.category] || 0) + (Number(e.amount) || 0);
-    });
+    const categoryTotals: Record<string, number> = {};
     
-    return Object.entries(catTotals)
-      .map(([name, value], i) => ({
-        name: name.length > 10 ? name.substring(0, 10) + '...' : name,
-        fullName: name,
+    filteredData.expenses.forEach(e => {
+      const cat = e.category || 'Otros';
+      categoryTotals[cat] = (categoryTotals[cat] || 0) + (Number(e.amount) || 0);
+    });
+
+    return Object.entries(categoryTotals)
+      .map(([name, value], index) => ({
+        name,
         value,
-        fill: CHART_COLORS[i % CHART_COLORS.length],
-        percentage: totals.totalExpenses > 0 ? (value / totals.totalExpenses) * 100 : 0,
+        fill: CHART_COLORS[index % CHART_COLORS.length],
+        percentage: totals.totalExpense > 0 ? (value / totals.totalExpense) * 100 : 0
       }))
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 8);
-  }, [filteredData.expenses, totals.totalExpenses]);
+      .sort((a, b) => b.value - a.value);
+  }, [filteredData.expenses, totals.totalExpense]);
 
   // Trend data for chart
   const trendData = useMemo(() => {
-    const days = periodConfig.days;
-    const dataPoints: { label: string; ingresos: number; gastos: number }[] = [];
+    const groupedData: Record<string, { income: number; expenses: number }> = {};
     
-    // Determine grouping
-    let groupDays = 1;
-    let numPoints = days;
-    if (days > 90) { groupDays = 30; numPoints = Math.ceil(days / 30); }
-    else if (days > 30) { groupDays = 7; numPoints = Math.ceil(days / 7); }
-    else if (days > 7) { groupDays = 1; numPoints = days; }
-    else { groupDays = 1; numPoints = days; }
-
-    // Limit points
-    numPoints = Math.min(numPoints, 12);
-    groupDays = Math.ceil(days / numPoints);
-
-    const now = new Date();
-    for (let i = numPoints - 1; i >= 0; i--) {
-      const startDate = new Date(now);
-      startDate.setDate(startDate.getDate() - (i + 1) * groupDays);
-      const endDate = new Date(now);
-      endDate.setDate(endDate.getDate() - i * groupDays);
-      
-      const startStr = startDate.toISOString().split('T')[0];
-      const endStr = endDate.toISOString().split('T')[0];
-
-      const periodExpenses = filteredData.expenses
-        .filter(e => e.date >= startStr && e.date < endStr)
-        .reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
-      
-      const periodIncomes = filteredData.incomes
-        .filter(i => i.date >= startStr && i.date < endStr)
-        .reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
-
-      let label: string;
-      if (days <= 7) {
-        label = startDate.toLocaleDateString('es', { weekday: 'short' });
-      } else if (days <= 30) {
-        label = startDate.toLocaleDateString('es', { day: '2-digit', month: 'short' });
+    // Determine grouping based on period
+    const getGroupKey = (date: Date) => {
+      if (periodConfig.days <= 7) {
+        return date.toLocaleDateString('es', { weekday: 'short' });
+      } else if (periodConfig.days <= 31) {
+        return date.toLocaleDateString('es', { day: 'numeric', month: 'short' });
       } else {
-        label = startDate.toLocaleDateString('es', { month: 'short' });
+        return date.toLocaleDateString('es', { month: 'short' });
       }
+    };
 
-      dataPoints.push({ label, ingresos: periodIncomes, gastos: periodExpenses });
-    }
+    filteredData.incomes.forEach(i => {
+      const key = getGroupKey(new Date(i.date));
+      if (!groupedData[key]) groupedData[key] = { income: 0, expenses: 0 };
+      groupedData[key].income += Number(i.amount) || 0;
+    });
 
-    return dataPoints;
+    filteredData.expenses.forEach(e => {
+      const key = getGroupKey(new Date(e.date));
+      if (!groupedData[key]) groupedData[key] = { income: 0, expenses: 0 };
+      groupedData[key].expenses += Number(e.amount) || 0;
+    });
+
+    return Object.entries(groupedData).map(([name, data]) => ({
+      name,
+      Ingresos: data.income,
+      Gastos: data.expenses,
+    }));
   }, [filteredData, periodConfig.days]);
 
   // Budget status
   const budgetStatus = useMemo(() => {
-    return Object.entries(safeBudgets).map(([category, limit]) => {
-      const spent = filteredData.expenses
-        .filter(e => e.category === category)
-        .reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
-      const percentage = limit > 0 ? (spent / limit) * 100 : 0;
-      return { category, limit, spent, percentage };
-    }).sort((a, b) => b.percentage - a.percentage);
-  }, [safeBudgets, filteredData.expenses]);
+    return Object.entries(safeBudgets).slice(0, 6).map(([category, limit]) => {
+      const spent = categoryData.find(c => c.name.toLowerCase() === category.toLowerCase())?.value || 0;
+      const percentage = limit > 0 ? (spent / Number(limit)) * 100 : 0;
+      return {
+        category,
+        limit: Number(limit),
+        spent,
+        percentage,
+        status: percentage >= 100 ? 'exceeded' : percentage >= 80 ? 'warning' : 'safe'
+      };
+    });
+  }, [safeBudgets, categoryData]);
 
   // Goals progress
   const goalsProgress = useMemo(() => {
-    return safeGoals.map(g => ({
+    return safeGoals.slice(0, 6).map(g => ({
       name: g.name,
-      progress: g.targetAmount > 0 ? (g.currentAmount / g.targetAmount) * 100 : 0,
-      current: g.currentAmount,
-      target: g.targetAmount,
-      fill: g.color || themeColors.primary,
+      current: Number(g.currentAmount) || 0,
+      target: Number(g.targetAmount) || 1,
+      percentage: Math.min(((Number(g.currentAmount) || 0) / (Number(g.targetAmount) || 1)) * 100, 100),
+      icon: g.icon || '🎯'
     }));
-  }, [safeGoals, themeColors.primary]);
+  }, [safeGoals]);
 
   // Render trend chart based on type
   const renderTrendChart = () => {
     const commonProps = {
       data: trendData,
-      margin: { top: 10, right: 10, left: -10, bottom: 0 },
+      margin: { top: 10, right: 10, left: -10, bottom: 0 }
     };
 
-    if (chartType === 'line') {
-      return (
-        <ResponsiveContainer width="100%" height={220}>
-          <RechartsLine {...commonProps}>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-            <XAxis dataKey="label" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 10 }} axisLine={false} />
-            <YAxis tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 10 }} axisLine={false} tickFormatter={v => `$${(v/1000).toFixed(0)}k`} />
-            <Tooltip content={<CustomTooltip currency={currency} />} />
-            <Line type="monotone" dataKey="ingresos" stroke="#22C55E" strokeWidth={2} dot={{ r: 3 }} name="Ingresos" />
-            <Line type="monotone" dataKey="gastos" stroke="#EF4444" strokeWidth={2} dot={{ r: 3 }} name="Gastos" />
-            <Legend wrapperStyle={{ fontSize: '12px' }} />
-          </RechartsLine>
-        </ResponsiveContainer>
-      );
-    }
-
-    if (chartType === 'area') {
-      return (
-        <ResponsiveContainer width="100%" height={220}>
-          <AreaChart {...commonProps}>
-            <defs>
-              <linearGradient id="incomeGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#22C55E" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="#22C55E" stopOpacity={0} />
-              </linearGradient>
-              <linearGradient id="expenseGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#EF4444" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="#EF4444" stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-            <XAxis dataKey="label" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 10 }} axisLine={false} />
-            <YAxis tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 10 }} axisLine={false} tickFormatter={v => `$${(v/1000).toFixed(0)}k`} />
-            <Tooltip content={<CustomTooltip currency={currency} />} />
-            <Area type="monotone" dataKey="ingresos" stroke="#22C55E" fill="url(#incomeGrad)" strokeWidth={2} name="Ingresos" />
-            <Area type="monotone" dataKey="gastos" stroke="#EF4444" fill="url(#expenseGrad)" strokeWidth={2} name="Gastos" />
-            <Legend wrapperStyle={{ fontSize: '12px' }} />
-          </AreaChart>
-        </ResponsiveContainer>
-      );
-    }
-
-    // Default: bar
+    const ChartComponent = chartType === 'bar' ? BarChart : chartType === 'line' ? LineChart : AreaChart;
+    
     return (
-      <ResponsiveContainer width="100%" height={220}>
-        <BarChart {...commonProps} barGap={4}>
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-          <XAxis dataKey="label" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 10 }} axisLine={false} />
-          <YAxis tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 10 }} axisLine={false} tickFormatter={v => `$${(v/1000).toFixed(0)}k`} />
+      <ResponsiveContainer width="100%" height={200}>
+        <ChartComponent {...commonProps}>
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+          <XAxis dataKey="name" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 10 }} />
+          <YAxis tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 10 }} tickFormatter={v => `$${(v/1000).toFixed(0)}k`} />
           <Tooltip content={<CustomTooltip currency={currency} />} />
-          <Bar dataKey="ingresos" fill="#22C55E" radius={[4, 4, 0, 0]} name="Ingresos" />
-          <Bar dataKey="gastos" fill="#EF4444" radius={[4, 4, 0, 0]} name="Gastos" />
-          <Legend wrapperStyle={{ fontSize: '12px' }} />
-        </BarChart>
+          <Legend wrapperStyle={{ fontSize: '11px' }} />
+          
+          {chartType === 'bar' && (
+            <>
+              <Bar dataKey="Ingresos" fill="#22C55E" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="Gastos" fill="#EF4444" radius={[4, 4, 0, 0]} />
+            </>
+          )}
+          {chartType === 'line' && (
+            <>
+              <Line type="monotone" dataKey="Ingresos" stroke="#22C55E" strokeWidth={2} dot={{ fill: '#22C55E' }} />
+              <Line type="monotone" dataKey="Gastos" stroke="#EF4444" strokeWidth={2} dot={{ fill: '#EF4444' }} />
+            </>
+          )}
+          {chartType === 'area' && (
+            <>
+              <Area type="monotone" dataKey="Ingresos" fill="#22C55E" fillOpacity={0.3} stroke="#22C55E" strokeWidth={2} />
+              <Area type="monotone" dataKey="Gastos" fill="#EF4444" fillOpacity={0.3} stroke="#EF4444" strokeWidth={2} />
+            </>
+          )}
+        </ChartComponent>
       </ResponsiveContainer>
     );
   };
 
   return (
-    <div className="space-y-6 pb-8">
-      {/* Header with Period & Chart Type Selectors */}
-      <div className="flex flex-col gap-4">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-white flex items-center justify-center gap-2">
-            <BarChart2 className="w-6 h-6" style={{ color: themeColors.primary }} />
-            Reportes Financieros
-          </h1>
-          <p className="text-white/60 mt-1">Análisis detallado de tus finanzas</p>
-        </div>
-
-        {/* Filters Row */}
-        <div className="flex flex-wrap justify-center gap-4">
-          {/* Period Selector */}
-          <div className="flex bg-white/5 rounded-xl p-1">
-            {PERIOD_OPTIONS.map(opt => (
-              <button
-                key={opt.value}
-                onClick={() => setPeriod(opt.value)}
-                className={cn(
-                  'px-3 py-1.5 rounded-lg text-xs font-medium transition-all',
-                  period === opt.value ? 'text-white' : 'text-white/50 hover:text-white'
-                )}
-                style={period === opt.value ? { backgroundColor: `${themeColors.primary}30`, color: themeColors.primary } : {}}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Chart Type Selector */}
-          <div className="flex bg-white/5 rounded-xl p-1">
-            {CHART_TYPES.map(opt => (
-              <button
-                key={opt.value}
-                onClick={() => setChartType(opt.value as any)}
-                className={cn(
-                  'px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1',
-                  chartType === opt.value ? 'text-white' : 'text-white/50 hover:text-white'
-                )}
-                style={chartType === opt.value ? { backgroundColor: `${themeColors.primary}30`, color: themeColors.primary } : {}}
-              >
-                {opt.icon}
-                {opt.label}
-              </button>
-            ))}
-          </div>
-        </div>
+    <div className="space-y-6 pb-24">
+      {/* Header */}
+      <div className="text-center">
+        <h1 className="text-2xl font-bold text-white flex items-center justify-center gap-2">
+          <BarChart2 className="w-7 h-7" style={{ color: themeColors.primary }} />
+          Reportes Financieros
+        </h1>
+        <p className="text-white/60 mt-1">Análisis de tus finanzas</p>
       </div>
 
+      {/* Period Filter */}
+      <Card className="p-3">
+        <div className="flex items-center gap-2 mb-2">
+          <Calendar className="w-4 h-4 text-white/60" />
+          <span className="text-sm text-white/60">Período</span>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {PERIOD_OPTIONS.map(period => (
+            <Button
+              key={period.value}
+              size="sm"
+              variant={selectedPeriod === period.value ? 'primary' : 'secondary'}
+              onClick={() => setSelectedPeriod(period.value)}
+            >
+              {period.label}
+            </Button>
+          ))}
+        </div>
+      </Card>
+
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="p-4 text-center">
-          <ArrowUpRight className="w-8 h-8 mx-auto mb-2 text-success-400" />
+      <div className="grid grid-cols-2 gap-3">
+        <Card className="p-4 text-center bg-gradient-to-br from-success-500/20 to-transparent">
+          <TrendingUp className="w-6 h-6 mx-auto mb-1 text-success-400" />
           <p className="text-xs text-white/50">Ingresos</p>
           <p className="text-lg font-bold text-success-400">{formatCurrency(totals.totalIncome, currency)}</p>
-          <div className="w-full h-1 bg-success-500/20 rounded-full mt-2">
-            <div className="h-full bg-success-500 rounded-full" style={{ width: '100%' }} />
-          </div>
+          {recurringTotals.income > 0 && (
+            <p className="text-xs text-white/40 mt-1">
+              +{formatCurrency(recurringTotals.income, currency)} recurrente
+            </p>
+          )}
         </Card>
-        <Card className="p-4 text-center">
-          <ArrowDownRight className="w-8 h-8 mx-auto mb-2 text-danger-400" />
+        
+        <Card className="p-4 text-center bg-gradient-to-br from-danger-500/20 to-transparent">
+          <TrendingDown className="w-6 h-6 mx-auto mb-1 text-danger-400" />
           <p className="text-xs text-white/50">Gastos</p>
-          <p className="text-lg font-bold text-danger-400">{formatCurrency(totals.totalExpenses, currency)}</p>
-          <div className="w-full h-1 bg-danger-500/20 rounded-full mt-2">
-            <div className="h-full bg-danger-500 rounded-full" style={{ width: `${Math.min(100, totals.totalIncome > 0 ? (totals.totalExpenses / totals.totalIncome) * 100 : 0)}%` }} />
-          </div>
+          <p className="text-lg font-bold text-danger-400">{formatCurrency(totals.totalExpense, currency)}</p>
+          {recurringTotals.expense > 0 && (
+            <p className="text-xs text-white/40 mt-1">
+              +{formatCurrency(recurringTotals.expense, currency)} recurrente
+            </p>
+          )}
         </Card>
-        <Card className="p-4 text-center">
-          <DollarSign className="w-8 h-8 mx-auto mb-2" style={{ color: totals.balance >= 0 ? '#22C55E' : '#EF4444' }} />
+        
+        <Card className={cn(
+          'p-4 text-center',
+          totals.balance >= 0 
+            ? 'bg-gradient-to-br from-primary-500/20 to-transparent' 
+            : 'bg-gradient-to-br from-warning-500/20 to-transparent'
+        )}>
+          <Wallet className="w-6 h-6 mx-auto mb-1" style={{ color: totals.balance >= 0 ? themeColors.primary : '#F59E0B' }} />
           <p className="text-xs text-white/50">Balance</p>
-          <p className={cn('text-lg font-bold', totals.balance >= 0 ? 'text-success-400' : 'text-danger-400')}>
+          <p className={cn('text-lg font-bold', totals.balance >= 0 ? 'text-primary-400' : 'text-warning-400')}>
             {formatCurrency(totals.balance, currency)}
           </p>
         </Card>
-        <Card className="p-4 text-center">
-          <Percent className="w-8 h-8 mx-auto mb-2" style={{ color: totals.savingsRate >= 20 ? '#22C55E' : totals.savingsRate >= 10 ? '#F59E0B' : '#EF4444' }} />
-          <p className="text-xs text-white/50">Ahorro</p>
-          <p className={cn('text-lg font-bold', totals.savingsRate >= 20 ? 'text-success-400' : totals.savingsRate >= 10 ? 'text-warning-400' : 'text-danger-400')}>
+        
+        <Card className="p-4 text-center bg-gradient-to-br from-purple-500/20 to-transparent">
+          <Percent className="w-6 h-6 mx-auto mb-1 text-purple-400" />
+          <p className="text-xs text-white/50">Tasa Ahorro</p>
+          <p className={cn(
+            'text-lg font-bold',
+            totals.savingsRate >= 20 ? 'text-success-400' : totals.savingsRate >= 0 ? 'text-warning-400' : 'text-danger-400'
+          )}>
             {totals.savingsRate.toFixed(1)}%
           </p>
         </Card>
       </div>
 
-      {/* Main Charts Row */}
-      <div className="grid lg:grid-cols-2 gap-6">
-        {/* Trend Chart */}
-        <Card className="p-4">
-          <h3 className="font-semibold text-white mb-4 flex items-center justify-center gap-2">
-            <TrendingUp className="w-5 h-5" style={{ color: themeColors.primary }} />
-            Tendencia {periodConfig.label}
-          </h3>
-          {trendData.length > 0 ? renderTrendChart() : (
-            <div className="h-48 flex items-center justify-center text-white/50">
-              No hay datos para el período seleccionado
-            </div>
-          )}
-        </Card>
+      {/* Chart Type Selector */}
+      <div className="flex justify-center gap-2">
+        {CHART_TYPES.map(type => (
+          <Button
+            key={type.value}
+            size="sm"
+            variant={chartType === type.value ? 'primary' : 'secondary'}
+            onClick={() => setChartType(type.value)}
+          >
+            <type.icon className="w-4 h-4 mr-1" />
+            {type.label}
+          </Button>
+        ))}
+      </div>
 
-        {/* Category Distribution */}
-        <Card className="p-4">
-          <h3 className="font-semibold text-white mb-4 flex items-center justify-center gap-2">
-            <PieChart className="w-5 h-5" style={{ color: themeColors.primary }} />
-            Distribución por Categoría
-          </h3>
-          {categoryData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={220}>
+      {/* Trend Chart */}
+      <Card className="p-4">
+        <h3 className="font-semibold text-white mb-4 text-center">📈 Ingresos vs Gastos</h3>
+        {trendData.length > 0 ? (
+          renderTrendChart()
+        ) : (
+          <div className="h-[200px] flex items-center justify-center text-white/50">
+            <div className="text-center">
+              <BarChart2 className="w-12 h-12 mx-auto mb-2 opacity-50" />
+              <p>No hay datos para este período</p>
+            </div>
+          </div>
+        )}
+      </Card>
+
+      {/* Category Distribution */}
+      <Card className="p-4">
+        <h3 className="font-semibold text-white mb-4 text-center">🎯 Distribución de Gastos</h3>
+        {categoryData.length > 0 ? (
+          <div className="grid md:grid-cols-2 gap-4">
+            <ResponsiveContainer width="100%" height={200}>
               <RechartsPie>
                 <Pie
                   data={categoryData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={45}
-                  outerRadius={75}
-                  paddingAngle={2}
+                  innerRadius={40}
+                  outerRadius={80}
+                  paddingAngle={3}
                   dataKey="value"
-                  label={({ name, percentage }) => `${name} ${percentage.toFixed(0)}%`}
-                  labelLine={false}
                 >
                   {categoryData.map((entry, index) => (
                     <Cell key={index} fill={entry.fill} />
@@ -404,34 +389,47 @@ export const ReportsPage: React.FC = () => {
                 <Tooltip content={<CustomTooltip currency={currency} />} />
               </RechartsPie>
             </ResponsiveContainer>
-          ) : (
-            <div className="h-48 flex items-center justify-center text-white/50">
-              No hay datos para mostrar
+            
+            <div className="space-y-2">
+              {categoryData.slice(0, 5).map((cat, idx) => (
+                <div key={idx} className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: cat.fill }} />
+                  <span className="text-sm text-white/80 flex-1 truncate">{cat.name}</span>
+                  <span className="text-sm font-medium text-white">{cat.percentage.toFixed(0)}%</span>
+                </div>
+              ))}
             </div>
-          )}
-        </Card>
-      </div>
+          </div>
+        ) : (
+          <div className="h-[200px] flex items-center justify-center text-white/50">
+            <div className="text-center">
+              <PieChart className="w-12 h-12 mx-auto mb-2 opacity-50" />
+              <p>Agrega gastos para ver la distribución</p>
+            </div>
+          </div>
+        )}
+      </Card>
 
-      {/* Top Categories List */}
+      {/* Top Categories */}
       {categoryData.length > 0 && (
         <Card className="p-4">
-          <h3 className="font-semibold text-white mb-4 text-center">Top Categorías de Gasto</h3>
+          <h3 className="font-semibold text-white mb-4 text-center">🏆 Top Categorías</h3>
           <div className="space-y-3">
-            {categoryData.slice(0, 5).map((cat, i) => (
-              <div key={i} className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold text-white" style={{ backgroundColor: cat.fill }}>
-                  {i + 1}
+            {categoryData.slice(0, 5).map((cat, idx) => (
+              <div key={idx}>
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="text-white">{cat.name}</span>
+                  <span className="text-white/60">{formatCurrency(cat.value, currency)}</span>
                 </div>
-                <div className="flex-1">
-                  <div className="flex justify-between mb-1">
-                    <span className="text-white text-sm">{cat.fullName}</span>
-                    <span className="text-white/70 text-sm">{formatCurrency(cat.value, currency)}</span>
-                  </div>
-                  <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-                    <div className="h-full rounded-full" style={{ width: `${cat.percentage}%`, backgroundColor: cat.fill }} />
-                  </div>
+                <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${cat.percentage}%` }}
+                    transition={{ duration: 0.5, delay: idx * 0.1 }}
+                    className="h-full rounded-full"
+                    style={{ backgroundColor: cat.fill }}
+                  />
                 </div>
-                <span className="text-white/50 text-sm w-12 text-right">{cat.percentage.toFixed(0)}%</span>
               </div>
             ))}
           </div>
@@ -441,26 +439,31 @@ export const ReportsPage: React.FC = () => {
       {/* Budget Status */}
       {budgetStatus.length > 0 && (
         <Card className="p-4">
-          <h3 className="font-semibold text-white mb-4 text-center">Estado de Presupuestos</h3>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {budgetStatus.slice(0, 6).map((b, i) => (
-              <div key={i} className={cn('p-3 rounded-xl', b.percentage >= 100 ? 'bg-danger-500/10' : b.percentage >= 80 ? 'bg-warning-500/10' : 'bg-success-500/10')}>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-white text-sm font-medium">{b.category}</span>
-                  <Badge variant={b.percentage >= 100 ? 'danger' : b.percentage >= 80 ? 'warning' : 'success'} size="sm">
+          <h3 className="font-semibold text-white mb-4 text-center">💰 Estado de Presupuestos</h3>
+          <div className="grid grid-cols-2 gap-3">
+            {budgetStatus.map((b, idx) => (
+              <div key={idx} className="bg-white/5 rounded-lg p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-white truncate">{b.category}</span>
+                  <Badge 
+                    variant={b.status === 'exceeded' ? 'danger' : b.status === 'warning' ? 'warning' : 'success'} 
+                    size="sm"
+                  >
                     {b.percentage.toFixed(0)}%
                   </Badge>
                 </div>
-                <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
                   <div 
-                    className={cn('h-full rounded-full', b.percentage >= 100 ? 'bg-danger-500' : b.percentage >= 80 ? 'bg-warning-500' : 'bg-success-500')} 
-                    style={{ width: `${Math.min(100, b.percentage)}%` }} 
+                    className={cn(
+                      'h-full rounded-full',
+                      b.status === 'exceeded' ? 'bg-danger-500' : b.status === 'warning' ? 'bg-warning-500' : 'bg-success-500'
+                    )}
+                    style={{ width: `${Math.min(b.percentage, 100)}%` }}
                   />
                 </div>
-                <div className="flex justify-between text-xs text-white/50 mt-1">
-                  <span>{formatCurrency(b.spent, currency)}</span>
-                  <span>{formatCurrency(b.limit, currency)}</span>
-                </div>
+                <p className="text-xs text-white/40 mt-1">
+                  {formatCurrency(b.spent, currency)} / {formatCurrency(b.limit, currency)}
+                </p>
               </div>
             ))}
           </div>
@@ -470,20 +473,25 @@ export const ReportsPage: React.FC = () => {
       {/* Goals Progress */}
       {goalsProgress.length > 0 && (
         <Card className="p-4">
-          <h3 className="font-semibold text-white mb-4 text-center">Progreso de Metas</h3>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {goalsProgress.slice(0, 6).map((g, i) => (
-              <div key={i} className="p-3 bg-white/5 rounded-xl">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-white text-sm font-medium">{g.name}</span>
-                  <span className="text-sm font-bold" style={{ color: g.fill }}>{g.progress.toFixed(0)}%</span>
+          <h3 className="font-semibold text-white mb-4 text-center">🎯 Progreso de Metas</h3>
+          <div className="grid grid-cols-2 gap-3">
+            {goalsProgress.map((g, idx) => (
+              <div key={idx} className="bg-white/5 rounded-lg p-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-lg">{g.icon}</span>
+                  <span className="text-sm text-white truncate">{g.name}</span>
                 </div>
-                <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-                  <div className="h-full rounded-full" style={{ width: `${Math.min(100, g.progress)}%`, backgroundColor: g.fill }} />
+                <div className="h-1.5 bg-white/10 rounded-full overflow-hidden mb-1">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${g.percentage}%` }}
+                    transition={{ duration: 0.5, delay: idx * 0.1 }}
+                    className="h-full rounded-full bg-primary-500"
+                  />
                 </div>
-                <div className="flex justify-between text-xs text-white/50 mt-1">
+                <div className="flex justify-between text-xs text-white/40">
                   <span>{formatCurrency(g.current, currency)}</span>
-                  <span>{formatCurrency(g.target, currency)}</span>
+                  <span>{g.percentage.toFixed(0)}%</span>
                 </div>
               </div>
             ))}
@@ -492,26 +500,19 @@ export const ReportsPage: React.FC = () => {
       )}
 
       {/* Recurring Summary */}
-      {safeRecurring.length > 0 && (
+      {(recurringTotals.income > 0 || recurringTotals.expense > 0) && (
         <Card className="p-4">
-          <h3 className="font-semibold text-white mb-4 flex items-center justify-center gap-2">
-            <RefreshCw className="w-5 h-5" style={{ color: themeColors.primary }} />
-            Transacciones Recurrentes (equivalente mensual)
-          </h3>
-          <div className="grid grid-cols-3 gap-4 text-center">
-            <div>
-              <p className="text-xs text-white/50">Ingresos Fijos</p>
-              <p className="text-lg font-bold text-success-400">{formatCurrency(recurringTotals.income * (30 / periodConfig.days), currency)}</p>
+          <h3 className="font-semibold text-white mb-4 text-center">🔄 Recurrentes en el Período</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="text-center">
+              <RefreshCw className="w-6 h-6 mx-auto mb-1 text-success-400" />
+              <p className="text-xs text-white/50">Ingresos</p>
+              <p className="font-bold text-success-400">{formatCurrency(recurringTotals.income, currency)}</p>
             </div>
-            <div>
-              <p className="text-xs text-white/50">Gastos Fijos</p>
-              <p className="text-lg font-bold text-danger-400">{formatCurrency(recurringTotals.expense * (30 / periodConfig.days), currency)}</p>
-            </div>
-            <div>
-              <p className="text-xs text-white/50">Balance Fijo</p>
-              <p className={cn('text-lg font-bold', recurringTotals.income > recurringTotals.expense ? 'text-success-400' : 'text-danger-400')}>
-                {formatCurrency((recurringTotals.income - recurringTotals.expense) * (30 / periodConfig.days), currency)}
-              </p>
+            <div className="text-center">
+              <RefreshCw className="w-6 h-6 mx-auto mb-1 text-danger-400" />
+              <p className="text-xs text-white/50">Gastos</p>
+              <p className="font-bold text-danger-400">{formatCurrency(recurringTotals.expense, currency)}</p>
             </div>
           </div>
         </Card>

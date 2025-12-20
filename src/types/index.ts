@@ -74,7 +74,7 @@ export interface TransactionFormData {
 }
 
 // ========================================
-// CATEGORIES
+// CATEGORIES - Based on Excel Budget Structure
 // ========================================
 export interface Category {
   id: string;
@@ -82,31 +82,112 @@ export interface Category {
   icon: string;
   color: string;
   type: 'expense' | 'income' | 'both';
+  group: BudgetGroup;
   isCustom?: boolean;
 }
 
-export const DEFAULT_EXPENSE_CATEGORIES: Category[] = [
-  { id: 'food', name: 'Alimentación', icon: '🍔', color: '#F59E0B', type: 'expense' },
-  { id: 'transport', name: 'Transporte', icon: '🚗', color: '#3B82F6', type: 'expense' },
-  { id: 'entertainment', name: 'Entretenimiento', icon: '🎬', color: '#8B5CF6', type: 'expense' },
-  { id: 'health', name: 'Salud', icon: '💊', color: '#EF4444', type: 'expense' },
-  { id: 'education', name: 'Educación', icon: '📚', color: '#10B981', type: 'expense' },
-  { id: 'shopping', name: 'Compras', icon: '🛒', color: '#EC4899', type: 'expense' },
-  { id: 'bills', name: 'Servicios', icon: '📄', color: '#6366F1', type: 'expense' },
-  { id: 'home', name: 'Hogar', icon: '🏠', color: '#14B8A6', type: 'expense' },
-  { id: 'subscriptions', name: 'Suscripciones', icon: '📺', color: '#F97316', type: 'expense' },
-  { id: 'other', name: 'Otros', icon: '📦', color: '#6B7280', type: 'expense' },
+// 6 Main Budget Groups (like in Excel)
+export type BudgetGroup = 
+  | 'ingresos'           // INGRESOS
+  | 'gastos_esenciales'  // GASTOS ESENCIALES
+  | 'gastos_discrecionales' // GASTOS DISCRECIONALES
+  | 'pago_deudas'        // PAGO DE DEUDAS
+  | 'ahorros'            // AHORROS
+  | 'inversiones';       // INVERSIONES
+
+export const BUDGET_GROUPS = {
+  ingresos: { id: 'ingresos', name: 'Ingresos', icon: '💰', color: '#22C55E' },
+  gastos_esenciales: { id: 'gastos_esenciales', name: 'Gastos Esenciales', icon: '🏠', color: '#3B82F6' },
+  gastos_discrecionales: { id: 'gastos_discrecionales', name: 'Gastos Discrecionales', icon: '🎬', color: '#F59E0B' },
+  pago_deudas: { id: 'pago_deudas', name: 'Pago de Deudas', icon: '💳', color: '#EF4444' },
+  ahorros: { id: 'ahorros', name: 'Ahorros', icon: '🐷', color: '#8B5CF6' },
+  inversiones: { id: 'inversiones', name: 'Inversiones', icon: '📈', color: '#14B8A6' },
+};
+
+// INGRESOS Categories
+export const INCOME_CATEGORIES: Category[] = [
+  { id: 'salary1', name: 'Salario', icon: '💼', color: '#22C55E', type: 'income', group: 'ingresos' },
+  { id: 'salary2', name: 'Salario 2', icon: '💵', color: '#16A34A', type: 'income', group: 'ingresos' },
+  { id: 'freelance', name: 'Freelance', icon: '💻', color: '#15803D', type: 'income', group: 'ingresos' },
+  { id: 'bonus', name: 'Bonos', icon: '🎁', color: '#166534', type: 'income', group: 'ingresos' },
+  { id: 'other-income', name: 'Otros Ingresos', icon: '💰', color: '#14532D', type: 'income', group: 'ingresos' },
 ];
 
-export const DEFAULT_INCOME_CATEGORIES: Category[] = [
-  { id: 'salary', name: 'Salario', icon: '💼', color: '#22C55E', type: 'income' },
-  { id: 'freelance', name: 'Freelance', icon: '💻', color: '#3B82F6', type: 'income' },
-  { id: 'investments', name: 'Inversiones', icon: '📈', color: '#8B5CF6', type: 'income' },
-  { id: 'sales', name: 'Ventas', icon: '🏷️', color: '#F59E0B', type: 'income' },
-  { id: 'gifts', name: 'Regalos', icon: '🎁', color: '#EC4899', type: 'income' },
-  { id: 'refunds', name: 'Reembolsos', icon: '💰', color: '#14B8A6', type: 'income' },
-  { id: 'other-income', name: 'Otros Ingresos', icon: '💵', color: '#6B7280', type: 'income' },
+// GASTOS ESENCIALES Categories  
+export const ESSENTIAL_EXPENSE_CATEGORIES: Category[] = [
+  { id: 'vivienda', name: 'Vivienda', icon: '🏠', color: '#3B82F6', type: 'expense', group: 'gastos_esenciales' },
+  { id: 'celular', name: 'Celular', icon: '📱', color: '#2563EB', type: 'expense', group: 'gastos_esenciales' },
+  { id: 'seguro-carro', name: 'Seguro Carro', icon: '🚗', color: '#1D4ED8', type: 'expense', group: 'gastos_esenciales' },
+  { id: 'gasolina', name: 'Gasolina y Aceite', icon: '⛽', color: '#1E40AF', type: 'expense', group: 'gastos_esenciales' },
+  { id: 'alimentacion-casa', name: 'Alimentación Casa', icon: '🍽️', color: '#1E3A8A', type: 'expense', group: 'gastos_esenciales' },
+  { id: 'servicios', name: 'Servicios', icon: '📄', color: '#3730A3', type: 'expense', group: 'gastos_esenciales' },
+  { id: 'familia', name: 'Familia', icon: '👨‍👩‍👧', color: '#4338CA', type: 'expense', group: 'gastos_esenciales' },
 ];
+
+// GASTOS DISCRECIONALES Categories
+export const DISCRETIONARY_EXPENSE_CATEGORIES: Category[] = [
+  { id: 'comida-calle', name: 'Comida Calle', icon: '🍔', color: '#F59E0B', type: 'expense', group: 'gastos_discrecionales' },
+  { id: 'salidas', name: 'Salidas', icon: '🎉', color: '#D97706', type: 'expense', group: 'gastos_discrecionales' },
+  { id: 'estudio', name: 'Estudio', icon: '📚', color: '#B45309', type: 'expense', group: 'gastos_discrecionales' },
+  { id: 'mecato', name: 'Mecato/Snacks', icon: '🍫', color: '#92400E', type: 'expense', group: 'gastos_discrecionales' },
+  { id: 'peluqueria', name: 'Peluquería', icon: '💇', color: '#78350F', type: 'expense', group: 'gastos_discrecionales' },
+  { id: 'suscripciones', name: 'Suscripciones', icon: '📺', color: '#F97316', type: 'expense', group: 'gastos_discrecionales' },
+  { id: 'cafe', name: 'Café', icon: '☕', color: '#EA580C', type: 'expense', group: 'gastos_discrecionales' },
+  { id: 'entretenimiento', name: 'Entretenimiento', icon: '🎬', color: '#C2410C', type: 'expense', group: 'gastos_discrecionales' },
+  { id: 'ropa', name: 'Ropa', icon: '👕', color: '#9A3412', type: 'expense', group: 'gastos_discrecionales' },
+  { id: 'otros-discrecional', name: 'Otros', icon: '📦', color: '#7C2D12', type: 'expense', group: 'gastos_discrecionales' },
+];
+
+// PAGO DE DEUDAS Categories
+export const DEBT_CATEGORIES: Category[] = [
+  { id: 'vehiculo', name: 'Vehículo', icon: '🚙', color: '#EF4444', type: 'expense', group: 'pago_deudas' },
+  { id: 'tarjeta-credito', name: 'Tarjeta de Crédito', icon: '💳', color: '#DC2626', type: 'expense', group: 'pago_deudas' },
+  { id: 'prestamo', name: 'Préstamo', icon: '🏦', color: '#B91C1C', type: 'expense', group: 'pago_deudas' },
+  { id: 'hipoteca', name: 'Hipoteca', icon: '🏡', color: '#991B1B', type: 'expense', group: 'pago_deudas' },
+  { id: 'otra-deuda', name: 'Otra Deuda', icon: '📋', color: '#7F1D1D', type: 'expense', group: 'pago_deudas' },
+];
+
+// AHORROS Categories
+export const SAVINGS_CATEGORIES: Category[] = [
+  { id: 'emergencias', name: 'Fondo Emergencias', icon: '🆘', color: '#8B5CF6', type: 'expense', group: 'ahorros' },
+  { id: 'vacaciones', name: 'Vacaciones', icon: '✈️', color: '#7C3AED', type: 'expense', group: 'ahorros' },
+  { id: 'retiro', name: 'Retiro', icon: '🏖️', color: '#6D28D9', type: 'expense', group: 'ahorros' },
+  { id: 'meta-especial', name: 'Meta Especial', icon: '🎯', color: '#5B21B6', type: 'expense', group: 'ahorros' },
+  { id: 'otro-ahorro', name: 'Otro Ahorro', icon: '💰', color: '#4C1D95', type: 'expense', group: 'ahorros' },
+];
+
+// INVERSIONES Categories
+export const INVESTMENT_CATEGORIES: Category[] = [
+  { id: 'acciones', name: 'Acciones', icon: '📊', color: '#14B8A6', type: 'expense', group: 'inversiones' },
+  { id: 'crypto', name: 'Criptomonedas', icon: '₿', color: '#0D9488', type: 'expense', group: 'inversiones' },
+  { id: 'fondos', name: 'Fondos', icon: '📈', color: '#0F766E', type: 'expense', group: 'inversiones' },
+  { id: 'bienes-raices', name: 'Bienes Raíces', icon: '🏢', color: '#115E59', type: 'expense', group: 'inversiones' },
+  { id: 'negocio', name: 'Negocio', icon: '🏪', color: '#134E4A', type: 'expense', group: 'inversiones' },
+  { id: 'otra-inversion', name: 'Otra Inversión', icon: '💎', color: '#042F2E', type: 'expense', group: 'inversiones' },
+];
+
+// Combined for backwards compatibility
+export const DEFAULT_EXPENSE_CATEGORIES: Category[] = [
+  ...ESSENTIAL_EXPENSE_CATEGORIES,
+  ...DISCRETIONARY_EXPENSE_CATEGORIES,
+];
+
+export const DEFAULT_INCOME_CATEGORIES: Category[] = INCOME_CATEGORIES;
+
+// All categories combined
+export const ALL_CATEGORIES: Category[] = [
+  ...INCOME_CATEGORIES,
+  ...ESSENTIAL_EXPENSE_CATEGORIES,
+  ...DISCRETIONARY_EXPENSE_CATEGORIES,
+  ...DEBT_CATEGORIES,
+  ...SAVINGS_CATEGORIES,
+  ...INVESTMENT_CATEGORIES,
+];
+
+// Get categories by group
+export const getCategoriesByGroup = (group: BudgetGroup): Category[] => {
+  return ALL_CATEGORIES.filter(cat => cat.group === group);
+};
 
 // ========================================
 // BUDGETS

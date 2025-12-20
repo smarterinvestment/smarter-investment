@@ -1,400 +1,410 @@
 // ============================================
-// 💰 BUDGETS PAGE - FULLY FUNCTIONAL v20
+// 💰 BUDGETS PAGE v21 - Based on Excel Structure
+// 6 Main Budget Groups with Estimado vs Real
 // ============================================
-import React, { useState, useMemo, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Plus, Edit2, Trash2, AlertTriangle, TrendingUp, TrendingDown, PiggyBank, BarChart2 } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Plus, Edit2, Trash2, TrendingUp, TrendingDown, PiggyBank, BarChart2, DollarSign, Target, CreditCard, Wallet, Check, AlertTriangle, X, Save } from 'lucide-react';
+import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 import { useStore, getThemeColors } from '../../stores/useStore';
 import { useBudgets } from '../../hooks/useFirebaseData';
-import { Card, Button, Input, Modal, Badge, EmptyState, ProgressBar } from '../../components/ui';
+import { Card, Button, Input, Badge } from '../../components/ui';
 import { cn } from '../../utils/cn';
-import { formatCurrency, filterByMonth, groupByCategory } from '../../utils/financial';
+import { formatCurrency } from '../../utils/financial';
 import { showSuccess, showError } from '../../lib/errorHandler';
-import { DEFAULT_EXPENSE_CATEGORIES } from '../../types';
 
-// Budget Form Component - Fixed with proper state management
-const BudgetForm: React.FC<{
-  isOpen: boolean;
-  onClose: () => void;
-  initialCategory?: string;
-  initialAmount?: number;
-  existingCategories: string[];
-  onSubmit: (category: string, amount: number) => Promise<void>;
-  isSubmitting: boolean;
-}> = ({ isOpen, onClose, initialCategory, initialAmount, existingCategories, onSubmit, isSubmitting }) => {
-  const [category, setCategory] = useState('');
-  const [amount, setAmount] = useState('');
-  const [error, setError] = useState<string | null>(null);
+// 6 Budget Groups based on Excel structure
+const BUDGET_GROUPS = [
+  { id: 'ingresos', name: 'Ingresos', icon: '💰', color: '#22C55E', type: 'income' },
+  { id: 'gastos_esenciales', name: 'Gastos Esenciales', icon: '🏠', color: '#3B82F6', type: 'expense' },
+  { id: 'gastos_discrecionales', name: 'Gastos Discrecionales', icon: '🎬', color: '#F59E0B', type: 'expense' },
+  { id: 'pago_deudas', name: 'Pago de Deudas', icon: '💳', color: '#EF4444', type: 'expense' },
+  { id: 'ahorros', name: 'Ahorros', icon: '🐷', color: '#8B5CF6', type: 'savings' },
+  { id: 'inversiones', name: 'Inversiones', icon: '📈', color: '#14B8A6', type: 'investment' },
+];
 
-  // Reset form when modal opens/closes or initial values change
-  useEffect(() => {
-    if (isOpen) {
-      setCategory(initialCategory || '');
-      setAmount(initialAmount?.toString() || '');
-      setError(null);
-    }
-  }, [isOpen, initialCategory, initialAmount]);
+// Categories per group (based on Excel)
+const CATEGORIES_BY_GROUP: Record<string, Array<{id: string, name: string, icon: string}>> = {
+  ingresos: [
+    { id: 'salario1', name: 'Salario Principal', icon: '💼' },
+    { id: 'salario2', name: 'Salario 2', icon: '💵' },
+    { id: 'freelance', name: 'Freelance', icon: '💻' },
+    { id: 'otros_ingresos', name: 'Otros Ingresos', icon: '💰' },
+  ],
+  gastos_esenciales: [
+    { id: 'vivienda', name: 'Vivienda/Arriendo', icon: '🏠' },
+    { id: 'familia', name: 'Familia', icon: '👨‍👩‍👧' },
+    { id: 'celular', name: 'Celular', icon: '📱' },
+    { id: 'seguro_carro', name: 'Seguro Carro', icon: '🚗' },
+    { id: 'gasolina', name: 'Gasolina y Aceite', icon: '⛽' },
+    { id: 'alimentacion', name: 'Alimentación Casa', icon: '🍽️' },
+    { id: 'servicios', name: 'Servicios', icon: '📄' },
+  ],
+  gastos_discrecionales: [
+    { id: 'salidas', name: 'Salidas', icon: '🎉' },
+    { id: 'comida_calle', name: 'Comida Calle', icon: '🍔' },
+    { id: 'estudio', name: 'Estudio', icon: '📚' },
+    { id: 'mecato', name: 'Mecato/Snacks', icon: '🍫' },
+    { id: 'peluqueria', name: 'Peluquería', icon: '💇' },
+    { id: 'almacenamiento', name: 'Almacenamiento', icon: '☁️' },
+    { id: 'cafe', name: 'Café', icon: '☕' },
+    { id: 'suscripciones', name: 'Suscripciones', icon: '📺' },
+  ],
+  pago_deudas: [
+    { id: 'vehiculo', name: 'Vehículo', icon: '🚙' },
+    { id: 'credito', name: 'Crédito', icon: '💳' },
+    { id: 'tarjeta', name: 'Tarjeta de Crédito', icon: '💳' },
+    { id: 'prestamo', name: 'Préstamo', icon: '🏦' },
+  ],
+  ahorros: [
+    { id: 'emergencias', name: 'Fondo Emergencias', icon: '🆘' },
+    { id: 'vacaciones', name: 'Vacaciones', icon: '✈️' },
+    { id: 'meta_especial', name: 'Meta Especial', icon: '🎯' },
+  ],
+  inversiones: [
+    { id: 'acciones', name: 'Acciones', icon: '📊' },
+    { id: 'crypto', name: 'Criptomonedas', icon: '₿' },
+    { id: 'fondos', name: 'Fondos', icon: '📈' },
+    { id: 'negocio', name: 'Negocio', icon: '🏪' },
+  ],
+};
 
-  // Available categories (exclude already used ones, unless editing that category)
-  const availableCategories = DEFAULT_EXPENSE_CATEGORIES.filter(
-    cat => !existingCategories.includes(cat.name) || cat.name === initialCategory
-  );
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-
-    if (!category) {
-      setError('Selecciona una categoría');
-      return;
-    }
-    if (!amount || parseFloat(amount) <= 0) {
-      setError('El monto debe ser mayor a 0');
-      return;
-    }
-
-    try {
-      await onSubmit(category, parseFloat(amount));
-      onClose();
-    } catch (err) {
-      setError('Error al guardar. Intenta de nuevo.');
-    }
-  };
-
-  return (
-    <Modal isOpen={isOpen} onClose={onClose} title={initialCategory ? '✏️ Editar Presupuesto' : '➕ Nuevo Presupuesto'} size="md">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {error && (
-          <div className="p-3 bg-danger-500/20 border border-danger-500/50 rounded-lg text-danger-400 text-sm">
-            ⚠️ {error}
-          </div>
-        )}
-
-        <div>
-          <label className="block mb-2 text-sm font-semibold text-white/90">Categoría *</label>
-          {availableCategories.length === 0 ? (
-            <div className="p-4 bg-white/5 rounded-xl text-center text-white/60">
-              Ya tienes presupuestos para todas las categorías
-            </div>
-          ) : (
-            <div className="grid grid-cols-3 gap-2 max-h-64 overflow-y-auto p-1">
-              {availableCategories.map(cat => (
-                <button
-                  key={cat.id}
-                  type="button"
-                  onClick={() => setCategory(cat.name)}
-                  disabled={!!initialCategory && initialCategory !== cat.name}
-                  className={cn(
-                    'flex flex-col items-center gap-1 p-3 rounded-xl transition-all border-2',
-                    category === cat.name 
-                      ? 'bg-primary-500/20 border-primary-500' 
-                      : 'bg-white/5 border-transparent hover:bg-white/10 hover:border-white/20',
-                    !!initialCategory && initialCategory !== cat.name && 'opacity-40 cursor-not-allowed'
-                  )}
-                >
-                  <span className="text-2xl">{cat.icon}</span>
-                  <span className="text-xs text-white/70 text-center">{cat.name}</span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <Input 
-          label="Límite Mensual *" 
-          type="number" 
-          step="0.01" 
-          min="0.01" 
-          placeholder="Ej: 500.00" 
-          value={amount} 
-          onChange={e => setAmount(e.target.value)} 
-          leftIcon={<span className="text-white/50">$</span>} 
-        />
-
-        {category && amount && (
-          <div className="p-3 bg-white/5 rounded-xl">
-            <p className="text-sm text-white/60 text-center">
-              Límite de <strong className="text-white">{formatCurrency(parseFloat(amount) || 0, 'USD')}</strong> para <strong className="text-white">{category}</strong>
-            </p>
-          </div>
-        )}
-
-        <div className="flex gap-3 pt-2">
-          <Button type="button" variant="secondary" onClick={onClose} fullWidth disabled={isSubmitting}>
-            Cancelar
-          </Button>
-          <Button type="submit" fullWidth disabled={!category || !amount || isSubmitting} isLoading={isSubmitting}>
-            {initialCategory ? 'Actualizar' : 'Crear Presupuesto'}
-          </Button>
-        </div>
-      </form>
-    </Modal>
-  );
+// Custom Tooltip
+const CustomTooltip = ({ active, payload, currency }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-black/90 border border-white/20 rounded-lg p-3 shadow-xl">
+        {payload.map((entry: any, index: number) => (
+          <p key={index} className="text-sm" style={{ color: entry.color }}>
+            {entry.name}: {formatCurrency(entry.value, currency)}
+          </p>
+        ))}
+      </div>
+    );
+  }
+  return null;
 };
 
 export const BudgetsPage: React.FC = () => {
-  const { expenses, currency, theme } = useStore();
-  const { budgets, update: updateBudget, remove: deleteBudget } = useBudgets();
+  const { expenses, incomes, currency, theme } = useStore();
+  const { budgets, update: updateBudget } = useBudgets();
   const themeColors = getThemeColors(theme);
 
-  const [showForm, setShowForm] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<string | undefined>();
-  const [editingAmount, setEditingAmount] = useState<number | undefined>();
-  const [deletingBudget, setDeletingBudget] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editingGroup, setEditingGroup] = useState<string | null>(null);
+  const [localBudgets, setLocalBudgets] = useState<Record<string, number>>({});
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
 
   // Safe arrays
   const safeExpenses = Array.isArray(expenses) ? expenses : [];
+  const safeIncomes = Array.isArray(incomes) ? incomes : [];
   const safeBudgets = budgets || {};
-  const existingCategories = Object.keys(safeBudgets);
 
-  // Get current month expenses
-  const monthlyExpenses = useMemo(() => filterByMonth(safeExpenses), [safeExpenses]);
-  const expensesByCategory = useMemo(() => groupByCategory(monthlyExpenses), [monthlyExpenses]);
+  // Get current month transactions
+  const currentMonth = new Date().getMonth();
+  const currentYear = new Date().getFullYear();
 
-  // Calculate budget status for each category
-  const budgetStatus = useMemo(() => {
-    return Object.entries(safeBudgets)
-      .map(([category, budget]) => {
-        const spent = expensesByCategory[category] || 0;
-        const percentage = budget > 0 ? (spent / budget) * 100 : 0;
-        const remaining = budget - spent;
-        const status = percentage >= 100 ? 'exceeded' : percentage >= 85 ? 'critical' : percentage >= 70 ? 'warning' : 'safe';
-        return { category, budget, spent, percentage, remaining, status };
-      })
-      .sort((a, b) => b.percentage - a.percentage);
-  }, [safeBudgets, expensesByCategory]);
+  const monthlyExpenses = useMemo(() => {
+    return safeExpenses.filter(e => {
+      const d = new Date(e.date);
+      return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+    });
+  }, [safeExpenses, currentMonth, currentYear]);
+
+  const monthlyIncomes = useMemo(() => {
+    return safeIncomes.filter(i => {
+      const d = new Date(i.date);
+      return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+    });
+  }, [safeIncomes, currentMonth, currentYear]);
+
+  // Calculate totals by category
+  const expensesByCategory = useMemo(() => {
+    return monthlyExpenses.reduce((acc, e) => {
+      const cat = e.category?.toLowerCase().replace(/\s+/g, '_') || 'otros';
+      acc[cat] = (acc[cat] || 0) + (Number(e.amount) || 0);
+      return acc;
+    }, {} as Record<string, number>);
+  }, [monthlyExpenses]);
+
+  const incomesByCategory = useMemo(() => {
+    return monthlyIncomes.reduce((acc, i) => {
+      const cat = i.category?.toLowerCase().replace(/\s+/g, '_') || 'otros';
+      acc[cat] = (acc[cat] || 0) + (Number(i.amount) || 0);
+      return acc;
+    }, {} as Record<string, number>);
+  }, [monthlyIncomes]);
+
+  // Calculate group totals
+  const groupTotals = useMemo(() => {
+    const totals: Record<string, { estimated: number; actual: number }> = {};
+
+    BUDGET_GROUPS.forEach(group => {
+      const categories = CATEGORIES_BY_GROUP[group.id] || [];
+      let estimated = 0;
+      let actual = 0;
+
+      categories.forEach(cat => {
+        estimated += Number(safeBudgets[cat.id]) || 0;
+        
+        if (group.id === 'ingresos') {
+          actual += incomesByCategory[cat.id] || incomesByCategory[cat.name.toLowerCase()] || 0;
+        } else {
+          actual += expensesByCategory[cat.id] || expensesByCategory[cat.name.toLowerCase()] || 0;
+        }
+      });
+
+      // Also sum from category names that might match
+      if (group.id === 'ingresos') {
+        actual = actual || monthlyIncomes.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+      }
+
+      totals[group.id] = { estimated, actual };
+    });
+
+    return totals;
+  }, [safeBudgets, expensesByCategory, incomesByCategory, monthlyIncomes]);
 
   // Summary calculations
   const summary = useMemo(() => {
-    const totalBudget = Object.values(safeBudgets).reduce((sum, b) => sum + b, 0);
-    const totalSpent = budgetStatus.reduce((sum, b) => sum + b.spent, 0);
-    const overBudgetCount = budgetStatus.filter(b => b.status === 'exceeded').length;
-    const warningCount = budgetStatus.filter(b => ['critical', 'warning'].includes(b.status)).length;
-    return { totalBudget, totalSpent, totalRemaining: totalBudget - totalSpent, overBudgetCount, warningCount };
-  }, [safeBudgets, budgetStatus]);
+    const totalIncome = groupTotals.ingresos?.actual || 0;
+    const totalEssential = groupTotals.gastos_esenciales?.actual || 0;
+    const totalDiscretionary = groupTotals.gastos_discrecionales?.actual || 0;
+    const totalDebt = groupTotals.pago_deudas?.actual || 0;
+    const totalSavings = groupTotals.ahorros?.actual || 0;
+    const totalInvestments = groupTotals.inversiones?.actual || 0;
 
-  // Handlers
-  const handleOpenCreate = () => {
-    setEditingCategory(undefined);
-    setEditingAmount(undefined);
-    setShowForm(true);
+    const totalExpenses = totalEssential + totalDiscretionary + totalDebt;
+    const remanente = totalIncome - totalExpenses - totalSavings - totalInvestments;
+    const savingsRate = totalIncome > 0 ? ((totalSavings + totalInvestments) / totalIncome) * 100 : 0;
+
+    return {
+      totalIncome,
+      totalExpenses,
+      totalSavings,
+      totalInvestments,
+      remanente,
+      savingsRate,
+    };
+  }, [groupTotals]);
+
+  // Start editing a group
+  const startEditing = (groupId: string) => {
+    const categories = CATEGORIES_BY_GROUP[groupId] || [];
+    const initial: Record<string, number> = {};
+    categories.forEach(cat => {
+      initial[cat.id] = safeBudgets[cat.id] || 0;
+    });
+    setLocalBudgets(initial);
+    setEditingGroup(groupId);
   };
 
-  const handleOpenEdit = (category: string, amount: number) => {
-    setEditingCategory(category);
-    setEditingAmount(amount);
-    setShowForm(true);
-  };
-
-  const handleCloseForm = () => {
-    setShowForm(false);
-    setEditingCategory(undefined);
-    setEditingAmount(undefined);
-  };
-
-  const handleSave = async (category: string, amount: number) => {
-    setIsSubmitting(true);
+  // Save budgets
+  const saveBudgets = async () => {
     try {
-      await updateBudget(category, amount);
-      showSuccess(editingCategory ? 'Presupuesto actualizado' : 'Presupuesto creado');
+      for (const [catId, amount] of Object.entries(localBudgets)) {
+        if (amount > 0) {
+          await updateBudget(catId, amount);
+        }
+      }
+      showSuccess('Presupuesto actualizado');
+      setEditingGroup(null);
     } catch (error) {
-      console.error('Error saving budget:', error);
-      showError('Error al guardar el presupuesto');
-      throw error;
-    } finally {
-      setIsSubmitting(false);
+      showError('Error al guardar');
     }
   };
 
-  const handleDelete = async () => {
-    if (!deletingBudget) return;
-    setIsSubmitting(true);
-    try {
-      await deleteBudget(deletingBudget);
-      showSuccess('Presupuesto eliminado');
-      setDeletingBudget(null);
-    } catch (error) {
-      console.error('Error deleting budget:', error);
-      showError('Error al eliminar');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  // Chart data for comparison
+  const comparisonData = BUDGET_GROUPS.map(group => ({
+    name: group.name.replace('Gastos ', 'G.').replace('Pago de ', ''),
+    Estimado: groupTotals[group.id]?.estimated || 0,
+    Real: groupTotals[group.id]?.actual || 0,
+    fill: group.color,
+  }));
 
-  const getStatusColor = (status: string) => {
-    if (status === 'exceeded' || status === 'critical') return 'danger';
-    if (status === 'warning') return 'warning';
-    return 'success';
-  };
+  // Pie chart data - where money goes
+  const pieData = BUDGET_GROUPS
+    .filter(g => g.type === 'expense' && (groupTotals[g.id]?.actual || 0) > 0)
+    .map(group => ({
+      name: group.name.replace('Gastos ', ''),
+      value: groupTotals[group.id]?.actual || 0,
+      fill: group.color,
+    }));
 
-  const getStatusIcon = (status: string) => {
-    if (status === 'exceeded') return '🔴';
-    if (status === 'critical') return '🟠';
-    if (status === 'warning') return '🟡';
-    return '🟢';
-  };
+  const totalPie = pieData.reduce((sum, d) => sum + d.value, 0);
 
   return (
-    <div className="space-y-6 pb-8">
+    <div className="space-y-6 pb-24">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="text-center flex-1">
-          <h1 className="text-2xl font-bold text-white">💰 Presupuestos</h1>
-          <p className="text-white/60 mt-1">{existingCategories.length} categorías configuradas</p>
-        </div>
-        <Button leftIcon={<Plus className="w-4 h-4" />} onClick={handleOpenCreate}>
-          Nuevo
-        </Button>
+      <div className="text-center">
+        <h1 className="text-2xl font-bold text-white flex items-center justify-center gap-2">
+          <PiggyBank className="w-7 h-7" style={{ color: themeColors.primary }} />
+          Presupuesto Mensual
+        </h1>
+        <p className="text-white/60 mt-1">
+          {new Date().toLocaleDateString('es', { month: 'long', year: 'numeric' })}
+        </p>
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="text-center p-4">
-          <PiggyBank className="w-8 h-8 mx-auto mb-2" style={{ color: themeColors.primary }} />
-          <p className="text-xs text-white/50">Total</p>
-          <p className="text-lg font-bold text-white">{formatCurrency(summary.totalBudget, currency)}</p>
+      <div className="grid grid-cols-2 gap-3">
+        <Card className="p-4 text-center bg-gradient-to-br from-success-500/20 to-transparent">
+          <TrendingUp className="w-6 h-6 mx-auto mb-1 text-success-400" />
+          <p className="text-xs text-white/50">Ingresos</p>
+          <p className="text-lg font-bold text-success-400">{formatCurrency(summary.totalIncome, currency)}</p>
         </Card>
-        <Card className="text-center p-4">
-          <BarChart2 className="w-8 h-8 mx-auto mb-2" style={{ color: themeColors.primary }} />
-          <p className="text-xs text-white/50">Gastado</p>
-          <p className="text-lg font-bold text-white">{formatCurrency(summary.totalSpent, currency)}</p>
+        <Card className="p-4 text-center bg-gradient-to-br from-danger-500/20 to-transparent">
+          <TrendingDown className="w-6 h-6 mx-auto mb-1 text-danger-400" />
+          <p className="text-xs text-white/50">Gastos</p>
+          <p className="text-lg font-bold text-danger-400">{formatCurrency(summary.totalExpenses, currency)}</p>
         </Card>
-        <Card className="text-center p-4">
-          <TrendingUp className="w-8 h-8 mx-auto mb-2 text-success-400" />
-          <p className="text-xs text-white/50">Disponible</p>
-          <p className={cn('text-lg font-bold', summary.totalRemaining >= 0 ? 'text-success-400' : 'text-danger-400')}>
-            {formatCurrency(summary.totalRemaining, currency)}
+        <Card className="p-4 text-center bg-gradient-to-br from-purple-500/20 to-transparent">
+          <Target className="w-6 h-6 mx-auto mb-1 text-purple-400" />
+          <p className="text-xs text-white/50">Ahorro + Inversión</p>
+          <p className="text-lg font-bold text-purple-400">
+            {formatCurrency(summary.totalSavings + summary.totalInvestments, currency)}
           </p>
         </Card>
-        <Card className="text-center p-4">
-          <AlertTriangle className="w-8 h-8 mx-auto mb-2 text-warning-400" />
-          <p className="text-xs text-white/50">Alertas</p>
-          <p className="text-lg font-bold text-warning-400">{summary.overBudgetCount + summary.warningCount}</p>
+        <Card className={cn(
+          'p-4 text-center',
+          summary.remanente >= 0 
+            ? 'bg-gradient-to-br from-success-500/20 to-transparent' 
+            : 'bg-gradient-to-br from-danger-500/20 to-transparent'
+        )}>
+          <Wallet className="w-6 h-6 mx-auto mb-1" style={{ color: summary.remanente >= 0 ? '#22C55E' : '#EF4444' }} />
+          <p className="text-xs text-white/50">Remanente</p>
+          <p className={cn('text-lg font-bold', summary.remanente >= 0 ? 'text-success-400' : 'text-danger-400')}>
+            {formatCurrency(summary.remanente, currency)}
+          </p>
         </Card>
       </div>
 
-      {/* Progress Overview */}
-      {budgetStatus.length > 0 && (
-        <Card className="p-4">
-          <h2 className="text-lg font-bold text-white mb-4 text-center">Progreso General</h2>
-          <div className="flex justify-between text-sm mb-2">
-            <span className="text-white/60">Uso del presupuesto</span>
-            <span className="font-semibold text-white">
-              {summary.totalBudget > 0 ? ((summary.totalSpent / summary.totalBudget) * 100).toFixed(1) : 0}%
-            </span>
-          </div>
-          <ProgressBar value={summary.totalSpent} max={summary.totalBudget} size="lg" />
-          <div className="flex justify-center gap-6 text-sm mt-4">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-success-500" />
-              <span className="text-white/60">OK</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-warning-500" />
-              <span className="text-white/60">Alerta</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-danger-500" />
-              <span className="text-white/60">Excedido</span>
-            </div>
-          </div>
-        </Card>
-      )}
-
-      {/* Budget List */}
-      {budgetStatus.length === 0 ? (
-        <Card className="p-8">
-          <EmptyState 
-            icon="💰" 
-            title="Sin presupuestos" 
-            description="Crea presupuestos para controlar tus gastos por categoría" 
-            action={<Button onClick={handleOpenCreate}>Crear Presupuesto</Button>} 
+      {/* Savings Rate */}
+      <Card className="p-4">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-white font-medium">Tasa de Ahorro e Inversión</span>
+          <Badge variant={summary.savingsRate >= 20 ? 'success' : summary.savingsRate >= 10 ? 'warning' : 'danger'}>
+            {summary.savingsRate.toFixed(1)}%
+          </Badge>
+        </div>
+        <div className="h-3 bg-white/10 rounded-full overflow-hidden">
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: `${Math.min(summary.savingsRate, 100)}%` }}
+            transition={{ duration: 0.8 }}
+            className={cn(
+              'h-full rounded-full',
+              summary.savingsRate >= 20 ? 'bg-success-500' : summary.savingsRate >= 10 ? 'bg-warning-500' : 'bg-danger-500'
+            )}
           />
-        </Card>
-      ) : (
-        <div className="grid md:grid-cols-2 gap-4">
-          {budgetStatus.map((budget, index) => {
-            const cat = DEFAULT_EXPENSE_CATEGORIES.find(c => c.name === budget.category);
+        </div>
+        <div className="flex justify-between text-xs text-white/40 mt-1">
+          <span>0%</span>
+          <span className="text-warning-400">Meta: 20%</span>
+          <span>100%</span>
+        </div>
+      </Card>
+
+      {/* View Toggle */}
+      <div className="flex justify-center gap-2">
+        <Button 
+          size="sm" 
+          variant={viewMode === 'cards' ? 'primary' : 'secondary'}
+          onClick={() => setViewMode('cards')}
+        >
+          📊 Tarjetas
+        </Button>
+        <Button 
+          size="sm" 
+          variant={viewMode === 'table' ? 'primary' : 'secondary'}
+          onClick={() => setViewMode('table')}
+        >
+          📈 Gráficos
+        </Button>
+      </div>
+
+      {/* Cards View - 6 Budget Groups */}
+      {viewMode === 'cards' && (
+        <div className="space-y-4">
+          {BUDGET_GROUPS.map((group, idx) => {
+            const { estimated, actual } = groupTotals[group.id] || { estimated: 0, actual: 0 };
+            const percentage = estimated > 0 ? (actual / estimated) * 100 : (actual > 0 ? 100 : 0);
+            const diff = actual - estimated;
+            const isIncome = group.type === 'income';
+            const isGood = isIncome ? actual >= estimated : actual <= estimated;
+
             return (
-              <motion.div 
-                key={budget.category} 
-                initial={{ opacity: 0, y: 20 }} 
-                animate={{ opacity: 1, y: 0 }} 
-                transition={{ delay: index * 0.05 }}
+              <motion.div
+                key={group.id}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: idx * 0.1 }}
               >
-                <Card className={cn('relative overflow-hidden', budget.status === 'exceeded' && 'border-danger-500/50')}>
-                  {/* Status glow effect */}
-                  <div className={cn(
-                    'absolute top-0 right-0 w-20 h-20 -mr-6 -mt-6 rounded-full opacity-20 blur-xl',
-                    budget.status === 'exceeded' && 'bg-danger-500',
-                    budget.status === 'critical' && 'bg-warning-500',
-                    budget.status === 'warning' && 'bg-warning-500',
-                    budget.status === 'safe' && 'bg-success-500'
-                  )} />
-                  
-                  {/* Header */}
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center text-2xl">
-                        {cat?.icon || '📦'}
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-white">{budget.category}</h3>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className="text-lg">{getStatusIcon(budget.status)}</span>
-                          <Badge variant={getStatusColor(budget.status)} size="sm">
-                            {budget.percentage.toFixed(0)}%
-                          </Badge>
-                        </div>
+                <Card 
+                  className={cn(
+                    'p-4 cursor-pointer hover:scale-[1.01] transition-all relative overflow-hidden',
+                    !isGood && estimated > 0 && 'border-warning-500/50'
+                  )}
+                  onClick={() => startEditing(group.id)}
+                >
+                  {/* Glow */}
+                  <div 
+                    className="absolute top-0 right-0 w-24 h-24 -mr-8 -mt-8 rounded-full opacity-20 blur-2xl"
+                    style={{ backgroundColor: group.color }}
+                  />
+
+                  <div className="flex items-center gap-3 mb-3">
+                    <div 
+                      className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl"
+                      style={{ backgroundColor: `${group.color}20` }}
+                    >
+                      {group.icon}
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-white">{group.name}</h3>
+                      <div className="flex items-center gap-2">
+                        <Badge 
+                          variant={isGood || estimated === 0 ? 'success' : 'warning'} 
+                          size="sm"
+                        >
+                          {percentage.toFixed(0)}%
+                        </Badge>
+                        {!isGood && estimated > 0 && (
+                          <AlertTriangle className="w-4 h-4 text-warning-400" />
+                        )}
                       </div>
                     </div>
-                    <div className="flex gap-1">
-                      <button 
-                        onClick={() => handleOpenEdit(budget.category, budget.budget)}
-                        className="p-2 rounded-lg hover:bg-white/10 transition-colors"
-                        title="Editar"
-                      >
-                        <Edit2 className="w-4 h-4 text-white/40 hover:text-white" />
-                      </button>
-                      <button 
-                        onClick={() => setDeletingBudget(budget.category)}
-                        className="p-2 rounded-lg hover:bg-danger-500/20 transition-colors"
-                        title="Eliminar"
-                      >
-                        <Trash2 className="w-4 h-4 text-danger-400/60 hover:text-danger-400" />
-                      </button>
-                    </div>
+                    <Edit2 className="w-4 h-4 text-white/30" />
                   </div>
-                  
-                  {/* Progress Bar */}
-                  <ProgressBar value={budget.spent} max={budget.budget} variant={getStatusColor(budget.status)} />
-                  
-                  {/* Details */}
-                  <div className="flex justify-between text-sm mt-3">
+
+                  {/* Progress */}
+                  <div className="h-2 bg-white/10 rounded-full overflow-hidden mb-3">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${Math.min(percentage, 100)}%` }}
+                      transition={{ duration: 0.5, delay: 0.2 + idx * 0.1 }}
+                      className="h-full rounded-full"
+                      style={{ backgroundColor: group.color }}
+                    />
+                  </div>
+
+                  {/* Numbers */}
+                  <div className="grid grid-cols-3 gap-2 text-sm">
                     <div>
-                      <p className="text-white/50">Gastado</p>
-                      <p className="font-semibold text-white">{formatCurrency(budget.spent, currency)}</p>
+                      <p className="text-white/40 text-xs">Estimado</p>
+                      <p className="font-bold text-white">{formatCurrency(estimated, currency)}</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-white/40 text-xs">Real</p>
+                      <p className="font-bold" style={{ color: group.color }}>
+                        {formatCurrency(actual, currency)}
+                      </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-white/50">Límite</p>
-                      <p className="font-semibold text-white">{formatCurrency(budget.budget, currency)}</p>
+                      <p className="text-white/40 text-xs">Diferencia</p>
+                      <p className={cn('font-bold', isGood ? 'text-success-400' : 'text-warning-400')}>
+                        {diff >= 0 ? '+' : ''}{formatCurrency(diff, currency)}
+                      </p>
                     </div>
-                  </div>
-                  
-                  {/* Remaining */}
-                  <div className={cn(
-                    'flex items-center justify-center gap-2 p-3 rounded-xl mt-3',
-                    budget.remaining >= 0 ? 'bg-success-500/10' : 'bg-danger-500/10'
-                  )}>
-                    {budget.remaining >= 0 
-                      ? <TrendingUp className="w-4 h-4 text-success-400" /> 
-                      : <TrendingDown className="w-4 h-4 text-danger-400" />
-                    }
-                    <span className={cn('font-semibold', budget.remaining >= 0 ? 'text-success-400' : 'text-danger-400')}>
-                      {budget.remaining >= 0 ? 'Disponible: ' : 'Excedido: '}
-                      {formatCurrency(Math.abs(budget.remaining), currency)}
-                    </span>
                   </div>
                 </Card>
               </motion.div>
@@ -403,35 +413,168 @@ export const BudgetsPage: React.FC = () => {
         </div>
       )}
 
-      {/* Form Modal */}
-      <BudgetForm 
-        isOpen={showForm} 
-        onClose={handleCloseForm} 
-        initialCategory={editingCategory}
-        initialAmount={editingAmount}
-        existingCategories={existingCategories}
-        onSubmit={handleSave}
-        isSubmitting={isSubmitting}
-      />
+      {/* Charts View */}
+      {viewMode === 'table' && (
+        <div className="space-y-6">
+          {/* Bar Chart - Estimado vs Real */}
+          <Card className="p-4">
+            <h3 className="font-semibold text-white mb-4 text-center">📊 Estimado vs Real</h3>
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={comparisonData} layout="vertical" margin={{ left: 10, right: 10 }}>
+                <XAxis 
+                  type="number" 
+                  tickFormatter={v => `$${(v/1000).toFixed(0)}k`} 
+                  tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 10 }} 
+                />
+                <YAxis 
+                  type="category" 
+                  dataKey="name" 
+                  tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 10 }} 
+                  width={90} 
+                />
+                <Tooltip content={<CustomTooltip currency={currency} />} />
+                <Legend wrapperStyle={{ fontSize: '11px' }} />
+                <Bar dataKey="Estimado" fill="#6366F1" radius={[0, 4, 4, 0]} />
+                <Bar dataKey="Real" fill="#22C55E" radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </Card>
 
-      {/* Delete Confirmation Modal */}
-      <Modal isOpen={!!deletingBudget} onClose={() => setDeletingBudget(null)} title="🗑️ Eliminar Presupuesto" size="sm">
-        <div className="text-center">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-danger-500/20 flex items-center justify-center">
-            <Trash2 className="w-8 h-8 text-danger-400" />
-          </div>
-          <p className="text-white/80 mb-2">¿Eliminar el presupuesto de</p>
-          <p className="text-xl font-bold text-white mb-6">"{deletingBudget}"?</p>
-          <div className="flex gap-3">
-            <Button variant="secondary" onClick={() => setDeletingBudget(null)} fullWidth disabled={isSubmitting}>
-              Cancelar
-            </Button>
-            <Button variant="danger" onClick={handleDelete} fullWidth isLoading={isSubmitting}>
-              Eliminar
-            </Button>
-          </div>
+          {/* Pie Chart - Distribution */}
+          <Card className="p-4">
+            <h3 className="font-semibold text-white mb-4 text-center">🎯 ¿A Dónde Va Mi Dinero?</h3>
+            {pieData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={280}>
+                <PieChart>
+                  <Pie
+                    data={pieData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={90}
+                    paddingAngle={3}
+                    dataKey="value"
+                  >
+                    {pieData.map((entry, index) => (
+                      <Cell key={index} fill={entry.fill} />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<CustomTooltip currency={currency} />} />
+                  <Legend 
+                    formatter={(value, entry: any) => {
+                      const item = pieData.find(d => d.name === value);
+                      const pct = item && totalPie > 0 ? ((item.value / totalPie) * 100).toFixed(0) : 0;
+                      return `${value} (${pct}%)`;
+                    }}
+                    wrapperStyle={{ fontSize: '11px' }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-[280px] flex items-center justify-center text-white/50">
+                <div className="text-center">
+                  <BarChart2 className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                  <p>Agrega gastos para ver la distribución</p>
+                </div>
+              </div>
+            )}
+          </Card>
         </div>
-      </Modal>
+      )}
+
+      {/* Edit Modal */}
+      <AnimatePresence>
+        {editingGroup && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm"
+            onClick={() => setEditingGroup(null)}
+          >
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 25 }}
+              className="w-full max-w-lg bg-card-bg rounded-t-3xl p-6 max-h-[80vh] overflow-y-auto"
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Modal Header */}
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl">
+                    {BUDGET_GROUPS.find(g => g.id === editingGroup)?.icon}
+                  </span>
+                  <h2 className="text-xl font-bold text-white">
+                    {BUDGET_GROUPS.find(g => g.id === editingGroup)?.name}
+                  </h2>
+                </div>
+                <button 
+                  onClick={() => setEditingGroup(null)}
+                  className="p-2 rounded-full bg-white/10 hover:bg-white/20"
+                >
+                  <X className="w-5 h-5 text-white" />
+                </button>
+              </div>
+
+              {/* Total */}
+              <div 
+                className="p-4 rounded-xl mb-6 text-center"
+                style={{ backgroundColor: `${BUDGET_GROUPS.find(g => g.id === editingGroup)?.color}20` }}
+              >
+                <p className="text-white/60 text-sm">Total Presupuestado</p>
+                <p className="text-2xl font-bold text-white">
+                  {formatCurrency(
+                    Object.values(localBudgets).reduce((sum, v) => sum + (v || 0), 0),
+                    currency
+                  )}
+                </p>
+              </div>
+
+              {/* Categories */}
+              <div className="space-y-4">
+                {(CATEGORIES_BY_GROUP[editingGroup] || []).map(cat => (
+                  <div key={cat.id} className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center text-xl">
+                      {cat.icon}
+                    </div>
+                    <div className="flex-1">
+                      <label className="text-sm text-white/80 block mb-1">{cat.name}</label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50">$</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={localBudgets[cat.id] || ''}
+                          onChange={e => setLocalBudgets(prev => ({
+                            ...prev,
+                            [cat.id]: parseFloat(e.target.value) || 0
+                          }))}
+                          placeholder="0.00"
+                          className="w-full bg-white/10 border border-white/20 rounded-lg px-8 py-2 text-white placeholder-white/30 focus:outline-none focus:border-primary-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3 mt-6">
+                <Button variant="secondary" onClick={() => setEditingGroup(null)} fullWidth>
+                  Cancelar
+                </Button>
+                <Button onClick={saveBudgets} fullWidth>
+                  <Save className="w-4 h-4 mr-2" />
+                  Guardar
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
