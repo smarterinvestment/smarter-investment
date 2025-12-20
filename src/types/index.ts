@@ -166,10 +166,13 @@ export const INVESTMENT_CATEGORIES: Category[] = [
   { id: 'otra-inversion', name: 'Otra Inversión', icon: '💎', color: '#042F2E', type: 'expense', group: 'inversiones' },
 ];
 
-// Combined for backwards compatibility
+// Combined for backwards compatibility - ALL expense categories
 export const DEFAULT_EXPENSE_CATEGORIES: Category[] = [
   ...ESSENTIAL_EXPENSE_CATEGORIES,
   ...DISCRETIONARY_EXPENSE_CATEGORIES,
+  ...DEBT_CATEGORIES,
+  ...SAVINGS_CATEGORIES,
+  ...INVESTMENT_CATEGORIES,
 ];
 
 export const DEFAULT_INCOME_CATEGORIES: Category[] = INCOME_CATEGORIES;

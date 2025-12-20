@@ -288,34 +288,40 @@ export const BudgetsPage: React.FC = () => {
         </p>
       </div>
 
-      {/* Summary Cards */}
+      {/* Summary Cards - Glassmorphism Effect */}
       <div className="grid grid-cols-2 gap-3">
-        <Card className="p-4 text-center bg-gradient-to-br from-success-500/20 to-transparent">
-          <TrendingUp className="w-6 h-6 mx-auto mb-1 text-success-400" />
-          <p className="text-xs text-white/50">Ingresos</p>
-          <p className="text-lg font-bold text-success-400">{formatCurrency(summary.totalIncome, currency)}</p>
+        <Card className="p-4 text-center backdrop-blur-xl bg-white/5 border border-white/10 shadow-lg">
+          <div className="w-10 h-10 mx-auto mb-2 rounded-xl bg-success-500/20 flex items-center justify-center">
+            <TrendingUp className="w-5 h-5 text-success-400" />
+          </div>
+          <p className="text-xs text-white/60 mb-1">Ingresos</p>
+          <p className="text-xl font-bold text-success-400">{formatCurrency(summary.totalIncome, currency)}</p>
         </Card>
-        <Card className="p-4 text-center bg-gradient-to-br from-danger-500/20 to-transparent">
-          <TrendingDown className="w-6 h-6 mx-auto mb-1 text-danger-400" />
-          <p className="text-xs text-white/50">Gastos</p>
-          <p className="text-lg font-bold text-danger-400">{formatCurrency(summary.totalExpenses, currency)}</p>
+        <Card className="p-4 text-center backdrop-blur-xl bg-white/5 border border-white/10 shadow-lg">
+          <div className="w-10 h-10 mx-auto mb-2 rounded-xl bg-danger-500/20 flex items-center justify-center">
+            <TrendingDown className="w-5 h-5 text-danger-400" />
+          </div>
+          <p className="text-xs text-white/60 mb-1">Gastos</p>
+          <p className="text-xl font-bold text-danger-400">{formatCurrency(summary.totalExpenses, currency)}</p>
         </Card>
-        <Card className="p-4 text-center bg-gradient-to-br from-purple-500/20 to-transparent">
-          <Target className="w-6 h-6 mx-auto mb-1 text-purple-400" />
-          <p className="text-xs text-white/50">Ahorro + Inversión</p>
-          <p className="text-lg font-bold text-purple-400">
+        <Card className="p-4 text-center backdrop-blur-xl bg-white/5 border border-white/10 shadow-lg">
+          <div className="w-10 h-10 mx-auto mb-2 rounded-xl bg-purple-500/20 flex items-center justify-center">
+            <Target className="w-5 h-5 text-purple-400" />
+          </div>
+          <p className="text-xs text-white/60 mb-1">Ahorro + Inversión</p>
+          <p className="text-xl font-bold text-purple-400">
             {formatCurrency(summary.totalSavings + summary.totalInvestments, currency)}
           </p>
         </Card>
-        <Card className={cn(
-          'p-4 text-center',
-          summary.remanente >= 0 
-            ? 'bg-gradient-to-br from-success-500/20 to-transparent' 
-            : 'bg-gradient-to-br from-danger-500/20 to-transparent'
-        )}>
-          <Wallet className="w-6 h-6 mx-auto mb-1" style={{ color: summary.remanente >= 0 ? '#22C55E' : '#EF4444' }} />
-          <p className="text-xs text-white/50">Remanente</p>
-          <p className={cn('text-lg font-bold', summary.remanente >= 0 ? 'text-success-400' : 'text-danger-400')}>
+        <Card className="p-4 text-center backdrop-blur-xl bg-white/5 border border-white/10 shadow-lg">
+          <div className={cn(
+            "w-10 h-10 mx-auto mb-2 rounded-xl flex items-center justify-center",
+            summary.remanente >= 0 ? "bg-success-500/20" : "bg-danger-500/20"
+          )}>
+            <Wallet className="w-5 h-5" style={{ color: summary.remanente >= 0 ? '#22C55E' : '#EF4444' }} />
+          </div>
+          <p className="text-xs text-white/60 mb-1">Remanente</p>
+          <p className={cn('text-xl font-bold', summary.remanente >= 0 ? 'text-success-400' : 'text-danger-400')}>
             {formatCurrency(summary.remanente, currency)}
           </p>
         </Card>
