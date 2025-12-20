@@ -287,12 +287,14 @@ export const ReportsPage: React.FC = () => {
         </div>
       </Card>
 
-      {/* Summary Cards */}
+      {/* Summary Cards - Glassmorphism */}
       <div className="grid grid-cols-2 gap-3">
-        <Card className="p-4 text-center bg-gradient-to-br from-success-500/20 to-transparent">
-          <TrendingUp className="w-6 h-6 mx-auto mb-1 text-success-400" />
-          <p className="text-xs text-white/50">Ingresos</p>
-          <p className="text-lg font-bold text-success-400">{formatCurrency(totals.totalIncome, currency)}</p>
+        <Card className="p-4 text-center backdrop-blur-xl bg-white/5 border border-white/10 shadow-lg">
+          <div className="w-10 h-10 mx-auto mb-2 rounded-xl bg-success-500/20 flex items-center justify-center">
+            <TrendingUp className="w-5 h-5 text-success-400" />
+          </div>
+          <p className="text-xs text-white/60 mb-1">Ingresos</p>
+          <p className="text-xl font-bold text-success-400">{formatCurrency(totals.totalIncome, currency)}</p>
           {recurringTotals.income > 0 && (
             <p className="text-xs text-white/40 mt-1">
               +{formatCurrency(recurringTotals.income, currency)} recurrente
@@ -300,10 +302,12 @@ export const ReportsPage: React.FC = () => {
           )}
         </Card>
         
-        <Card className="p-4 text-center bg-gradient-to-br from-danger-500/20 to-transparent">
-          <TrendingDown className="w-6 h-6 mx-auto mb-1 text-danger-400" />
-          <p className="text-xs text-white/50">Gastos</p>
-          <p className="text-lg font-bold text-danger-400">{formatCurrency(totals.totalExpense, currency)}</p>
+        <Card className="p-4 text-center backdrop-blur-xl bg-white/5 border border-white/10 shadow-lg">
+          <div className="w-10 h-10 mx-auto mb-2 rounded-xl bg-danger-500/20 flex items-center justify-center">
+            <TrendingDown className="w-5 h-5 text-danger-400" />
+          </div>
+          <p className="text-xs text-white/60 mb-1">Gastos</p>
+          <p className="text-xl font-bold text-danger-400">{formatCurrency(totals.totalExpense, currency)}</p>
           {recurringTotals.expense > 0 && (
             <p className="text-xs text-white/40 mt-1">
               +{formatCurrency(recurringTotals.expense, currency)} recurrente
@@ -311,24 +315,31 @@ export const ReportsPage: React.FC = () => {
           )}
         </Card>
         
-        <Card className={cn(
-          'p-4 text-center',
-          totals.balance >= 0 
-            ? 'bg-gradient-to-br from-primary-500/20 to-transparent' 
-            : 'bg-gradient-to-br from-warning-500/20 to-transparent'
-        )}>
-          <Wallet className="w-6 h-6 mx-auto mb-1" style={{ color: totals.balance >= 0 ? themeColors.primary : '#F59E0B' }} />
-          <p className="text-xs text-white/50">Balance</p>
-          <p className={cn('text-lg font-bold', totals.balance >= 0 ? 'text-primary-400' : 'text-warning-400')}>
+        <Card className="p-4 text-center backdrop-blur-xl bg-white/5 border border-white/10 shadow-lg">
+          <div className={cn(
+            "w-10 h-10 mx-auto mb-2 rounded-xl flex items-center justify-center",
+            totals.balance >= 0 ? "bg-primary-500/20" : "bg-warning-500/20"
+          )}>
+            <Wallet className="w-5 h-5" style={{ color: totals.balance >= 0 ? themeColors.primary : '#F59E0B' }} />
+          </div>
+          <p className="text-xs text-white/60 mb-1">Balance</p>
+          <p className={cn('text-xl font-bold', totals.balance >= 0 ? 'text-primary-400' : 'text-warning-400')}>
             {formatCurrency(totals.balance, currency)}
           </p>
         </Card>
         
-        <Card className="p-4 text-center bg-gradient-to-br from-purple-500/20 to-transparent">
-          <Percent className="w-6 h-6 mx-auto mb-1 text-purple-400" />
-          <p className="text-xs text-white/50">Tasa Ahorro</p>
+        <Card className="p-4 text-center backdrop-blur-xl bg-white/5 border border-white/10 shadow-lg">
+          <div className={cn(
+            "w-10 h-10 mx-auto mb-2 rounded-xl flex items-center justify-center",
+            totals.savingsRate >= 20 ? "bg-success-500/20" : totals.savingsRate >= 0 ? "bg-warning-500/20" : "bg-danger-500/20"
+          )}>
+            <Percent className="w-5 h-5" style={{ 
+              color: totals.savingsRate >= 20 ? '#22C55E' : totals.savingsRate >= 0 ? '#F59E0B' : '#EF4444' 
+            }} />
+          </div>
+          <p className="text-xs text-white/60 mb-1">Tasa Ahorro</p>
           <p className={cn(
-            'text-lg font-bold',
+            'text-xl font-bold',
             totals.savingsRate >= 20 ? 'text-success-400' : totals.savingsRate >= 0 ? 'text-warning-400' : 'text-danger-400'
           )}>
             {totals.savingsRate.toFixed(1)}%

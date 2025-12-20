@@ -32,13 +32,19 @@ const MENU_SECTIONS = [
     ]
   },
   {
-    title: 'Configuración',
+    title: 'Configuración Rápida',
     items: [
-      { id: 'profile', icon: User, label: 'Mi Perfil', description: 'Nombre, foto, email', action: 'profile' },
       { id: 'theme', icon: Palette, label: 'Tema Visual', description: 'Colores y apariencia', action: 'theme' },
       { id: 'language', icon: Globe, label: 'Idioma', description: 'Español, English', action: 'language' },
       { id: 'currency', icon: DollarSign, label: 'Moneda', description: 'USD, EUR, MXN...', action: 'currency' },
-      { id: 'notifications', icon: Bell, label: 'Notificaciones', description: 'Alertas y recordatorios', action: 'notifications' },
+    ]
+  },
+  {
+    title: 'Configuración Avanzada',
+    items: [
+      { id: 'settings', icon: Settings, label: '⚙️ Configuración Completa', description: 'Alertas, notificaciones, datos', color: '#05BFDB', page: 'settings' },
+      { id: 'notifications', icon: Bell, label: 'Alertas Inteligentes', description: 'Personaliza tus notificaciones', color: '#F59E0B', page: 'settings' },
+      { id: 'profile', icon: User, label: 'Mi Perfil', description: 'Nombre, foto, email', action: 'profile' },
     ]
   },
   {
@@ -99,9 +105,9 @@ export const MorePage: React.FC = () => {
         case 'currency': setShowCurrencyModal(true); break;
         case 'language': setShowLanguageModal(true); break;
         case 'export': setShowExportModal(true); break;
-        case 'profile': break; // TODO
-        case 'notifications': break; // TODO
-        case 'security': break; // TODO
+        case 'profile': setActivePage('settings'); break;
+        case 'notifications': setActivePage('settings'); break;
+        case 'security': setActivePage('settings'); break;
         case 'help': break; // TODO
         case 'import': break; // TODO
       }

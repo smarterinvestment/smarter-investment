@@ -1,14 +1,18 @@
 // ============================================
-// 🤖 ASSISTANT PAGE v21.2 - Smart Local Analysis
-// Works without API - Full intelligent financial advisor
+// 🤖 ASSISTANT PAGE v21.3 - AI + Local Analysis
+// Supports Claude API + Smart Local Fallback
 // ============================================
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bot, Send, Sparkles, Loader2, TrendingUp, TrendingDown, Target, AlertTriangle, Trash2, Lightbulb, PiggyBank, CreditCard, Calendar, Award, ChevronRight } from 'lucide-react';
+import { Bot, Send, Sparkles, Loader2, TrendingUp, TrendingDown, Target, AlertTriangle, Trash2, Lightbulb, PiggyBank, CreditCard, Calendar, Award, ChevronRight, Zap, Cloud, Cpu } from 'lucide-react';
 import { useStore, getThemeColors } from '../../stores/useStore';
 import { Card, Button, Badge } from '../../components/ui';
 import { cn } from '../../utils/cn';
 import { formatCurrency } from '../../utils/financial';
+
+// Check if Claude API is configured
+const CLAUDE_API_KEY = import.meta.env.VITE_CLAUDE_API_KEY;
+const USE_CLAUDE_API = !!CLAUDE_API_KEY;
 
 // Quick action prompts
 const QUICK_ACTIONS = [
@@ -27,6 +31,7 @@ interface Message {
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
+  source?: 'local' | 'claude';
 }
 
 interface FinancialAlert {
@@ -37,6 +42,66 @@ interface FinancialAlert {
   priority: number;
 }
 
+// Claude API Call Function
+const callClaudeAPI = async (
+  userMessage: string, 
+  financialContext: string,
+  conversationHistory: Message[]
+): Promise<string> => {
+  const systemPrompt = `Eres un asesor financiero personal experto y amigable llamado "Smarter Assistant". 
+Tu trabajo es ayudar a los usuarios a mejorar sus finanzas personales.
+
+CONTEXTO FINANCIERO DEL USUARIO:
+${financialContext}
+
+INSTRUCCIONES:
+1. Analiza los datos financieros del usuario y da consejos personalizados
+2. Sé específico con los números y porcentajes
+3. Usa emojis para hacer las respuestas más amigables
+4. Da consejos prácticos y accionables
+5. Si detectas problemas (gastos excesivos, poco ahorro), menciónalos con tacto
+6. Responde siempre en español
+7. Mantén las respuestas concisas pero útiles (máximo 400 palabras)
+8. Usa formato con saltos de línea y ## para títulos
+
+REGLAS:
+- Nunca des consejos de inversión específicos (acciones particulares)
+- Siempre recomienda consultar profesionales para decisiones importantes
+- Sé empático y positivo`;
+
+  const messages = [
+    ...conversationHistory.slice(-6).map(m => ({
+      role: m.role as 'user' | 'assistant',
+      content: m.content
+    })),
+    { role: 'user' as const, content: userMessage }
+  ];
+
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': CLAUDE_API_KEY!,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1024,
+      system: systemPrompt,
+      messages
+    })
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error?.message || 'API error');
+  }
+
+  const data = await response.json();
+  return data.content[0].text;
+};
+
 export const AssistantPage: React.FC = () => {
   const { user, expenses, incomes, goals, budgets, recurringTransactions, theme, currency } = useStore();
   const themeColors = getThemeColors(theme);
@@ -44,6 +109,7 @@ export const AssistantPage: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [useAI, setUseAI] = useState(USE_CLAUDE_API);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Safe arrays
@@ -612,7 +678,36 @@ export const AssistantPage: React.FC = () => {
   };
 
   // Handle send message
-  const handleSend = (text?: string) => {
+  // Generate financial context string for Claude
+  const generateFinancialContext = () => {
+    return `
+RESUMEN FINANCIERO (${new Date().toLocaleDateString('es', { month: 'long', year: 'numeric' })}):
+- Ingresos del mes: ${formatCurrency(ctx.effectiveIncome, currency)}
+- Gastos del mes: ${formatCurrency(ctx.totalExpenses, currency)}
+- Balance: ${formatCurrency(ctx.balance, currency)}
+- Tasa de ahorro: ${ctx.savingsRate.toFixed(1)}%
+- Días restantes en el mes: ${ctx.daysRemaining}
+
+TOP 5 GASTOS POR CATEGORÍA:
+${ctx.topCategories.map((c, i) => `${i + 1}. ${c.name}: ${formatCurrency(c.amount, currency)} (${c.percentage.toFixed(0)}%)`).join('\n')}
+
+METAS DE AHORRO:
+${ctx.goalsStatus.length > 0 
+  ? ctx.goalsStatus.map(g => `- ${g.name}: ${g.percentage.toFixed(0)}% completado (${formatCurrency(g.current, currency)} de ${formatCurrency(g.target, currency)})`).join('\n')
+  : 'Sin metas configuradas'}
+
+ALERTAS ACTIVAS:
+${alerts.length > 0 
+  ? alerts.map(a => `- ${a.icon} ${a.title}: ${a.message}`).join('\n')
+  : 'Sin alertas'}
+
+TRANSACCIONES RECURRENTES:
+- Ingresos fijos mensuales: ${formatCurrency(ctx.recurringIncome, currency)}
+- Gastos fijos mensuales: ${formatCurrency(ctx.recurringExpense, currency)}
+`;
+  };
+
+  const handleSend = async (text?: string) => {
     const messageText = text || input.trim();
     if (!messageText || isTyping) return;
 
@@ -627,18 +722,52 @@ export const AssistantPage: React.FC = () => {
     setInput('');
     setIsTyping(true);
 
-    // Simulate typing delay
-    setTimeout(() => {
-      const response = generateResponse(messageText);
+    try {
+      let response: string;
+      let source: 'local' | 'claude' = 'local';
+
+      if (useAI && USE_CLAUDE_API) {
+        // Use Claude API
+        try {
+          response = await callClaudeAPI(
+            messageText, 
+            generateFinancialContext(),
+            messages.filter(m => m.role !== 'assistant' || !m.content.includes('👋'))
+          );
+          source = 'claude';
+        } catch (apiError) {
+          console.error('Claude API error:', apiError);
+          // Fallback to local
+          response = generateResponse(messageText);
+          source = 'local';
+        }
+      } else {
+        // Use local analysis
+        await new Promise(resolve => setTimeout(resolve, 500 + Math.random() * 500));
+        response = generateResponse(messageText);
+      }
+
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
         content: response,
-        timestamp: new Date()
+        timestamp: new Date(),
+        source
       };
       setMessages(prev => [...prev, assistantMessage]);
+    } catch (error) {
+      console.error('Error:', error);
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: '❌ Hubo un error. Por favor intenta de nuevo.',
+        timestamp: new Date(),
+        source: 'local'
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
       setIsTyping(false);
-    }, 500 + Math.random() * 500);
+    }
   };
 
   // Clear chat
@@ -711,12 +840,45 @@ export const AssistantPage: React.FC = () => {
           <Bot className="w-6 h-6" style={{ color: themeColors.primary }} />
           Asistente Financiero
         </h1>
-        <div className="flex items-center justify-center gap-2 mt-1">
+        <div className="flex items-center justify-center gap-2 mt-2">
+          {USE_CLAUDE_API ? (
+            <button
+              onClick={() => setUseAI(!useAI)}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all",
+                useAI 
+                  ? "bg-purple-500/20 text-purple-400 border border-purple-500/30" 
+                  : "bg-white/10 text-white/60 border border-white/10"
+              )}
+            >
+              {useAI ? (
+                <>
+                  <Cloud className="w-3 h-3" />
+                  Claude AI
+                </>
+              ) : (
+                <>
+                  <Cpu className="w-3 h-3" />
+                  Local
+                </>
+              )}
+            </button>
+          ) : (
+            <Badge variant="secondary" size="sm">
+              <Cpu className="w-3 h-3 mr-1" />
+              Análisis Local
+            </Badge>
+          )}
           <Badge variant="success" size="sm">
             <Sparkles className="w-3 h-3 mr-1" />
-            Análisis Inteligente
+            Inteligente
           </Badge>
         </div>
+        {!USE_CLAUDE_API && (
+          <p className="text-xs text-white/40 mt-1">
+            Configura VITE_CLAUDE_API_KEY para usar AI
+          </p>
+        )}
       </div>
 
       {/* Alerts Banner */}
