@@ -443,7 +443,7 @@ export const GoalsPage: React.FC = () => {
           <AnimatePresence>
             {filteredGoals.map((goal, index) => {
               const progress = getGoalProgress(goal);
-              const daysLeft = getDaysUntilDeadline(goal.deadline);
+              const daysLeft = goal.deadline ? getDaysUntilDeadline(goal) : null;
               const monthlyRequired = getRequiredMonthlySaving(goal);
               const remaining = Math.max(0, (goal.targetAmount || 0) - (goal.currentAmount || 0));
 

@@ -1,14 +1,14 @@
 // ============================================
-// 💰 BUDGETS PAGE v21 - Based on Excel Structure
-// 6 Main Budget Groups with Estimado vs Real
+// 💰 BUDGETS PAGE v21.1 - With Custom Categories
+// 6 Main Budget Groups + Add Custom Categories
 // ============================================
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Edit2, Trash2, TrendingUp, TrendingDown, PiggyBank, BarChart2, DollarSign, Target, CreditCard, Wallet, Check, AlertTriangle, X, Save } from 'lucide-react';
+import { Plus, Edit2, Trash2, TrendingUp, TrendingDown, PiggyBank, BarChart2, DollarSign, Target, CreditCard, Wallet, Check, AlertTriangle, X, Save, ChevronDown, ChevronUp } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 import { useStore, getThemeColors } from '../../stores/useStore';
 import { useBudgets } from '../../hooks/useFirebaseData';
-import { Card, Button, Input, Badge } from '../../components/ui';
+import { Card, Button, Input, Badge, Modal } from '../../components/ui';
 import { cn } from '../../utils/cn';
 import { formatCurrency } from '../../utils/financial';
 import { showSuccess, showError } from '../../lib/errorHandler';
@@ -23,10 +23,10 @@ const BUDGET_GROUPS = [
   { id: 'inversiones', name: 'Inversiones', icon: '📈', color: '#14B8A6', type: 'investment' },
 ];
 
-// Categories per group (based on Excel)
-const CATEGORIES_BY_GROUP: Record<string, Array<{id: string, name: string, icon: string}>> = {
+// Default categories per group
+const DEFAULT_CATEGORIES: Record<string, Array<{id: string, name: string, icon: string}>> = {
   ingresos: [
-    { id: 'salario1', name: 'Salario Principal', icon: '💼' },
+    { id: 'salario', name: 'Salario', icon: '💼' },
     { id: 'salario2', name: 'Salario 2', icon: '💵' },
     { id: 'freelance', name: 'Freelance', icon: '💻' },
     { id: 'otros_ingresos', name: 'Otros Ingresos', icon: '💰' },
@@ -36,7 +36,7 @@ const CATEGORIES_BY_GROUP: Record<string, Array<{id: string, name: string, icon:
     { id: 'familia', name: 'Familia', icon: '👨‍👩‍👧' },
     { id: 'celular', name: 'Celular', icon: '📱' },
     { id: 'seguro_carro', name: 'Seguro Carro', icon: '🚗' },
-    { id: 'gasolina', name: 'Gasolina y Aceite', icon: '⛽' },
+    { id: 'gasolina', name: 'Gasolina', icon: '⛽' },
     { id: 'alimentacion', name: 'Alimentación Casa', icon: '🍽️' },
     { id: 'servicios', name: 'Servicios', icon: '📄' },
   ],
@@ -46,9 +46,8 @@ const CATEGORIES_BY_GROUP: Record<string, Array<{id: string, name: string, icon:
     { id: 'estudio', name: 'Estudio', icon: '📚' },
     { id: 'mecato', name: 'Mecato/Snacks', icon: '🍫' },
     { id: 'peluqueria', name: 'Peluquería', icon: '💇' },
-    { id: 'almacenamiento', name: 'Almacenamiento', icon: '☁️' },
-    { id: 'cafe', name: 'Café', icon: '☕' },
     { id: 'suscripciones', name: 'Suscripciones', icon: '📺' },
+    { id: 'cafe', name: 'Café', icon: '☕' },
   ],
   pago_deudas: [
     { id: 'vehiculo', name: 'Vehículo', icon: '🚙' },
@@ -69,6 +68,8 @@ const CATEGORIES_BY_GROUP: Record<string, Array<{id: string, name: string, icon:
   ],
 };
 
+const ICONS = ['💼', '💵', '💻', '💰', '🏠', '👨‍👩‍👧', '📱', '🚗', '⛽', '🍽️', '📄', '🎉', '🍔', '📚', '🍫', '💇', '📺', '☕', '🚙', '💳', '🏦', '🆘', '✈️', '🎯', '📊', '₿', '📈', '🏪', '🛒', '💊', '🎬', '🏋️', '🎮', '🐶', '👕', '🔧', '📦'];
+
 // Custom Tooltip
 const CustomTooltip = ({ active, payload, currency }: any) => {
   if (active && payload && payload.length) {
@@ -87,12 +88,17 @@ const CustomTooltip = ({ active, payload, currency }: any) => {
 
 export const BudgetsPage: React.FC = () => {
   const { expenses, incomes, currency, theme } = useStore();
-  const { budgets, update: updateBudget } = useBudgets();
+  const { budgets, update: updateBudget, remove: removeBudget } = useBudgets();
   const themeColors = getThemeColors(theme);
 
+  // State
   const [editingGroup, setEditingGroup] = useState<string | null>(null);
   const [localBudgets, setLocalBudgets] = useState<Record<string, number>>({});
-  const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
+  const [customCategories, setCustomCategories] = useState<Record<string, Array<{id: string, name: string, icon: string}>>>({});
+  const [showAddCategory, setShowAddCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [newCategoryIcon, setNewCategoryIcon] = useState('📦');
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
 
   // Safe arrays
   const safeExpenses = Array.isArray(expenses) ? expenses : [];
@@ -122,6 +128,8 @@ export const BudgetsPage: React.FC = () => {
     return monthlyExpenses.reduce((acc, e) => {
       const cat = e.category?.toLowerCase().replace(/\s+/g, '_') || 'otros';
       acc[cat] = (acc[cat] || 0) + (Number(e.amount) || 0);
+      // Also store by original name
+      acc[e.category || 'Otros'] = (acc[e.category || 'Otros'] || 0) + (Number(e.amount) || 0);
       return acc;
     }, {} as Record<string, number>);
   }, [monthlyExpenses]);
@@ -130,16 +138,24 @@ export const BudgetsPage: React.FC = () => {
     return monthlyIncomes.reduce((acc, i) => {
       const cat = i.category?.toLowerCase().replace(/\s+/g, '_') || 'otros';
       acc[cat] = (acc[cat] || 0) + (Number(i.amount) || 0);
+      acc[i.category || 'Otros'] = (acc[i.category || 'Otros'] || 0) + (Number(i.amount) || 0);
       return acc;
     }, {} as Record<string, number>);
   }, [monthlyIncomes]);
+
+  // Get categories for a group (default + custom)
+  const getCategoriesForGroup = (groupId: string) => {
+    const defaults = DEFAULT_CATEGORIES[groupId] || [];
+    const custom = customCategories[groupId] || [];
+    return [...defaults, ...custom];
+  };
 
   // Calculate group totals
   const groupTotals = useMemo(() => {
     const totals: Record<string, { estimated: number; actual: number }> = {};
 
     BUDGET_GROUPS.forEach(group => {
-      const categories = CATEGORIES_BY_GROUP[group.id] || [];
+      const categories = getCategoriesForGroup(group.id);
       let estimated = 0;
       let actual = 0;
 
@@ -147,22 +163,22 @@ export const BudgetsPage: React.FC = () => {
         estimated += Number(safeBudgets[cat.id]) || 0;
         
         if (group.id === 'ingresos') {
-          actual += incomesByCategory[cat.id] || incomesByCategory[cat.name.toLowerCase()] || 0;
+          actual += incomesByCategory[cat.id] || incomesByCategory[cat.name] || 0;
         } else {
-          actual += expensesByCategory[cat.id] || expensesByCategory[cat.name.toLowerCase()] || 0;
+          actual += expensesByCategory[cat.id] || expensesByCategory[cat.name] || 0;
         }
       });
 
-      // Also sum from category names that might match
-      if (group.id === 'ingresos') {
-        actual = actual || monthlyIncomes.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+      // For income, also try to sum all if categories don't match
+      if (group.id === 'ingresos' && actual === 0) {
+        actual = monthlyIncomes.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
       }
 
       totals[group.id] = { estimated, actual };
     });
 
     return totals;
-  }, [safeBudgets, expensesByCategory, incomesByCategory, monthlyIncomes]);
+  }, [safeBudgets, expensesByCategory, incomesByCategory, monthlyIncomes, customCategories]);
 
   // Summary calculations
   const summary = useMemo(() => {
@@ -189,13 +205,40 @@ export const BudgetsPage: React.FC = () => {
 
   // Start editing a group
   const startEditing = (groupId: string) => {
-    const categories = CATEGORIES_BY_GROUP[groupId] || [];
+    const categories = getCategoriesForGroup(groupId);
     const initial: Record<string, number> = {};
     categories.forEach(cat => {
       initial[cat.id] = safeBudgets[cat.id] || 0;
     });
     setLocalBudgets(initial);
     setEditingGroup(groupId);
+    setShowAddCategory(false);
+  };
+
+  // Add custom category
+  const addCustomCategory = () => {
+    if (!newCategoryName.trim() || !editingGroup) return;
+
+    const newCat = {
+      id: `custom_${Date.now()}`,
+      name: newCategoryName.trim(),
+      icon: newCategoryIcon,
+    };
+
+    setCustomCategories(prev => ({
+      ...prev,
+      [editingGroup]: [...(prev[editingGroup] || []), newCat]
+    }));
+
+    setLocalBudgets(prev => ({
+      ...prev,
+      [newCat.id]: 0
+    }));
+
+    setNewCategoryName('');
+    setNewCategoryIcon('📦');
+    setShowAddCategory(false);
+    showSuccess('Categoría agregada');
   };
 
   // Save budgets
@@ -213,15 +256,15 @@ export const BudgetsPage: React.FC = () => {
     }
   };
 
-  // Chart data for comparison
-  const comparisonData = BUDGET_GROUPS.map(group => ({
-    name: group.name.replace('Gastos ', 'G.').replace('Pago de ', ''),
-    Estimado: groupTotals[group.id]?.estimated || 0,
-    Real: groupTotals[group.id]?.actual || 0,
-    fill: group.color,
-  }));
+  // Toggle group expansion
+  const toggleGroup = (groupId: string) => {
+    setExpandedGroups(prev => ({
+      ...prev,
+      [groupId]: !prev[groupId]
+    }));
+  };
 
-  // Pie chart data - where money goes
+  // Pie chart data
   const pieData = BUDGET_GROUPS
     .filter(g => g.type === 'expense' && (groupTotals[g.id]?.actual || 0) > 0)
     .map(group => ({
@@ -304,55 +347,30 @@ export const BudgetsPage: React.FC = () => {
         </div>
       </Card>
 
-      {/* View Toggle */}
-      <div className="flex justify-center gap-2">
-        <Button 
-          size="sm" 
-          variant={viewMode === 'cards' ? 'primary' : 'secondary'}
-          onClick={() => setViewMode('cards')}
-        >
-          📊 Tarjetas
-        </Button>
-        <Button 
-          size="sm" 
-          variant={viewMode === 'table' ? 'primary' : 'secondary'}
-          onClick={() => setViewMode('table')}
-        >
-          📈 Gráficos
-        </Button>
-      </div>
+      {/* Budget Groups */}
+      <div className="space-y-3">
+        {BUDGET_GROUPS.map((group, idx) => {
+          const { estimated, actual } = groupTotals[group.id] || { estimated: 0, actual: 0 };
+          const percentage = estimated > 0 ? (actual / estimated) * 100 : (actual > 0 ? 100 : 0);
+          const diff = actual - estimated;
+          const isIncome = group.type === 'income';
+          const isGood = isIncome ? actual >= estimated : actual <= estimated;
+          const isExpanded = expandedGroups[group.id];
 
-      {/* Cards View - 6 Budget Groups */}
-      {viewMode === 'cards' && (
-        <div className="space-y-4">
-          {BUDGET_GROUPS.map((group, idx) => {
-            const { estimated, actual } = groupTotals[group.id] || { estimated: 0, actual: 0 };
-            const percentage = estimated > 0 ? (actual / estimated) * 100 : (actual > 0 ? 100 : 0);
-            const diff = actual - estimated;
-            const isIncome = group.type === 'income';
-            const isGood = isIncome ? actual >= estimated : actual <= estimated;
-
-            return (
-              <motion.div
-                key={group.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: idx * 0.1 }}
-              >
-                <Card 
-                  className={cn(
-                    'p-4 cursor-pointer hover:scale-[1.01] transition-all relative overflow-hidden',
-                    !isGood && estimated > 0 && 'border-warning-500/50'
-                  )}
-                  onClick={() => startEditing(group.id)}
+          return (
+            <motion.div
+              key={group.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: idx * 0.05 }}
+            >
+              <Card className="overflow-hidden">
+                {/* Group Header - Clickable */}
+                <div 
+                  className="p-4 cursor-pointer hover:bg-white/5 transition-colors"
+                  onClick={() => toggleGroup(group.id)}
                 >
-                  {/* Glow */}
-                  <div 
-                    className="absolute top-0 right-0 w-24 h-24 -mr-8 -mt-8 rounded-full opacity-20 blur-2xl"
-                    style={{ backgroundColor: group.color }}
-                  />
-
-                  <div className="flex items-center gap-3 mb-3">
+                  <div className="flex items-center gap-3">
                     <div 
                       className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl"
                       style={{ backgroundColor: `${group.color}20` }}
@@ -360,126 +378,120 @@ export const BudgetsPage: React.FC = () => {
                       {group.icon}
                     </div>
                     <div className="flex-1">
-                      <h3 className="font-semibold text-white">{group.name}</h3>
                       <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-white">{group.name}</h3>
                         <Badge 
                           variant={isGood || estimated === 0 ? 'success' : 'warning'} 
                           size="sm"
                         >
                           {percentage.toFixed(0)}%
                         </Badge>
-                        {!isGood && estimated > 0 && (
-                          <AlertTriangle className="w-4 h-4 text-warning-400" />
-                        )}
+                      </div>
+                      <div className="flex gap-4 text-sm mt-1">
+                        <span className="text-white/50">Est: {formatCurrency(estimated, currency)}</span>
+                        <span style={{ color: group.color }}>Real: {formatCurrency(actual, currency)}</span>
                       </div>
                     </div>
-                    <Edit2 className="w-4 h-4 text-white/30" />
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          startEditing(group.id);
+                        }}
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </Button>
+                      {isExpanded ? (
+                        <ChevronUp className="w-5 h-5 text-white/50" />
+                      ) : (
+                        <ChevronDown className="w-5 h-5 text-white/50" />
+                      )}
+                    </div>
                   </div>
 
-                  {/* Progress */}
-                  <div className="h-2 bg-white/10 rounded-full overflow-hidden mb-3">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${Math.min(percentage, 100)}%` }}
-                      transition={{ duration: 0.5, delay: 0.2 + idx * 0.1 }}
-                      className="h-full rounded-full"
-                      style={{ backgroundColor: group.color }}
+                  {/* Progress Bar */}
+                  <div className="h-2 bg-white/10 rounded-full overflow-hidden mt-3">
+                    <div
+                      className="h-full rounded-full transition-all duration-500"
+                      style={{ 
+                        width: `${Math.min(percentage, 100)}%`,
+                        backgroundColor: group.color 
+                      }}
                     />
                   </div>
-
-                  {/* Numbers */}
-                  <div className="grid grid-cols-3 gap-2 text-sm">
-                    <div>
-                      <p className="text-white/40 text-xs">Estimado</p>
-                      <p className="font-bold text-white">{formatCurrency(estimated, currency)}</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-white/40 text-xs">Real</p>
-                      <p className="font-bold" style={{ color: group.color }}>
-                        {formatCurrency(actual, currency)}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-white/40 text-xs">Diferencia</p>
-                      <p className={cn('font-bold', isGood ? 'text-success-400' : 'text-warning-400')}>
-                        {diff >= 0 ? '+' : ''}{formatCurrency(diff, currency)}
-                      </p>
-                    </div>
-                  </div>
-                </Card>
-              </motion.div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Charts View */}
-      {viewMode === 'table' && (
-        <div className="space-y-6">
-          {/* Bar Chart - Estimado vs Real */}
-          <Card className="p-4">
-            <h3 className="font-semibold text-white mb-4 text-center">📊 Estimado vs Real</h3>
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={comparisonData} layout="vertical" margin={{ left: 10, right: 10 }}>
-                <XAxis 
-                  type="number" 
-                  tickFormatter={v => `$${(v/1000).toFixed(0)}k`} 
-                  tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 10 }} 
-                />
-                <YAxis 
-                  type="category" 
-                  dataKey="name" 
-                  tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 10 }} 
-                  width={90} 
-                />
-                <Tooltip content={<CustomTooltip currency={currency} />} />
-                <Legend wrapperStyle={{ fontSize: '11px' }} />
-                <Bar dataKey="Estimado" fill="#6366F1" radius={[0, 4, 4, 0]} />
-                <Bar dataKey="Real" fill="#22C55E" radius={[0, 4, 4, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </Card>
-
-          {/* Pie Chart - Distribution */}
-          <Card className="p-4">
-            <h3 className="font-semibold text-white mb-4 text-center">🎯 ¿A Dónde Va Mi Dinero?</h3>
-            {pieData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={280}>
-                <PieChart>
-                  <Pie
-                    data={pieData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={50}
-                    outerRadius={90}
-                    paddingAngle={3}
-                    dataKey="value"
-                  >
-                    {pieData.map((entry, index) => (
-                      <Cell key={index} fill={entry.fill} />
-                    ))}
-                  </Pie>
-                  <Tooltip content={<CustomTooltip currency={currency} />} />
-                  <Legend 
-                    formatter={(value, entry: any) => {
-                      const item = pieData.find(d => d.name === value);
-                      const pct = item && totalPie > 0 ? ((item.value / totalPie) * 100).toFixed(0) : 0;
-                      return `${value} (${pct}%)`;
-                    }}
-                    wrapperStyle={{ fontSize: '11px' }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="h-[280px] flex items-center justify-center text-white/50">
-                <div className="text-center">
-                  <BarChart2 className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                  <p>Agrega gastos para ver la distribución</p>
                 </div>
-              </div>
-            )}
-          </Card>
-        </div>
+
+                {/* Expanded Categories */}
+                <AnimatePresence>
+                  {isExpanded && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className="border-t border-white/10"
+                    >
+                      <div className="p-4 space-y-2">
+                        {getCategoriesForGroup(group.id).map(cat => {
+                          const catBudget = safeBudgets[cat.id] || 0;
+                          const catActual = group.id === 'ingresos' 
+                            ? (incomesByCategory[cat.id] || incomesByCategory[cat.name] || 0)
+                            : (expensesByCategory[cat.id] || expensesByCategory[cat.name] || 0);
+
+                          return (
+                            <div key={cat.id} className="flex items-center gap-3 p-2 rounded-lg bg-white/5">
+                              <span className="text-lg">{cat.icon}</span>
+                              <span className="text-sm text-white flex-1">{cat.name}</span>
+                              <div className="text-right text-sm">
+                                <span className="text-white/50">{formatCurrency(catBudget, currency)}</span>
+                                <span className="mx-1 text-white/30">/</span>
+                                <span style={{ color: group.color }}>{formatCurrency(catActual, currency)}</span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </Card>
+            </motion.div>
+          );
+        })}
+      </div>
+
+      {/* Distribution Chart */}
+      {pieData.length > 0 && (
+        <Card className="p-4">
+          <h3 className="font-semibold text-white mb-4 text-center">🎯 Distribución de Gastos</h3>
+          <ResponsiveContainer width="100%" height={200}>
+            <PieChart>
+              <Pie
+                data={pieData}
+                cx="50%"
+                cy="50%"
+                innerRadius={50}
+                outerRadius={80}
+                paddingAngle={3}
+                dataKey="value"
+              >
+                {pieData.map((entry, index) => (
+                  <Cell key={index} fill={entry.fill} />
+                ))}
+              </Pie>
+              <Tooltip content={<CustomTooltip currency={currency} />} />
+              <Legend 
+                formatter={(value, entry: any) => {
+                  const item = pieData.find(d => d.name === value);
+                  const pct = item && totalPie > 0 ? ((item.value / totalPie) * 100).toFixed(0) : 0;
+                  return `${value} (${pct}%)`;
+                }}
+                wrapperStyle={{ fontSize: '11px' }}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+        </Card>
       )}
 
       {/* Edit Modal */}
@@ -497,7 +509,7 @@ export const BudgetsPage: React.FC = () => {
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25 }}
-              className="w-full max-w-lg bg-card-bg rounded-t-3xl p-6 max-h-[80vh] overflow-y-auto"
+              className="w-full max-w-lg bg-card-bg rounded-t-3xl p-6 max-h-[85vh] overflow-y-auto"
               onClick={e => e.stopPropagation()}
             >
               {/* Modal Header */}
@@ -533,8 +545,8 @@ export const BudgetsPage: React.FC = () => {
               </div>
 
               {/* Categories */}
-              <div className="space-y-4">
-                {(CATEGORIES_BY_GROUP[editingGroup] || []).map(cat => (
+              <div className="space-y-3">
+                {getCategoriesForGroup(editingGroup).map(cat => (
                   <div key={cat.id} className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center text-xl">
                       {cat.icon}
@@ -560,6 +572,56 @@ export const BudgetsPage: React.FC = () => {
                   </div>
                 ))}
               </div>
+
+              {/* Add Custom Category */}
+              {showAddCategory ? (
+                <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10">
+                  <h4 className="text-sm font-medium text-white mb-3">Nueva Categoría</h4>
+                  <div className="space-y-3">
+                    <Input
+                      placeholder="Nombre de la categoría"
+                      value={newCategoryName}
+                      onChange={e => setNewCategoryName(e.target.value)}
+                    />
+                    <div>
+                      <label className="text-xs text-white/60 mb-2 block">Selecciona un icono</label>
+                      <div className="flex flex-wrap gap-2 max-h-24 overflow-y-auto">
+                        {ICONS.map(icon => (
+                          <button
+                            key={icon}
+                            onClick={() => setNewCategoryIcon(icon)}
+                            className={cn(
+                              'w-8 h-8 rounded-lg flex items-center justify-center text-lg transition-all',
+                              newCategoryIcon === icon 
+                                ? 'bg-primary-500/30 ring-2 ring-primary-500' 
+                                : 'bg-white/10 hover:bg-white/20'
+                            )}
+                          >
+                            {icon}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button variant="secondary" size="sm" onClick={() => setShowAddCategory(false)} fullWidth>
+                        Cancelar
+                      </Button>
+                      <Button size="sm" onClick={addCustomCategory} fullWidth disabled={!newCategoryName.trim()}>
+                        <Plus className="w-4 h-4 mr-1" />
+                        Agregar
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowAddCategory(true)}
+                  className="w-full mt-4 p-3 rounded-xl border border-dashed border-white/20 text-white/50 hover:text-white hover:border-white/40 transition-colors flex items-center justify-center gap-2"
+                >
+                  <Plus className="w-5 h-5" />
+                  Agregar Categoría Personalizada
+                </button>
+              )}
 
               {/* Actions */}
               <div className="flex gap-3 mt-6">
