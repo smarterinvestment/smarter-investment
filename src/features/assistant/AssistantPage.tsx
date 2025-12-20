@@ -500,6 +500,55 @@ export const AssistantPage: React.FC = () => {
       `¿En qué puedo ayudarte?`;
   };
 
+  // Generate financial context for Claude API
+  const generateFinancialContext = () => {
+    return `
+RESUMEN FINANCIERO (${new Date().toLocaleDateString('es', { month: 'long', year: 'numeric' })}):
+- Ingresos del mes: ${formatCurrency(ctx.effectiveIncome, currency)}
+- Gastos del mes: ${formatCurrency(ctx.totalExpenses, currency)}
+- Balance: ${formatCurrency(ctx.balance, currency)}
+- Tasa de ahorro: ${ctx.savingsRate.toFixed(1)}%
+- Días restantes en el mes: ${ctx.daysRemaining}
+
+TOP GASTOS POR CATEGORÍA:
+${ctx.topCategories.map((c, i) => `${i + 1}. ${c.name}: ${formatCurrency(c.amount, currency)} (${c.percentage.toFixed(0)}%)`).join('\n')}
+
+METAS DE AHORRO:
+${ctx.goalsStatus.length > 0 
+  ? ctx.goalsStatus.map(g => `- ${g.name}: ${g.percentage.toFixed(0)}% completado`).join('\n')
+  : 'Sin metas configuradas'}
+
+ALERTAS: ${alerts.map(a => `${a.icon} ${a.title}`).join(', ') || 'Ninguna'}
+`;
+  };
+
+  // Call Claude API via backend
+  const callClaudeAPI = async (userMessage: string): Promise<string | null> => {
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userMessage,
+          financialContext: generateFinancialContext(),
+          messages: messages.slice(-6).map(m => ({ role: m.role, content: m.content }))
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        console.warn('Claude API unavailable:', error);
+        return null;
+      }
+
+      const data = await response.json();
+      return data.content || null;
+    } catch (error) {
+      console.warn('Claude API error:', error);
+      return null;
+    }
+  };
+
   // Handle send message
   const handleSend = async (text?: string) => {
     const messageText = text || input.trim();
@@ -516,10 +565,21 @@ export const AssistantPage: React.FC = () => {
     setInput('');
     setIsTyping(true);
 
-    // Simulate processing time
-    await new Promise(resolve => setTimeout(resolve, 400 + Math.random() * 400));
+    let response: string;
+    let usedAPI = false;
 
-    const response = generateResponse(messageText);
+    // Try Claude API first, fallback to local
+    const apiResponse = await callClaudeAPI(messageText);
+    
+    if (apiResponse) {
+      response = apiResponse;
+      usedAPI = true;
+    } else {
+      // Fallback to local analysis
+      await new Promise(resolve => setTimeout(resolve, 300));
+      response = generateResponse(messageText);
+    }
+
     const assistantMessage: Message = {
       id: (Date.now() + 1).toString(),
       role: 'assistant',

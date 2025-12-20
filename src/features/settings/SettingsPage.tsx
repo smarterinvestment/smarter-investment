@@ -127,12 +127,15 @@ const NumberStepper: React.FC<{
 export const SettingsPage: React.FC = () => {
   const { 
     user, theme, setTheme, currency, setCurrency, language, setLanguage,
-    logout, expenses, incomes, goals, budgets 
+    logout, expenses, incomes, goals, budgets, settingsTab, setSettingsTab
   } = useStore();
   const themeColors = getThemeColors(theme);
 
-  // Settings state
-  const [activeTab, setActiveTab] = useState<'general' | 'alerts' | 'notifications' | 'data'>('general');
+  // Use store's settingsTab instead of local state
+  const activeTab = settingsTab;
+  const setActiveTab = setSettingsTab;
+  
+  // Modal states
   const [showThemeModal, setShowThemeModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);

@@ -43,6 +43,7 @@ interface AppState {
   activePage: Page;
   sidebarOpen: boolean;
   modalStack: Modal[];
+  settingsTab: 'general' | 'alerts' | 'notifications' | 'data';
   
   // Settings
   theme: Theme;
@@ -96,6 +97,7 @@ interface AppActions {
   // UI actions
   setLoading: (loading: boolean, message?: string) => void;
   setActivePage: (page: Page) => void;
+  setSettingsTab: (tab: 'general' | 'alerts' | 'notifications' | 'data') => void;
   toggleSidebar: () => void;
   openModal: (modal: Modal) => void;
   closeModal: (id?: string) => void;
@@ -140,6 +142,7 @@ const initialState: AppState = {
   activePage: 'dashboard',
   sidebarOpen: false,
   modalStack: [],
+  settingsTab: 'general',
   
   // Settings
   theme: 'dark',
@@ -391,6 +394,11 @@ export const useStore = create<Store>()(
       setActivePage: (page) =>
         set((state) => {
           state.activePage = page;
+        }),
+
+      setSettingsTab: (tab) =>
+        set((state) => {
+          state.settingsTab = tab;
         }),
 
       toggleSidebar: () =>

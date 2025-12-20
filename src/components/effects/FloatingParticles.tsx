@@ -1,25 +1,26 @@
 // ============================================
-// ✨ FLOATING PARTICLES - PREMIUM FINTECH EFFECT
-// Animated background particles & bubbles for the entire app
+// ✨ FLOATING PARTICLES - FINANCIAL SYMBOLS EFFECT
+// Animated financial symbols floating in background
 // ============================================
 import React, { useMemo } from 'react';
 import { useStore, getThemeColors } from '../../stores/useStore';
 
-interface Particle {
+// Financial symbols to display
+const FINANCIAL_SYMBOLS = [
+  '$', '€', '£', '¥', '₿', '₽', '₩', '฿',
+  '💰', '💵', '💳', '📈', '📊', '💎', '🏦', '🪙',
+  '📉', '💹', '🎯', '🐷', '✨', '⭐', '💲'
+];
+
+interface FloatingSymbol {
   id: number;
+  symbol: string;
   size: number;
   x: number;
   delay: number;
   duration: number;
   opacity: number;
-}
-
-interface Bubble {
-  id: number;
-  size: number;
-  x: number;
-  delay: number;
-  duration: number;
+  rotation: number;
 }
 
 interface GlowOrb {
@@ -34,37 +35,39 @@ export const FloatingParticles: React.FC = () => {
   const { theme } = useStore();
   const themeColors = getThemeColors(theme);
 
-  // Generate random particles (small dots)
-  const particles = useMemo<Particle[]>(() => {
-    return Array.from({ length: 40 }, (_, i) => ({
+  // Generate floating financial symbols
+  const floatingSymbols = useMemo<FloatingSymbol[]>(() => {
+    return Array.from({ length: 25 }, (_, i) => ({
       id: i,
-      size: Math.random() * 4 + 2, // 2-6px
+      symbol: FINANCIAL_SYMBOLS[Math.floor(Math.random() * FINANCIAL_SYMBOLS.length)],
+      size: Math.random() * 16 + 12, // 12-28px
       x: Math.random() * 100, // 0-100%
-      delay: Math.random() * 25, // 0-25s delay
-      duration: Math.random() * 20 + 15, // 15-35s duration
-      opacity: Math.random() * 0.6 + 0.3, // 0.3-0.9 opacity
+      delay: Math.random() * 30, // 0-30s delay
+      duration: Math.random() * 25 + 20, // 20-45s duration
+      opacity: Math.random() * 0.4 + 0.2, // 0.2-0.6 opacity
+      rotation: Math.random() * 360, // Random initial rotation
     }));
   }, []);
 
-  // Generate bubbles (larger, hollow circles)
-  const bubbles = useMemo<Bubble[]>(() => {
-    return Array.from({ length: 15 }, (_, i) => ({
+  // Generate circular outline bubbles (hollow rings)
+  const circleBubbles = useMemo(() => {
+    return Array.from({ length: 12 }, (_, i) => ({
       id: i,
-      size: Math.random() * 30 + 10, // 10-40px
+      size: Math.random() * 60 + 30, // 30-90px
       x: Math.random() * 100,
       delay: Math.random() * 20,
-      duration: Math.random() * 25 + 20, // 20-45s
+      duration: Math.random() * 30 + 25, // 25-55s
     }));
   }, []);
 
-  // Generate glow orbs (large, blurred circles)
+  // Generate glow orbs (large, blurred ambient lights)
   const glowOrbs = useMemo<GlowOrb[]>(() => {
-    return Array.from({ length: 6 }, (_, i) => ({
+    return Array.from({ length: 5 }, (_, i) => ({
       id: i,
-      size: Math.random() * 250 + 150, // 150-400px
+      size: Math.random() * 300 + 200, // 200-500px
       x: Math.random() * 100,
       y: Math.random() * 100,
-      delay: Math.random() * 8,
+      delay: Math.random() * 10,
     }));
   }, []);
 
@@ -85,41 +88,47 @@ export const FloatingParticles: React.FC = () => {
       style={{ zIndex: 1 }}
       aria-hidden="true"
     >
-      {/* Floating Particles (small glowing dots) */}
-      {particles.map((particle) => (
+      {/* Floating Financial Symbols */}
+      {floatingSymbols.map((item) => (
         <div
-          key={`particle-${particle.id}`}
-          className="absolute rounded-full"
+          key={`symbol-${item.id}`}
+          className="absolute flex items-center justify-center select-none"
           style={{
-            width: particle.size,
-            height: particle.size,
-            left: `${particle.x}%`,
-            bottom: '-20px',
-            background: `radial-gradient(circle, ${particleColor}${particle.opacity}) 0%, ${particleColor}0) 70%)`,
-            boxShadow: `0 0 ${particle.size * 3}px ${particleColor}0.6)`,
-            animation: `particleFloat ${particle.duration}s linear infinite`,
-            animationDelay: `${particle.delay}s`,
+            fontSize: item.size,
+            left: `${item.x}%`,
+            bottom: '-50px',
+            color: `${particleColor}${item.opacity})`,
+            textShadow: `
+              0 0 ${item.size}px ${particleColor}0.8),
+              0 0 ${item.size * 2}px ${particleColor}0.4),
+              0 0 ${item.size * 3}px ${particleColor}0.2)
+            `,
+            animation: `symbolFloat ${item.duration}s linear infinite`,
+            animationDelay: `${item.delay}s`,
+            filter: 'blur(0.5px)',
           }}
-        />
+        >
+          {item.symbol}
+        </div>
       ))}
 
-      {/* Floating Bubbles (larger hollow circles) */}
-      {bubbles.map((bubble) => (
+      {/* Floating Circle Outlines (hollow rings) */}
+      {circleBubbles.map((bubble) => (
         <div
-          key={`bubble-${bubble.id}`}
+          key={`circle-${bubble.id}`}
           className="absolute rounded-full"
           style={{
             width: bubble.size,
             height: bubble.size,
             left: `${bubble.x}%`,
-            bottom: '-50px',
+            bottom: '-100px',
             background: 'transparent',
-            border: `1px solid ${particleColor}0.3)`,
+            border: `1.5px solid ${particleColor}0.25)`,
             boxShadow: `
-              0 0 ${bubble.size / 2}px ${particleColor}0.2),
-              inset 0 0 ${bubble.size / 3}px ${particleColor}0.1)
+              0 0 ${bubble.size / 2}px ${particleColor}0.15),
+              inset 0 0 ${bubble.size / 3}px ${particleColor}0.08)
             `,
-            animation: `bubbleFloat ${bubble.duration}s ease-in-out infinite`,
+            animation: `circleFloat ${bubble.duration}s ease-in-out infinite`,
             animationDelay: `${bubble.delay}s`,
           }}
         />
@@ -135,9 +144,9 @@ export const FloatingParticles: React.FC = () => {
             height: orb.size,
             left: `${orb.x}%`,
             top: `${orb.y}%`,
-            background: `radial-gradient(circle, ${particleColor}0.12) 0%, transparent 70%)`,
-            filter: 'blur(50px)',
-            animation: `orbPulse 10s ease-in-out infinite`,
+            background: `radial-gradient(circle, ${particleColor}0.1) 0%, transparent 70%)`,
+            filter: 'blur(60px)',
+            animation: `orbPulse 12s ease-in-out infinite`,
             animationDelay: `${orb.delay}s`,
             transform: 'translate(-50%, -50%)',
           }}
@@ -148,63 +157,68 @@ export const FloatingParticles: React.FC = () => {
       <div
         className="absolute top-0 left-0 w-[500px] h-[500px]"
         style={{
-          background: `radial-gradient(circle at top left, ${particleColor}0.2) 0%, transparent 60%)`,
+          background: `radial-gradient(circle at top left, ${particleColor}0.15) 0%, transparent 60%)`,
           filter: 'blur(80px)',
         }}
       />
       <div
         className="absolute bottom-0 right-0 w-[500px] h-[500px]"
         style={{
-          background: `radial-gradient(circle at bottom right, ${particleColor}0.15) 0%, transparent 60%)`,
+          background: `radial-gradient(circle at bottom right, ${particleColor}0.12) 0%, transparent 60%)`,
           filter: 'blur(80px)',
-        }}
-      />
-      <div
-        className="absolute top-1/2 left-1/2 w-[600px] h-[600px] -translate-x-1/2 -translate-y-1/2"
-        style={{
-          background: `radial-gradient(circle, ${particleColor}0.08) 0%, transparent 50%)`,
-          filter: 'blur(100px)',
         }}
       />
 
       {/* Inline keyframes for animations */}
       <style>{`
-        @keyframes particleFloat {
+        @keyframes symbolFloat {
           0% {
-            transform: translateY(0) rotate(0deg) scale(1);
+            transform: translateY(0) rotate(0deg) scale(0.8);
             opacity: 0;
           }
           5% {
             opacity: 1;
           }
+          25% {
+            transform: translateY(-25vh) rotate(15deg) scale(1);
+          }
           50% {
-            transform: translateY(-50vh) rotate(180deg) scale(1.2);
+            transform: translateY(-50vh) rotate(-10deg) scale(1.1);
+          }
+          75% {
+            transform: translateY(-75vh) rotate(20deg) scale(1);
           }
           95% {
-            opacity: 0.8;
+            opacity: 0.6;
           }
           100% {
-            transform: translateY(-100vh) rotate(360deg) scale(0.8);
+            transform: translateY(-105vh) rotate(0deg) scale(0.9);
             opacity: 0;
           }
         }
         
-        @keyframes bubbleFloat {
+        @keyframes circleFloat {
           0% {
-            transform: translateY(0) translateX(0) scale(1);
+            transform: translateY(0) translateX(0) scale(0.8) rotate(0deg);
             opacity: 0;
           }
           10% {
-            opacity: 0.6;
+            opacity: 0.5;
+          }
+          30% {
+            transform: translateY(-30vh) translateX(30px) scale(1) rotate(60deg);
           }
           50% {
-            transform: translateY(-50vh) translateX(20px) scale(1.1);
+            transform: translateY(-50vh) translateX(-20px) scale(1.1) rotate(120deg);
+          }
+          70% {
+            transform: translateY(-70vh) translateX(25px) scale(1) rotate(180deg);
           }
           90% {
-            opacity: 0.4;
+            opacity: 0.3;
           }
           100% {
-            transform: translateY(-100vh) translateX(-10px) scale(0.9);
+            transform: translateY(-105vh) translateX(0) scale(0.9) rotate(360deg);
             opacity: 0;
           }
         }
@@ -212,11 +226,11 @@ export const FloatingParticles: React.FC = () => {
         @keyframes orbPulse {
           0%, 100% {
             transform: translate(-50%, -50%) scale(1);
-            opacity: 0.3;
+            opacity: 0.25;
           }
           50% {
-            transform: translate(-50%, -50%) scale(1.4);
-            opacity: 0.6;
+            transform: translate(-50%, -50%) scale(1.5);
+            opacity: 0.5;
           }
         }
       `}</style>

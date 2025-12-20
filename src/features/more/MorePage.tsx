@@ -42,14 +42,16 @@ const MENU_SECTIONS = [
   {
     title: 'Configuración Avanzada',
     items: [
-      { id: 'settings', icon: Settings, label: '⚙️ Configuración Completa', description: 'Alertas, notificaciones, datos', color: '#05BFDB', page: 'settings' },
-      { id: 'notifications', icon: Bell, label: 'Alertas Inteligentes', description: 'Personaliza tus notificaciones', color: '#F59E0B', page: 'settings' },
-      { id: 'profile', icon: User, label: 'Mi Perfil', description: 'Nombre, foto, email', action: 'profile' },
+      { id: 'settings', icon: Settings, label: '⚙️ Configuración Completa', description: 'Alertas, notificaciones, datos', color: '#05BFDB', page: 'settings', settingsTab: 'general' },
+      { id: 'alerts', icon: Bell, label: '🔔 Alertas Inteligentes', description: 'Umbrales y avisos financieros', color: '#F59E0B', page: 'settings', settingsTab: 'alerts' },
+      { id: 'notifications', icon: Bell, label: '📱 Notificaciones', description: 'Push, email, recordatorios', color: '#8B5CF6', page: 'settings', settingsTab: 'notifications' },
+      { id: 'data', icon: Download, label: '💾 Gestión de Datos', description: 'Exportar, sincronizar, eliminar', color: '#EF4444', page: 'settings', settingsTab: 'data' },
     ]
   },
   {
-    title: 'Seguridad',
+    title: 'Cuenta',
     items: [
+      { id: 'profile', icon: User, label: 'Mi Perfil', description: 'Nombre, foto, email', action: 'profile' },
       { id: 'security', icon: Shield, label: 'Seguridad', description: 'Contraseña, 2FA', action: 'security' },
     ]
   },
@@ -86,7 +88,7 @@ const LANGUAGES: Array<{ id: Language; name: string; flag: string }> = [
 export const MorePage: React.FC = () => {
   const { 
     user, theme, currency, language, 
-    setTheme, setCurrency, setLanguage, setActivePage, logout 
+    setTheme, setCurrency, setLanguage, setActivePage, setSettingsTab, logout 
   } = useStore();
   const themeColors = getThemeColors(theme);
   
@@ -98,6 +100,10 @@ export const MorePage: React.FC = () => {
 
   const handleItemClick = (item: any) => {
     if (item.page) {
+      // Handle settings navigation with specific tab
+      if (item.page === 'settings' && item.settingsTab) {
+        setSettingsTab(item.settingsTab);
+      }
       setActivePage(item.page);
     } else if (item.action) {
       switch (item.action) {
@@ -105,9 +111,9 @@ export const MorePage: React.FC = () => {
         case 'currency': setShowCurrencyModal(true); break;
         case 'language': setShowLanguageModal(true); break;
         case 'export': setShowExportModal(true); break;
-        case 'profile': setActivePage('settings'); break;
-        case 'notifications': setActivePage('settings'); break;
-        case 'security': setActivePage('settings'); break;
+        case 'profile': setSettingsTab('general'); setActivePage('settings'); break;
+        case 'notifications': setSettingsTab('notifications'); setActivePage('settings'); break;
+        case 'security': setSettingsTab('general'); setActivePage('settings'); break;
         case 'help': break; // TODO
         case 'import': break; // TODO
       }
