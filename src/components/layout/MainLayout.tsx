@@ -27,7 +27,7 @@ import { useFirebaseData } from '../../hooks/useFirebaseData';
 import { FloatingParticles } from '../effects/FloatingParticles';
 import { Avatar, Badge } from '../ui';
 import { cn } from '../../utils/cn';
-import { useTranslation } from '../../utils/i18n';
+import { getNavLabels } from '../../utils/i18n';
 import type { Page, Theme } from '../../types';
 
 // ========================================
@@ -36,7 +36,7 @@ import type { Page, Theme } from '../../types';
 // Bottom Navigation (5 main items)
 const BOTTOM_NAV_ITEMS: Array<{
   id: Page;
-  labelKey: keyof ReturnType<typeof useTranslation>['t']['nav'];
+  labelKey: string;
   icon: React.ReactNode;
 }> = [
   { id: 'dashboard', labelKey: 'home', icon: <Home className="w-5 h-5" /> },
@@ -49,7 +49,7 @@ const BOTTOM_NAV_ITEMS: Array<{
 // Sidebar Navigation (all items)
 const SIDEBAR_NAV_ITEMS: Array<{
   id: Page;
-  labelKey: keyof ReturnType<typeof useTranslation>['t']['nav'];
+  labelKey: string;
   icon: React.ReactNode;
 }> = [
   { id: 'dashboard', labelKey: 'home', icon: <Home className="w-5 h-5" /> },
@@ -78,8 +78,8 @@ interface MainLayoutProps {
 }
 
 export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
-  const { user, activePage, setActivePage, notifications, theme, setTheme, logout } = useStore();
-  const { t } = useTranslation();
+  const { user, activePage, setActivePage, notifications, theme, setTheme, logout, language } = useStore();
+  const navLabels = getNavLabels(language);
   const [showSidebar, setShowSidebar] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showThemeMenu, setShowThemeMenu] = useState(false);
@@ -100,7 +100,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         href="#main-content"
         className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary-500 focus:text-white focus:rounded-lg"
       >
-        {t.nav.home}
+        {navLabels.home}
       </a>
 
       {/* Header */}
@@ -288,11 +288,11 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                 color: themeColors.primary,
                 backgroundColor: `${themeColors.primary}20`,
               } : undefined}
-              aria-label={t.nav[item.labelKey]}
+              aria-label={navLabels[item.labelKey]}
               aria-current={activePage === item.id ? 'page' : undefined}
             >
               {item.icon}
-              <span className="text-[10px] font-medium">{t.nav[item.labelKey]}</span>
+              <span className="text-[10px] font-medium">{navLabels[item.labelKey]}</span>
             </button>
           ))}
         </div>
@@ -379,7 +379,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                       } : undefined}
                     >
                       {item.icon}
-                      <span className="font-medium">{t.nav[item.labelKey]}</span>
+                      <span className="font-medium">{navLabels[item.labelKey]}</span>
                     </button>
                   ))}
                   
@@ -406,7 +406,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                     } : undefined}
                   >
                     <Settings className="w-5 h-5" />
-                    <span className="font-medium">{t.nav.settings}</span>
+                    <span className="font-medium">{navLabels.settings}</span>
                   </button>
                 </div>
               </nav>
@@ -421,7 +421,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                   className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-danger-400 hover:bg-danger-500/10 transition-colors"
                 >
                   <LogOut className="w-5 h-5" />
-                  <span className="font-medium">{t.common.logout}</span>
+                  <span className="font-medium">{'Cerrar Sesión'}</span>
                 </button>
               </div>
             </motion.aside>

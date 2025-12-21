@@ -256,23 +256,11 @@ const navLabels: Record<Language, Record<string, string>> = {
   ja: { home: 'ホーム', transactions: '取引', budgets: '予算', goals: '目標', reports: 'レポート', assistant: 'アシスタント', recurring: '定期', more: 'その他', settings: '設定' },
 };
 
-// Hook for React components (returns object structure)
+// Hook for React components - simplified version that returns static Spanish by default
+// The actual language switching happens through the store
 export function useTranslation() {
-  // This will be called inside a React component where useStore is available
-  // For now return a function that can be used
-  const getLanguage = (): Language => {
-    try {
-      // Try to get from localStorage
-      const stored = localStorage.getItem('smarter-investment-storage');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        return parsed?.state?.language || 'es';
-      }
-    } catch {}
-    return 'es';
-  };
-
-  const lang = getLanguage();
+  // Default to Spanish - components should use store.language for dynamic switching
+  const lang: Language = 'es';
   const trans = getTranslations(lang);
   const nav = navLabels[lang] || navLabels.es;
 
@@ -283,6 +271,11 @@ export function useTranslation() {
     },
     language: lang,
   };
+}
+
+// Get nav labels for a specific language
+export function getNavLabels(language: Language): Record<string, string> {
+  return navLabels[language] || navLabels.es;
 }
 
 export default translations;
