@@ -24,7 +24,7 @@ export interface UserPreferences {
 }
 
 export type Currency = 'USD' | 'EUR' | 'MXN' | 'COP' | 'ARS' | 'CLP' | 'PEN';
-export type Language = 'es' | 'en';
+export type Language = 'es' | 'en' | 'fr' | 'it' | 'pt' | 'zh' | 'ja' | 'de';
 export type Theme = 'dark' | 'pink' | 'purple' | 'turquoise';
 
 export interface NotificationSettings {

@@ -1,84 +1,111 @@
 // ============================================
-// 🔐 AUTH PAGE - LOGIN & REGISTER
+// 🔐 AUTH PAGE - Login & Registration
+// Premium dark glassmorphism design
 // ============================================
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
+  Mail, Lock, Eye, EyeOff, ArrowRight, Wallet, Target, 
+  PieChart, Bot, User, ChevronLeft
+} from 'lucide-react';
+import { 
   signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
-  sendPasswordResetEmail,
+  createUserWithEmailAndPassword,
+  signInWithPopup, 
   GoogleAuthProvider,
-  signInWithPopup,
   updateProfile
 } from 'firebase/auth';
 import { auth } from '../../lib/firebase';
-import { Mail, Lock, User, Eye, EyeOff, ArrowRight, Sparkles, TrendingUp, PiggyBank, Target } from 'lucide-react';
+import { useStore, getThemeColors } from '../../stores/useStore';
 import { Button, Input } from '../../components/ui';
-import { cn } from '../../utils/cn';
 import { showSuccess, showError } from '../../lib/errorHandler';
+import { t } from '../../utils/i18n';
 
-type AuthMode = 'login' | 'register' | 'forgot';
-
-// Feature cards for landing
+// Features to display
 const FEATURES = [
-  { icon: <TrendingUp className="w-6 h-6" />, title: 'Control de Gastos', description: 'Registra y categoriza todos tus movimientos' },
-  { icon: <PiggyBank className="w-6 h-6" />, title: 'Presupuestos', description: 'Establece límites y recibe alertas' },
-  { icon: <Target className="w-6 h-6" />, title: 'Metas de Ahorro', description: 'Alcanza tus objetivos financieros' },
-  { icon: <Sparkles className="w-6 h-6" />, title: 'Asistente IA', description: 'Consejos personalizados para ti' },
+  { icon: <Wallet className="w-6 h-6" />, titleKey: 'feature1Title', descKey: 'feature1Desc' },
+  { icon: <PieChart className="w-6 h-6" />, titleKey: 'feature2Title', descKey: 'feature2Desc' },
+  { icon: <Target className="w-6 h-6" />, titleKey: 'feature3Title', descKey: 'feature3Desc' },
+  { icon: <Bot className="w-6 h-6" />, titleKey: 'feature4Title', descKey: 'feature4Desc' },
 ];
 
 export const AuthPage: React.FC = () => {
-  const [mode, setMode] = useState<AuthMode>('login');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
+  const { theme, language } = useStore();
+  const themeColors = getThemeColors(theme);
+  
+  const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    confirmPassword: ''
+  });
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    
+    if (!formData.email || !formData.password) {
+      showError(t(language, 'error'), 'Por favor completa todos los campos');
+      return;
+    }
 
+    if (!isLogin) {
+      if (!formData.name) {
+        showError(t(language, 'error'), 'El nombre es requerido');
+        return;
+      }
+      if (formData.password !== formData.confirmPassword) {
+        showError(t(language, 'error'), 'Las contraseñas no coinciden');
+        return;
+      }
+      if (formData.password.length < 6) {
+        showError(t(language, 'error'), 'La contraseña debe tener al menos 6 caracteres');
+        return;
+      }
+    }
+
+    setIsLoading(true);
     try {
-      if (mode === 'login') {
-        await signInWithEmailAndPassword(auth, email, password);
-        showSuccess('¡Bienvenido de vuelta!');
-      } else if (mode === 'register') {
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        if (name) {
-          await updateProfile(userCredential.user, { displayName: name });
-        }
-        showSuccess('¡Cuenta creada exitosamente!');
-      } else if (mode === 'forgot') {
-        await sendPasswordResetEmail(auth, email);
-        showSuccess('Se envió un correo para restablecer tu contraseña');
-        setMode('login');
+      if (isLogin) {
+        await signInWithEmailAndPassword(auth, formData.email, formData.password);
+        showSuccess('¡Bienvenido!', 'Sesión iniciada correctamente');
+      } else {
+        const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+        await updateProfile(userCredential.user, { displayName: formData.name });
+        showSuccess('¡Cuenta creada!', 'Bienvenido a Smarter Investment');
       }
     } catch (error: any) {
       const errorMessages: Record<string, string> = {
-        'auth/invalid-email': 'El correo electrónico no es válido',
-        'auth/user-disabled': 'Esta cuenta ha sido deshabilitada',
-        'auth/user-not-found': 'No existe una cuenta con este correo',
+        'auth/invalid-credential': 'Credenciales inválidas',
+        'auth/user-not-found': 'Usuario no encontrado',
         'auth/wrong-password': 'Contraseña incorrecta',
-        'auth/email-already-in-use': 'Ya existe una cuenta con este correo',
-        'auth/weak-password': 'La contraseña debe tener al menos 6 caracteres',
-        'auth/too-many-requests': 'Demasiados intentos. Intenta más tarde',
+        'auth/email-already-in-use': 'Este correo ya está registrado',
+        'auth/weak-password': 'La contraseña es muy débil',
+        'auth/invalid-email': 'Correo electrónico inválido',
       };
-      showError(errorMessages[error.code] || 'Ocurrió un error. Intenta de nuevo.');
+      showError('Error', errorMessages[error.code] || 'Error de autenticación');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleGoogleLogin = async () => {
+  const handleGoogleAuth = async () => {
     setIsLoading(true);
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
-      showSuccess('¡Bienvenido!');
+      showSuccess('¡Bienvenido!', 'Sesión iniciada con Google');
     } catch (error: any) {
       if (error.code !== 'auth/popup-closed-by-user') {
-        showError('Error al iniciar sesión con Google');
+        showError('Error', 'No se pudo iniciar sesión con Google');
       }
     } finally {
       setIsLoading(false);
@@ -86,237 +113,324 @@ export const AuthPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#000510] flex">
+    <div 
+      className="min-h-screen flex"
+      style={{ background: 'linear-gradient(135deg, #000408 0%, #000810 50%, #000000 100%)' }}
+    >
       {/* Left Panel - Features */}
-      <div className="hidden lg:flex lg:w-1/2 p-12 flex-col justify-between relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #001520 0%, #000a10 50%, #000000 100%)' }}>
-        {/* Background decorations */}
-        <div className="absolute top-0 left-0 w-96 h-96 bg-primary-500/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
-        <div className="absolute bottom-0 right-0 w-96 h-96 bg-primary-500/5 rounded-full blur-3xl translate-x-1/2 translate-y-1/2" />
+      <div 
+        className="hidden lg:flex lg:w-1/2 p-12 flex-col justify-between relative overflow-hidden"
+        style={{ background: 'linear-gradient(135deg, #001018 0%, #000810 50%, #000000 100%)' }}
+      >
+        {/* Background effects */}
+        <div 
+          className="absolute top-0 left-0 w-[500px] h-[500px] rounded-full blur-[120px] -translate-x-1/2 -translate-y-1/2"
+          style={{ backgroundColor: `${themeColors.primary}15` }}
+        />
+        <div 
+          className="absolute bottom-0 right-0 w-[400px] h-[400px] rounded-full blur-[100px] translate-x-1/2 translate-y-1/2"
+          style={{ backgroundColor: `${themeColors.primary}10` }}
+        />
 
-        {/* Logo */}
+        {/* Logo - LARGER */}
         <div className="relative z-10">
-          <div className="flex items-center gap-3 mb-4">
-            <img 
-              src="/logo-smarter.jpg" 
-              alt="Smarter Investment" 
-              className="w-14 h-14 rounded-xl object-cover shadow-lg shadow-primary-500/20"
-            />
+          <div className="flex items-center gap-4 mb-6">
+            <div 
+              className="w-24 h-24 rounded-2xl overflow-hidden shadow-2xl"
+              style={{ 
+                boxShadow: `0 0 40px ${themeColors.primary}40, 0 0 80px ${themeColors.primary}20`,
+                border: `2px solid ${themeColors.primary}50`
+              }}
+            >
+              <img 
+                src="/logo-smarter.jpg" 
+                alt="Smarter Investment" 
+                className="w-full h-full object-cover"
+              />
+            </div>
             <div>
-              <h1 className="text-2xl font-bold text-white">Smarter</h1>
-              <p className="text-primary-400 text-sm font-medium">Investment</p>
+              <h1 className="text-3xl font-bold text-white">Smarter</h1>
+              <p className="text-lg font-medium" style={{ color: themeColors.primary }}>Investment</p>
             </div>
           </div>
-          <p className="text-white/60 text-lg max-w-md">
-            Tu gestor financiero personal inteligente. Toma el control de tus finanzas hoy.
+          <p className="text-white/70 text-lg max-w-md leading-relaxed">
+            {t(language, 'tagline')}
           </p>
         </div>
 
         {/* Features Grid - Glassmorphism */}
-        <div className="relative z-10 grid grid-cols-2 gap-4">
+        <div className="relative z-10 grid grid-cols-2 gap-4 my-8">
           {FEATURES.map((feature, index) => (
             <motion.div
               key={index}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className="backdrop-blur-xl bg-white/5 rounded-2xl p-5 border border-white/10 shadow-lg hover:bg-white/10 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-primary-500/10"
+              transition={{ delay: index * 0.1 + 0.3 }}
+              className="backdrop-blur-xl rounded-2xl p-5 border transition-all duration-300 hover:scale-[1.03]"
+              style={{
+                backgroundColor: 'rgba(255,255,255,0.03)',
+                borderColor: 'rgba(255,255,255,0.08)',
+                boxShadow: `0 4px 30px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)`
+              }}
             >
-              <div className="w-12 h-12 rounded-xl bg-primary-500/20 flex items-center justify-center text-primary-400 mb-4 shadow-lg shadow-primary-500/20">
+              <div 
+                className="w-12 h-12 rounded-xl flex items-center justify-center mb-4"
+                style={{ 
+                  backgroundColor: `${themeColors.primary}20`,
+                  color: themeColors.primary,
+                  boxShadow: `0 0 20px ${themeColors.primary}30`
+                }}
+              >
                 {feature.icon}
               </div>
-              <h3 className="font-bold text-white mb-2">{feature.title}</h3>
-              <p className="text-sm text-white/60">{feature.description}</p>
+              <h3 className="font-bold text-white mb-2">{t(language, feature.titleKey)}</h3>
+              <p className="text-sm text-white/50">{t(language, feature.descKey)}</p>
             </motion.div>
           ))}
         </div>
 
         {/* Footer */}
         <div className="relative z-10 text-white/30 text-sm">
-          © 2025 Smarter Investment. Todos los derechos reservados.
+          {t(language, 'copyright')}
         </div>
       </div>
 
       {/* Right Panel - Auth Form */}
-      <div className="flex-1 flex items-center justify-center p-6 lg:p-12" style={{ background: 'linear-gradient(135deg, #001015 0%, #000510 50%, #000000 100%)' }}>
+      <div 
+        className="flex-1 flex items-center justify-center p-6 lg:p-12"
+        style={{ background: 'linear-gradient(135deg, #000510 0%, #000408 50%, #000000 100%)' }}
+      >
+        {/* Mobile Logo */}
+        <div className="lg:hidden absolute top-6 left-6 flex items-center gap-3">
+          <img 
+            src="/logo-smarter.jpg" 
+            alt="Smarter" 
+            className="w-12 h-12 rounded-xl object-cover"
+            style={{ boxShadow: `0 0 20px ${themeColors.primary}40` }}
+          />
+          <div>
+            <h1 className="text-xl font-bold text-white">Smarter</h1>
+            <p className="text-xs" style={{ color: themeColors.primary }}>Investment</p>
+          </div>
+        </div>
+
+        {/* Auth Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="w-full max-w-md"
         >
-          {/* Mobile Logo */}
-          <div className="lg:hidden text-center mb-8">
-            <img 
-              src="/logo-smarter.jpg" 
-              alt="Smarter Investment" 
-              className="w-20 h-20 mx-auto rounded-2xl object-cover mb-4 shadow-lg shadow-primary-500/30"
-            />
-            <h1 className="text-2xl font-bold text-white">Smarter Investment</h1>
-            <p className="text-white/50">Tu gestor financiero personal</p>
-          </div>
+          <div 
+            className="backdrop-blur-xl rounded-3xl p-8 border"
+            style={{
+              backgroundColor: 'rgba(255,255,255,0.02)',
+              borderColor: 'rgba(255,255,255,0.06)',
+              boxShadow: `0 8px 40px rgba(0,0,0,0.5), 0 0 60px ${themeColors.primary}10`
+            }}
+          >
+            {/* Header */}
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold text-white mb-2">
+                {isLogin ? t(language, 'welcome') : t(language, 'createAccount')}
+              </h2>
+              <p className="text-white/50">
+                {isLogin ? 'Inicia sesión para continuar' : 'Crea tu cuenta gratis'}
+              </p>
+            </div>
 
-          {/* Auth Card - Glassmorphism */}
-          <div className="backdrop-blur-xl bg-white/5 rounded-3xl p-8 border border-white/10 shadow-2xl shadow-primary-500/10">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={mode}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.2 }}
-              >
-                {/* Header */}
-                <div className="text-center mb-8">
-                  <h2 className="text-2xl font-bold text-white mb-2">
-                    {mode === 'login' && '¡Bienvenido!'}
-                    {mode === 'register' && 'Crear Cuenta'}
-                    {mode === 'forgot' && 'Recuperar Contraseña'}
-                  </h2>
-                  <p className="text-white/50">
-                    {mode === 'login' && 'Inicia sesión para continuar'}
-                    {mode === 'register' && 'Regístrate gratis en segundos'}
-                    {mode === 'forgot' && 'Te enviaremos un enlace de recuperación'}
-                  </p>
-                </div>
+            {/* Form */}
+            <form onSubmit={handleEmailAuth} className="space-y-4">
+              {/* Name field (only for registration) */}
+              <AnimatePresence>
+                {!isLogin && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                  >
+                    <label className="block text-sm text-white/60 mb-2">
+                      {t(language, 'name')}
+                    </label>
+                    <div className="relative">
+                      <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" />
+                      <input
+                        type="text"
+                        value={formData.name}
+                        onChange={(e) => handleInputChange('name', e.target.value)}
+                        placeholder={t(language, 'namePlaceholder')}
+                        className="w-full pl-12 pr-4 py-3.5 rounded-xl text-white placeholder-white/30 transition-all focus:outline-none focus:ring-2"
+                        style={{
+                          backgroundColor: 'rgba(255,255,255,0.05)',
+                          border: '1px solid rgba(255,255,255,0.1)',
+                        }}
+                      />
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
-                {/* Form */}
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  {mode === 'register' && (
-                    <Input
-                      label="Nombre"
-                      type="text"
-                      placeholder="Tu nombre"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      leftIcon={<User className="w-4 h-4" />}
-                    />
-                  )}
-
-                  <Input
-                    label="Correo electrónico"
+              {/* Email */}
+              <div>
+                <label className="block text-sm text-white/60 mb-2">
+                  {t(language, 'email')}
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" />
+                  <input
                     type="email"
-                    placeholder="correo@ejemplo.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    leftIcon={<Mail className="w-4 h-4" />}
-                    required
+                    value={formData.email}
+                    onChange={(e) => handleInputChange('email', e.target.value)}
+                    placeholder={t(language, 'emailPlaceholder')}
+                    className="w-full pl-12 pr-4 py-3.5 rounded-xl text-white placeholder-white/30 transition-all focus:outline-none focus:ring-2"
+                    style={{
+                      backgroundColor: 'rgba(255,255,255,0.05)',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                    }}
                   />
+                </div>
+              </div>
 
-                  {mode !== 'forgot' && (
-                    <Input
-                      label="Contraseña"
-                      type={showPassword ? 'text' : 'password'}
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      leftIcon={<Lock className="w-4 h-4" />}
-                      rightIcon={
-                        <button type="button" onClick={() => setShowPassword(!showPassword)}>
-                          {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </button>
-                      }
-                      required
-                    />
-                  )}
+              {/* Password */}
+              <div>
+                <label className="block text-sm text-white/60 mb-2">
+                  {t(language, 'password')}
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={formData.password}
+                    onChange={(e) => handleInputChange('password', e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full pl-12 pr-12 py-3.5 rounded-xl text-white placeholder-white/30 transition-all focus:outline-none focus:ring-2"
+                    style={{
+                      backgroundColor: 'rgba(255,255,255,0.05)',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/60"
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+              </div>
 
-                  {mode === 'login' && (
-                    <div className="text-right">
+              {/* Confirm Password (only for registration) */}
+              <AnimatePresence>
+                {!isLogin && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                  >
+                    <label className="block text-sm text-white/60 mb-2">
+                      {t(language, 'confirmPassword')}
+                    </label>
+                    <div className="relative">
+                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" />
+                      <input
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        value={formData.confirmPassword}
+                        onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                        placeholder="••••••••"
+                        className="w-full pl-12 pr-12 py-3.5 rounded-xl text-white placeholder-white/30 transition-all focus:outline-none focus:ring-2"
+                        style={{
+                          backgroundColor: 'rgba(255,255,255,0.05)',
+                          border: '1px solid rgba(255,255,255,0.1)',
+                        }}
+                      />
                       <button
                         type="button"
-                        onClick={() => setMode('forgot')}
-                        className="text-sm text-primary-400 hover:text-primary-300 transition-colors"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/60"
                       >
-                        ¿Olvidaste tu contraseña?
+                        {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                       </button>
                     </div>
-                  )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
-                  <Button
-                    type="submit"
-                    fullWidth
-                    isLoading={isLoading}
-                    rightIcon={<ArrowRight className="w-4 h-4" />}
-                    className="mt-6"
+              {/* Forgot Password (only for login) */}
+              {isLogin && (
+                <div className="text-right">
+                  <button 
+                    type="button" 
+                    className="text-sm hover:underline"
+                    style={{ color: themeColors.primary }}
                   >
-                    {mode === 'login' && 'Iniciar Sesión'}
-                    {mode === 'register' && 'Crear Cuenta'}
-                    {mode === 'forgot' && 'Enviar Enlace'}
-                  </Button>
-                </form>
+                    {t(language, 'forgotPassword')}
+                  </button>
+                </div>
+              )}
 
-                {/* Divider */}
-                {mode !== 'forgot' && (
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full py-3.5 rounded-xl font-semibold text-white flex items-center justify-center gap-2 transition-all hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{ 
+                  backgroundColor: themeColors.primary,
+                  boxShadow: `0 4px 20px ${themeColors.primary}40`
+                }}
+              >
+                {isLoading ? (
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
                   <>
-                    <div className="flex items-center gap-4 my-6">
-                      <div className="flex-1 h-px bg-white/10" />
-                      <span className="text-sm text-white/40">o continúa con</span>
-                      <div className="flex-1 h-px bg-white/10" />
-                    </div>
-
-                    {/* Google Login */}
-                    <button
-                      type="button"
-                      onClick={handleGoogleLogin}
-                      disabled={isLoading}
-                      className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition-colors text-white font-medium disabled:opacity-50"
-                    >
-                      <svg className="w-5 h-5" viewBox="0 0 24 24">
-                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                      </svg>
-                      Continuar con Google
-                    </button>
+                    {isLogin ? t(language, 'login') : t(language, 'createAccount')}
+                    <ArrowRight className="w-5 h-5" />
                   </>
                 )}
+              </button>
+            </form>
 
-                {/* Mode Toggle */}
-                <div className="text-center mt-6">
-                  {mode === 'login' && (
-                    <p className="text-white/50">
-                      ¿No tienes cuenta?{' '}
-                      <button
-                        type="button"
-                        onClick={() => setMode('register')}
-                        className="text-primary-400 hover:text-primary-300 font-medium transition-colors"
-                      >
-                        Regístrate
-                      </button>
-                    </p>
-                  )}
-                  {mode === 'register' && (
-                    <p className="text-white/50">
-                      ¿Ya tienes cuenta?{' '}
-                      <button
-                        type="button"
-                        onClick={() => setMode('login')}
-                        className="text-primary-400 hover:text-primary-300 font-medium transition-colors"
-                      >
-                        Inicia Sesión
-                      </button>
-                    </p>
-                  )}
-                  {mode === 'forgot' && (
-                    <button
-                      type="button"
-                      onClick={() => setMode('login')}
-                      className="text-primary-400 hover:text-primary-300 font-medium transition-colors"
-                    >
-                      Volver al inicio de sesión
-                    </button>
-                  )}
-                </div>
-              </motion.div>
-            </AnimatePresence>
+            {/* Divider */}
+            <div className="flex items-center gap-4 my-6">
+              <div className="flex-1 h-px bg-white/10" />
+              <span className="text-white/40 text-sm">{t(language, 'continueWith')}</span>
+              <div className="flex-1 h-px bg-white/10" />
+            </div>
+
+            {/* Google Auth */}
+            <button
+              onClick={handleGoogleAuth}
+              disabled={isLoading}
+              className="w-full py-3.5 rounded-xl font-medium text-white flex items-center justify-center gap-3 transition-all hover:bg-white/10 disabled:opacity-50"
+              style={{
+                backgroundColor: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(255,255,255,0.1)',
+              }}
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+              </svg>
+              Continuar con Google
+            </button>
+
+            {/* Toggle Login/Register */}
+            <div className="mt-6 text-center">
+              <span className="text-white/50">
+                {isLogin ? t(language, 'noAccount') : t(language, 'alreadyHaveAccount')}
+              </span>
+              <button
+                onClick={() => {
+                  setIsLogin(!isLogin);
+                  setFormData({ name: '', email: '', password: '', confirmPassword: '' });
+                }}
+                className="ml-2 font-semibold hover:underline"
+                style={{ color: themeColors.primary }}
+              >
+                {isLogin ? t(language, 'register') : t(language, 'login')}
+              </button>
+            </div>
           </div>
-
-          {/* Terms */}
-          <p className="text-center text-white/30 text-xs mt-6">
-            Al continuar, aceptas nuestros{' '}
-            <a href="#" className="text-primary-400 hover:underline">Términos de Servicio</a>
-            {' '}y{' '}
-            <a href="#" className="text-primary-400 hover:underline">Política de Privacidad</a>
-          </p>
         </motion.div>
       </div>
     </div>

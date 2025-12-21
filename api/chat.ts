@@ -16,11 +16,11 @@ export default async function handler(req: Request) {
     });
   }
 
-  // Get API key from environment variable
-  const CLAUDE_API_KEY = process.env.CLAUDE_API_KEY;
+  // Get API key from environment variable (try both names)
+  const CLAUDE_API_KEY = process.env.CLAUDE_API_KEY || process.env.VITE_CLAUDE_API_KEY || process.env.VITE_ANTHROPIC_API_KEY;
   
   if (!CLAUDE_API_KEY) {
-    return new Response(JSON.stringify({ error: 'API key not configured' }), {
+    return new Response(JSON.stringify({ error: 'API key not configured', fallback: true }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     });
