@@ -228,13 +228,13 @@ export const AuthPage: React.FC = () => {
               boxShadow: `0 8px 40px rgba(0,0,0,0.5), 0 0 60px ${themeColors.primary}10`
             }}
           >
-            {/* Logo centrado grande */}
+            {/* Logo centrado EXTRA grande */}
             <div className="flex justify-center mb-6">
               <div 
-                className="w-28 h-28 rounded-3xl overflow-hidden shadow-2xl"
+                className="w-40 h-40 rounded-3xl overflow-hidden shadow-2xl"
                 style={{ 
-                  boxShadow: `0 0 50px ${themeColors.primary}50, 0 0 100px ${themeColors.primary}30`,
-                  border: `3px solid ${themeColors.primary}60`
+                  boxShadow: `0 0 60px ${themeColors.primary}60, 0 0 120px ${themeColors.primary}40`,
+                  border: `4px solid ${themeColors.primary}70`
                 }}
               >
                 <img 
@@ -384,21 +384,24 @@ export const AuthPage: React.FC = () => {
                 </div>
               )}
 
-              {/* Submit Button */}
+              {/* Submit Button - Card style with visible text */}
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-3.5 rounded-xl font-semibold text-white flex items-center justify-center gap-2 transition-all hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed backdrop-blur-sm border"
                 style={{ 
-                  backgroundColor: themeColors.primary,
-                  boxShadow: `0 4px 20px ${themeColors.primary}40`
+                  background: `linear-gradient(135deg, ${themeColors.primary}90, ${themeColors.primary}70)`,
+                  borderColor: `${themeColors.primary}`,
+                  boxShadow: `0 4px 25px ${themeColors.primary}50, inset 0 1px 0 rgba(255,255,255,0.2)`,
+                  color: '#FFFFFF',
+                  textShadow: '0 1px 2px rgba(0,0,0,0.3)'
                 }}
               >
                 {isLoading ? (
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <div className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin" />
                 ) : (
                   <>
-                    {isLogin ? t(language, 'login') : t(language, 'createAccount')}
+                    <span>{isLogin ? t(language, 'login') : t(language, 'createAccount')}</span>
                     <ArrowRight className="w-5 h-5" />
                   </>
                 )}

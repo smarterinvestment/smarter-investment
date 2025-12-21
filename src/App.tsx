@@ -17,6 +17,7 @@ import { SettingsPage } from './features/settings/SettingsPage';
 import { AssistantPage } from './features/assistant/AssistantPage';
 import { RecurringPage } from './features/recurring/RecurringPage';
 import { MorePage } from './features/more/MorePage';
+import { OnboardingTutorial } from './components/tutorial/OnboardingTutorial';
 import { Toaster } from 'react-hot-toast';
 
 // Page Components Map
@@ -281,6 +282,35 @@ function App() {
   } = useStore();
 
   const [initializing, setInitializing] = useState(true);
+  const [showTutorial, setShowTutorial] = useState(false);
+
+  // Check if user has seen tutorial
+  const checkTutorialStatus = (userId: string) => {
+    const tutorialKey = `smarter-tutorial-completed-${userId}`;
+    return localStorage.getItem(tutorialKey) === 'true';
+  };
+
+  // Mark tutorial as completed
+  const completeTutorial = () => {
+    if (user?.uid) {
+      const tutorialKey = `smarter-tutorial-completed-${user.uid}`;
+      localStorage.setItem(tutorialKey, 'true');
+    }
+    setShowTutorial(false);
+  };
+
+  // Function to show tutorial again (called from settings/more)
+  const openTutorial = () => {
+    setShowTutorial(true);
+  };
+
+  // Expose openTutorial globally for other components
+  useEffect(() => {
+    (window as any).openTutorial = openTutorial;
+    return () => {
+      delete (window as any).openTutorial;
+    };
+  }, []);
 
   // Apply theme on mount and changes
   useEffect(() => {
@@ -297,6 +327,13 @@ function App() {
           displayName: firebaseUser.displayName,
           photoURL: firebaseUser.photoURL,
         });
+        
+        // Check if new user needs tutorial
+        const hasSeenTutorial = checkTutorialStatus(firebaseUser.uid);
+        if (!hasSeenTutorial) {
+          // Show tutorial after a brief delay
+          setTimeout(() => setShowTutorial(true), 2000);
+        }
       } else {
         setUser(null);
       }
@@ -358,6 +395,14 @@ function App() {
           <PageComponent />
         )}
       </MainLayout>
+      
+      {/* Onboarding Tutorial */}
+      <OnboardingTutorial
+        isOpen={showTutorial}
+        onClose={() => setShowTutorial(false)}
+        onComplete={completeTutorial}
+      />
+      
       <Toaster
         position="top-center"
         toastOptions={{

@@ -59,6 +59,7 @@ const MENU_SECTIONS = [
   {
     title: 'Soporte',
     items: [
+      { id: 'tutorial', icon: Sparkles, label: '📚 Ver Tutorial', description: 'Guía paso a paso', color: '#8B5CF6', action: 'tutorial' },
       { id: 'help', icon: HelpCircle, label: 'Ayuda', description: 'FAQ y tutoriales', action: 'help' },
     ]
   }
@@ -165,6 +166,12 @@ export const MorePage: React.FC = () => {
         case 'profile': setSettingsTab('general'); setActivePage('settings'); break;
         case 'notifications': setSettingsTab('notifications'); setActivePage('settings'); break;
         case 'security': setSettingsTab('general'); setActivePage('settings'); break;
+        case 'tutorial': 
+          // Call the global function to open tutorial
+          if ((window as any).openTutorial) {
+            (window as any).openTutorial();
+          }
+          break;
         case 'help': break; // TODO
         case 'import': break; // TODO
       }
