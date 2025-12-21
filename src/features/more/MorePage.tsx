@@ -12,6 +12,7 @@ import {
 import { useStore, getThemeColors } from '../../stores/useStore';
 import { Card, Button, Modal, Badge } from '../../components/ui';
 import { cn } from '../../utils/cn';
+import { useTranslations, LANGUAGE_OPTIONS } from '../../utils/translations';
 import type { Theme, Currency, Language } from '../../types';
 
 // Menu Items
@@ -97,12 +98,56 @@ export const MorePage: React.FC = () => {
     setTheme, setCurrency, setLanguage, setActivePage, setSettingsTab, logout 
   } = useStore();
   const themeColors = getThemeColors(theme);
+  const t = useTranslations(language);
   
   const [showThemeModal, setShowThemeModal] = useState(false);
   const [showCurrencyModal, setShowCurrencyModal] = useState(false);
   const [showLanguageModal, setShowLanguageModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+
+  // Dynamic menu sections based on language
+  const MENU_SECTIONS_TRANSLATED = [
+    {
+      title: t.recur_title,
+      items: [
+        { id: 'recurring-income', icon: TrendingUp, label: t.recur_fixedIncome, description: t.cat_salary, color: '#22C55E', page: 'recurring' },
+        { id: 'recurring-expense', icon: TrendingDown, label: t.recur_fixedExpenses, description: t.cat_subscriptions, color: '#EF4444', page: 'recurring' },
+      ]
+    },
+    {
+      title: t.reports_title,
+      items: [
+        { id: 'reports', icon: PieChart, label: t.reports_title, description: t.reports_byCategory, page: 'reports' },
+        { id: 'export', icon: Download, label: t.settings_export, description: 'CSV, PDF, Excel', action: 'export' },
+        { id: 'import', icon: Upload, label: t.settings_import, description: 'CSV, Excel', action: 'import' },
+      ]
+    },
+    {
+      title: t.more_quickSettings,
+      items: [
+        { id: 'theme', icon: Palette, label: t.settings_theme, description: t.settings_appearance, action: 'theme' },
+        { id: 'language', icon: Globe, label: t.settings_language, description: LANGUAGE_OPTIONS.find(l => l.value === language)?.label || 'Español', action: 'language' },
+        { id: 'currency', icon: DollarSign, label: t.settings_currency, description: currency, action: 'currency' },
+      ]
+    },
+    {
+      title: t.more_advancedSettings,
+      items: [
+        { id: 'settings', icon: Settings, label: `⚙️ ${t.more_fullSettings}`, description: t.settings_alerts, color: '#05BFDB', page: 'settings', settingsTab: 'general' },
+        { id: 'alerts', icon: Bell, label: `🔔 ${t.more_smartAlerts}`, description: t.settings_budgetAlerts, color: '#F59E0B', page: 'settings', settingsTab: 'alerts' },
+        { id: 'notifications', icon: Bell, label: `📱 ${t.settings_notifications}`, description: 'Push, email', color: '#8B5CF6', page: 'settings', settingsTab: 'notifications' },
+        { id: 'data', icon: Download, label: `💾 ${t.more_dataManagement}`, description: t.settings_export, color: '#EF4444', page: 'settings', settingsTab: 'data' },
+      ]
+    },
+    {
+      title: t.more_account,
+      items: [
+        { id: 'profile', icon: User, label: `👤 ${t.more_myProfile}`, description: user?.email || '', page: 'settings', settingsTab: 'general' },
+        { id: 'logout', icon: LogOut, label: `🚪 ${t.nav_logout}`, description: t.more_logoutConfirm, color: '#EF4444', action: 'logout' },
+      ]
+    },
+  ];
 
   const handleItemClick = (item: any) => {
     if (item.page) {
@@ -176,7 +221,7 @@ export const MorePage: React.FC = () => {
         animate="visible"
         className="space-y-6"
       >
-        {MENU_SECTIONS.map((section) => (
+        {MENU_SECTIONS_TRANSLATED.map((section) => (
           <div key={section.title}>
             <h3 className="text-sm font-semibold text-white/50 uppercase tracking-wider mb-3 px-1">
               {section.title}

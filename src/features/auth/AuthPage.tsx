@@ -228,6 +228,23 @@ export const AuthPage: React.FC = () => {
               boxShadow: `0 8px 40px rgba(0,0,0,0.5), 0 0 60px ${themeColors.primary}10`
             }}
           >
+            {/* Logo centrado grande */}
+            <div className="flex justify-center mb-6">
+              <div 
+                className="w-28 h-28 rounded-3xl overflow-hidden shadow-2xl"
+                style={{ 
+                  boxShadow: `0 0 50px ${themeColors.primary}50, 0 0 100px ${themeColors.primary}30`,
+                  border: `3px solid ${themeColors.primary}60`
+                }}
+              >
+                <img 
+                  src="/logo-smarter.jpg" 
+                  alt="Smarter Investment" 
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </div>
+
             {/* Header */}
             <div className="text-center mb-8">
               <h2 className="text-2xl font-bold text-white mb-2">

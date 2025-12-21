@@ -14,6 +14,7 @@ import { useStore, applyTheme, getThemeColors } from '../../stores/useStore';
 import { Card, Button, Input, Select, Modal, Badge, Avatar } from '../../components/ui';
 import { cn } from '../../utils/cn';
 import { showSuccess, showError } from '../../lib/errorHandler';
+import { useTranslations, LANGUAGE_OPTIONS } from '../../utils/translations';
 import type { Theme, Currency, Language } from '../../types';
 
 // Theme options
@@ -136,6 +137,7 @@ export const SettingsPage: React.FC = () => {
     logout, expenses, incomes, goals, budgets, settingsTab, setSettingsTab
   } = useStore();
   const themeColors = getThemeColors(theme);
+  const t = useTranslations(language);
 
   // Use store's settingsTab instead of local state
   const activeTab = settingsTab;

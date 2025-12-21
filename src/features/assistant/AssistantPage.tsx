@@ -12,6 +12,7 @@ import { useStore, getThemeColors } from '../../stores/useStore';
 import { Card, Button, Badge } from '../../components/ui';
 import { cn } from '../../utils/cn';
 import { formatCurrency } from '../../utils/financial';
+import { useTranslations } from '../../utils/translations';
 
 // Quick action prompts
 const QUICK_ACTIONS = [
@@ -41,8 +42,9 @@ interface FinancialAlert {
 }
 
 export const AssistantPage: React.FC = () => {
-  const { user, expenses, incomes, goals, budgets, recurringTransactions, theme, currency } = useStore();
+  const { user, expenses, incomes, goals, budgets, recurringTransactions, theme, currency, language } = useStore();
   const themeColors = getThemeColors(theme);
+  const t = useTranslations(language);
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -653,16 +655,16 @@ ALERTAS: ${alerts.map(a => `${a.icon} ${a.title}`).join(', ') || 'Ninguna'}
       <div className="text-center py-3 border-b border-white/10 flex-shrink-0">
         <h1 className="text-xl font-bold text-white flex items-center justify-center gap-2">
           <Bot className="w-6 h-6" style={{ color: themeColors.primary }} />
-          Asistente Financiero
+          {t.asst_title}
         </h1>
         <div className="flex items-center justify-center gap-2 mt-2">
           <Badge variant="success" size="sm">
             <Brain className="w-3 h-3 mr-1" />
-            IA Integrada
+            IA
           </Badge>
           <Badge variant="secondary" size="sm">
             <Zap className="w-3 h-3 mr-1" />
-            Análisis en Tiempo Real
+            {language === 'es' ? 'Análisis en Tiempo Real' : 'Real-Time Analysis'}
           </Badge>
         </div>
       </div>
@@ -673,10 +675,10 @@ ALERTAS: ${alerts.map(a => `${a.icon} ${a.title}`).join(', ') || 'Ninguna'}
           <div className="flex items-center gap-2 text-sm">
             <AlertTriangle className="w-4 h-4 text-warning-400" />
             <span className="text-warning-400">
-              {alerts.filter(a => a.type === 'danger' || a.type === 'warning').length} alerta(s) activa(s)
+              {alerts.filter(a => a.type === 'danger' || a.type === 'warning').length} {t.asst_alerts.toLowerCase()}
             </span>
             <Button size="sm" variant="secondary" onClick={() => handleSend('alertas')} className="ml-auto">
-              Ver
+              {language === 'es' ? 'Ver' : 'View'}
             </Button>
           </div>
         </div>
@@ -685,7 +687,16 @@ ALERTAS: ${alerts.map(a => `${a.icon} ${a.title}`).join(', ') || 'Ninguna'}
       {/* Quick Actions */}
       <div className="px-4 py-3 border-b border-white/10 flex-shrink-0">
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-          {QUICK_ACTIONS.map(action => (
+          {[
+            { id: '1', icon: '📊', label: t.asst_summary, keyword: 'resumen' },
+            { id: '2', icon: '💡', label: t.asst_tips, keyword: 'consejos' },
+            { id: '3', icon: '💰', label: t.asst_savings, keyword: 'ahorro' },
+            { id: '4', icon: '🎯', label: t.nav_goals, keyword: 'metas' },
+            { id: '5', icon: '📈', label: t.asst_projection, keyword: 'proyeccion' },
+            { id: '6', icon: '⚠️', label: t.asst_alerts, keyword: 'alertas' },
+            { id: '7', icon: '📉', label: t.dash_expenses, keyword: 'gastos' },
+            { id: '8', icon: '🏆', label: t.asst_achievements, keyword: 'logros' },
+          ].map(action => (
             <Button
               key={action.id}
               size="sm"
@@ -765,7 +776,7 @@ ALERTAS: ${alerts.map(a => `${a.icon} ${a.title}`).join(', ') || 'Ninguna'}
           <button
             onClick={clearChat}
             className="p-3 rounded-xl bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-colors flex-shrink-0"
-            title="Limpiar chat"
+            title={t.asst_clearChat}
           >
             <Trash2 className="w-5 h-5" />
           </button>
@@ -776,7 +787,7 @@ ALERTAS: ${alerts.map(a => `${a.icon} ${a.title}`).join(', ') || 'Ninguna'}
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyPress={e => e.key === 'Enter' && !isTyping && handleSend()}
-              placeholder="Escribe tu pregunta financiera..."
+              placeholder={t.asst_placeholder}
               disabled={isTyping}
               className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3.5 pr-12 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-transparent disabled:opacity-50 transition-all"
               style={{ borderColor: `${themeColors.primary}30` }}
@@ -798,7 +809,7 @@ ALERTAS: ${alerts.map(a => `${a.icon} ${a.title}`).join(', ') || 'Ninguna'}
         
         {/* Hint text */}
         <p className="text-xs text-white/30 mt-2 text-center">
-          Presiona Enter o el botón para enviar • Usa los botones de arriba para consultas rápidas
+          {t.asst_hint}
         </p>
       </div>
     </div>

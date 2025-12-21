@@ -27,7 +27,7 @@ import { useFirebaseData } from '../../hooks/useFirebaseData';
 import { FloatingParticles } from '../effects/FloatingParticles';
 import { Avatar, Badge } from '../ui';
 import { cn } from '../../utils/cn';
-import { getNavLabels } from '../../utils/i18n';
+import { getNavLabels, useTranslations } from '../../utils/translations';
 import type { Page, Theme } from '../../types';
 
 // ========================================

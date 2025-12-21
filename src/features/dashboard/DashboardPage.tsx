@@ -30,6 +30,7 @@ import {
 } from '../../utils/financial';
 import { showSuccess, showError } from '../../lib/errorHandler';
 import { DEFAULT_EXPENSE_CATEGORIES, DEFAULT_INCOME_CATEGORIES } from '../../types';
+import { useTranslations } from '../../utils/translations';
 import type { Transaction } from '../../types';
 
 // ========================================
@@ -443,11 +444,13 @@ export const DashboardPage: React.FC = () => {
     recurringTransactions,
     currency,
     theme,
+    language,
     setActivePage,
   } = useStore();
 
   const { add } = useTransactions();
   const themeColors = getThemeColors(theme);
+  const t = useTranslations(language);
 
   const [showQuickAdd, setShowQuickAdd] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);

@@ -18,6 +18,7 @@ import { Card, Button, Input, Select, Modal, Badge, EmptyState, Switch } from '.
 import { cn } from '../../utils/cn';
 import { formatCurrency } from '../../utils/financial';
 import { showSuccess, showError } from '../../lib/errorHandler';
+import { useTranslations } from '../../utils/translations';
 import type { RecurringTransaction, RecurringFrequency } from '../../types';
 import { DEFAULT_EXPENSE_CATEGORIES, DEFAULT_INCOME_CATEGORIES } from '../../types';
 
@@ -189,9 +190,10 @@ const RecurringForm: React.FC<RecurringFormProps> = ({ isOpen, onClose, recurrin
 // MAIN PAGE
 // ========================================
 export const RecurringPage: React.FC = () => {
-  const { currency, theme } = useStore();
+  const { currency, theme, language } = useStore();
   const { recurring, add, update, remove } = useRecurring();
   const themeColors = getThemeColors(theme);
+  const t = useTranslations(language);
 
   const [showForm, setShowForm] = useState(false);
   const [editingRecurring, setEditingRecurring] = useState<RecurringTransaction | null>(null);
@@ -330,35 +332,35 @@ export const RecurringPage: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-2">
             <RefreshCw className="w-6 h-6" style={{ color: themeColors.primary }} />
-            Recurrentes
+            {t.recur_title}
           </h1>
-          <p className="text-white/60 mt-1">{safeRecurring.length} transacciones configuradas</p>
+          <p className="text-white/60 mt-1">{safeRecurring.length} {t.nav_transactions.toLowerCase()}</p>
         </div>
-        <Button leftIcon={<Plus className="w-4 h-4" />} onClick={() => setShowForm(true)}>Nuevo</Button>
+        <Button leftIcon={<Plus className="w-4 h-4" />} onClick={() => setShowForm(true)}>{t.new}</Button>
       </div>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="text-center p-4">
           <ArrowUpRight className="w-8 h-8 mx-auto mb-2 text-success-400" />
-          <p className="text-xs text-white/50">Ingresos Fijos/mes</p>
+          <p className="text-xs text-white/50">{t.recur_fixedIncome}</p>
           <p className="text-lg font-bold text-success-400">{formatCurrency(summary.monthlyIncome, currency)}</p>
         </Card>
         <Card className="text-center p-4">
           <ArrowDownRight className="w-8 h-8 mx-auto mb-2 text-danger-400" />
-          <p className="text-xs text-white/50">Gastos Fijos/mes</p>
+          <p className="text-xs text-white/50">{t.recur_fixedExpenses}</p>
           <p className="text-lg font-bold text-danger-400">{formatCurrency(summary.monthlyExpenses, currency)}</p>
         </Card>
         <Card className="text-center p-4">
           <TrendingUp className="w-8 h-8 mx-auto mb-2" style={{ color: summary.net >= 0 ? '#22C55E' : '#EF4444' }} />
-          <p className="text-xs text-white/50">Balance Fijo/mes</p>
+          <p className="text-xs text-white/50">{t.recur_fixedBalance}</p>
           <p className={cn('text-lg font-bold', summary.net >= 0 ? 'text-success-400' : 'text-danger-400')}>
             {formatCurrency(summary.net, currency)}
           </p>
         </Card>
         <Card className="text-center p-4">
           <RefreshCw className="w-8 h-8 mx-auto mb-2" style={{ color: themeColors.primary }} />
-          <p className="text-xs text-white/50">Total Activos</p>
+          <p className="text-xs text-white/50">{t.recur_totalActive}</p>
           <p className="text-lg font-bold text-white">{safeRecurring.filter(r => r.isActive).length}</p>
         </Card>
       </div>
