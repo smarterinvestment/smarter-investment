@@ -37,6 +37,12 @@ const CURRENCIES: Array<{ value: Currency; label: string; symbol: string }> = [
 const LANGUAGES: Array<{ value: Language; label: string; flag: string }> = [
   { value: 'es', label: 'Español', flag: '🇪🇸' },
   { value: 'en', label: 'English', flag: '🇺🇸' },
+  { value: 'fr', label: 'Français', flag: '🇫🇷' },
+  { value: 'it', label: 'Italiano', flag: '🇮🇹' },
+  { value: 'pt', label: 'Português', flag: '🇧🇷' },
+  { value: 'de', label: 'Deutsch', flag: '🇩🇪' },
+  { value: 'zh', label: '中文', flag: '🇨🇳' },
+  { value: 'ja', label: '日本語', flag: '🇯🇵' },
 ];
 
 // Setting Section Component

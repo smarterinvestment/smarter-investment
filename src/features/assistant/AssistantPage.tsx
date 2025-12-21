@@ -648,9 +648,9 @@ ALERTAS: ${alerts.map(a => `${a.icon} ${a.title}`).join(', ') || 'Ninguna'}
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-140px)]">
+    <div className="flex flex-col" style={{ height: 'calc(100vh - 130px)', minHeight: '400px' }}>
       {/* Header */}
-      <div className="text-center py-3 border-b border-white/10">
+      <div className="text-center py-3 border-b border-white/10 flex-shrink-0">
         <h1 className="text-xl font-bold text-white flex items-center justify-center gap-2">
           <Bot className="w-6 h-6" style={{ color: themeColors.primary }} />
           Asistente Financiero
@@ -669,7 +669,7 @@ ALERTAS: ${alerts.map(a => `${a.icon} ${a.title}`).join(', ') || 'Ninguna'}
 
       {/* Alerts Banner */}
       {alerts.filter(a => a.type === 'danger' || a.type === 'warning').length > 0 && (
-        <div className="px-4 py-2 border-b border-white/10 bg-warning-500/5">
+        <div className="px-4 py-2 border-b border-white/10 bg-warning-500/5 flex-shrink-0">
           <div className="flex items-center gap-2 text-sm">
             <AlertTriangle className="w-4 h-4 text-warning-400" />
             <span className="text-warning-400">
@@ -683,7 +683,7 @@ ALERTAS: ${alerts.map(a => `${a.icon} ${a.title}`).join(', ') || 'Ninguna'}
       )}
 
       {/* Quick Actions */}
-      <div className="px-4 py-3 border-b border-white/10">
+      <div className="px-4 py-3 border-b border-white/10 flex-shrink-0">
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
           {QUICK_ACTIONS.map(action => (
             <Button
@@ -701,8 +701,8 @@ ALERTAS: ${alerts.map(a => `${a.icon} ${a.title}`).join(', ') || 'Ninguna'}
         </div>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      {/* Messages - scrollable area */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
         <AnimatePresence>
           {messages.map(msg => (
             <motion.div
@@ -759,31 +759,47 @@ ALERTAS: ${alerts.map(a => `${a.icon} ${a.title}`).join(', ') || 'Ninguna'}
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input */}
-      <div className="p-4 border-t border-white/10">
-        <div className="flex gap-2">
+      {/* Input Area - Fixed at bottom */}
+      <div className="p-4 border-t border-white/10 bg-dark-800/50 backdrop-blur-sm flex-shrink-0">
+        <div className="flex gap-3 items-center">
           <button
             onClick={clearChat}
-            className="p-3 rounded-xl bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-colors"
+            className="p-3 rounded-xl bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-colors flex-shrink-0"
             title="Limpiar chat"
           >
             <Trash2 className="w-5 h-5" />
           </button>
           
-          <input
-            type="text"
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyPress={e => e.key === 'Enter' && handleSend()}
-            placeholder="Escribe tu pregunta..."
-            disabled={isTyping}
-            className="flex-1 bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-primary-500 disabled:opacity-50"
-          />
+          <div className="flex-1 relative">
+            <input
+              type="text"
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyPress={e => e.key === 'Enter' && !isTyping && handleSend()}
+              placeholder="Escribe tu pregunta financiera..."
+              disabled={isTyping}
+              className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3.5 pr-12 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-transparent disabled:opacity-50 transition-all"
+              style={{ borderColor: `${themeColors.primary}30` }}
+            />
+          </div>
 
-          <Button onClick={() => handleSend()} disabled={!input.trim() || isTyping}>
+          <button
+            onClick={() => handleSend()}
+            disabled={!input.trim() || isTyping}
+            className="p-3.5 rounded-xl text-white transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+            style={{ 
+              backgroundColor: themeColors.primary,
+              boxShadow: `0 4px 15px ${themeColors.primary}40`
+            }}
+          >
             <Send className="w-5 h-5" />
-          </Button>
+          </button>
         </div>
+        
+        {/* Hint text */}
+        <p className="text-xs text-white/30 mt-2 text-center">
+          Presiona Enter o el botón para enviar • Usa los botones de arriba para consultas rápidas
+        </p>
       </div>
     </div>
   );

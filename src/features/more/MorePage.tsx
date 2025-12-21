@@ -83,6 +83,12 @@ const CURRENCIES: Array<{ id: Currency; name: string; symbol: string }> = [
 const LANGUAGES: Array<{ id: Language; name: string; flag: string }> = [
   { id: 'es', name: 'Español', flag: '🇪🇸' },
   { id: 'en', name: 'English', flag: '🇺🇸' },
+  { id: 'fr', name: 'Français', flag: '🇫🇷' },
+  { id: 'it', name: 'Italiano', flag: '🇮🇹' },
+  { id: 'pt', name: 'Português', flag: '🇧🇷' },
+  { id: 'de', name: 'Deutsch', flag: '🇩🇪' },
+  { id: 'zh', name: '中文', flag: '🇨🇳' },
+  { id: 'ja', name: '日本語', flag: '🇯🇵' },
 ];
 
 export const MorePage: React.FC = () => {
