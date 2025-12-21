@@ -108,7 +108,7 @@ REGLAS:
 
     console.log('[Claude API] Calling Anthropic API...');
 
-    // Call Claude API with claude-3-5-sonnet (latest stable)
+    // Call Claude API with claude-3-haiku (most reliable and cheapest)
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -117,7 +117,7 @@ REGLAS:
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-3-5-sonnet-20241022',
+        model: 'claude-3-haiku-20240307',
         max_tokens: 1024,
         system: systemPrompt,
         messages: apiMessages
