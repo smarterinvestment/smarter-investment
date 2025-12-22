@@ -50,17 +50,50 @@ interface FlexibleChartProps {
   height?: number;
 }
 
-// Custom Tooltip
+// Custom Tooltip - Enhanced
 const CustomTooltip = ({ active, payload, label, currency }: any) => {
   if (active && payload && payload.length) {
+    // Calculate total if multiple items
+    const total = payload.reduce((sum: number, entry: any) => sum + (entry.value || 0), 0);
+    const hasMultipleItems = payload.length > 1;
+
     return (
-      <div className="bg-black/90 border border-white/20 rounded-lg p-3 shadow-xl backdrop-blur-sm">
-        <p className="text-white/60 text-sm mb-1">{label}</p>
-        {payload.map((entry: any, index: number) => (
-          <p key={index} className="font-semibold text-sm" style={{ color: entry.color || entry.fill }}>
-            {entry.name}: {formatCurrency(entry.value, currency)}
-          </p>
-        ))}
+      <div className="bg-gradient-to-br from-black/95 to-black/85 border border-white/20 rounded-xl p-4 shadow-2xl backdrop-blur-md min-w-[180px]">
+        {/* Label */}
+        <p className="text-white/70 text-xs font-medium mb-2 uppercase tracking-wide">{label}</p>
+
+        {/* Items */}
+        <div className="space-y-1.5">
+          {payload.map((entry: any, index: number) => (
+            <div key={index} className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <div
+                  className="w-2.5 h-2.5 rounded-full"
+                  style={{ backgroundColor: entry.color || entry.fill }}
+                />
+                <span className="text-white/80 text-sm font-medium">{entry.name}</span>
+              </div>
+              <span
+                className="font-bold text-sm tabular-nums"
+                style={{ color: entry.color || entry.fill }}
+              >
+                {formatCurrency(entry.value, currency)}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {/* Total (if multiple items) */}
+        {hasMultipleItems && (
+          <div className="mt-3 pt-2 border-t border-white/10">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-white/60 text-xs font-medium">Total</span>
+              <span className="font-bold text-sm text-white tabular-nums">
+                {formatCurrency(total, currency)}
+              </span>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -222,19 +255,25 @@ export const FlexibleChart: React.FC<FlexibleChartProps> = ({
               cy="50%"
               innerRadius={50}
               outerRadius={80}
-              paddingAngle={2}
+              paddingAngle={3}
               dataKey="value"
               label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
               labelLine={false}
+              animationDuration={800}
+              animationBegin={0}
             >
               {chartData.map((entry: any, index: number) => (
-                <Cell key={index} fill={entry.fill || CHART_COLORS[index % CHART_COLORS.length]} />
+                <Cell
+                  key={index}
+                  fill={entry.fill || CHART_COLORS[index % CHART_COLORS.length]}
+                  style={{ cursor: 'pointer' }}
+                />
               ))}
             </Pie>
             <Tooltip content={<CustomTooltip currency={currency} />} />
-            <Legend 
+            <Legend
               formatter={(value) => <span className="text-white/70 text-xs">{value}</span>}
-              wrapperStyle={{ fontSize: '12px' }}
+              wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }}
             />
           </PieChart>
         </ResponsiveContainer>
@@ -248,17 +287,17 @@ export const FlexibleChart: React.FC<FlexibleChartProps> = ({
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
             <XAxis dataKey="label" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 11 }} axisLine={false} />
             <YAxis tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 11 }} axisLine={false} tickFormatter={(v) => `$${(v/1000).toFixed(0)}k`} />
-            <Tooltip content={<CustomTooltip currency={currency} />} />
+            <Tooltip content={<CustomTooltip currency={currency} />} cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeWidth: 2 }} />
             {dataMode !== 'categories' && (
               <>
-                <Line type="monotone" dataKey="ingresos" stroke="#22C55E" strokeWidth={2} dot={{ fill: '#22C55E', r: 4 }} name="Ingresos" />
-                <Line type="monotone" dataKey="gastos" stroke="#EF4444" strokeWidth={2} dot={{ fill: '#EF4444', r: 4 }} name="Gastos" />
+                <Line type="monotone" dataKey="ingresos" stroke="#22C55E" strokeWidth={3} dot={{ fill: '#22C55E', r: 4, strokeWidth: 2, stroke: '#1a1a1a' }} activeDot={{ r: 6 }} name="Ingresos" animationDuration={800} />
+                <Line type="monotone" dataKey="gastos" stroke="#EF4444" strokeWidth={3} dot={{ fill: '#EF4444', r: 4, strokeWidth: 2, stroke: '#1a1a1a' }} activeDot={{ r: 6 }} name="Gastos" animationDuration={800} />
               </>
             )}
             {dataMode === 'categories' && (
-              <Line type="monotone" dataKey="value" stroke={themeColors.primary} strokeWidth={2} dot={{ fill: themeColors.primary, r: 4 }} name="Monto" />
+              <Line type="monotone" dataKey="value" stroke={themeColors.primary} strokeWidth={3} dot={{ fill: themeColors.primary, r: 4, strokeWidth: 2, stroke: '#1a1a1a' }} activeDot={{ r: 6 }} name="Monto" animationDuration={800} />
             )}
-            <Legend />
+            <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
           </LineChart>
         </ResponsiveContainer>
       );
@@ -270,21 +309,21 @@ export const FlexibleChart: React.FC<FlexibleChartProps> = ({
           <AreaChart {...commonProps}>
             <defs>
               <linearGradient id="incomeGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#22C55E" stopOpacity={0.3} />
+                <stop offset="5%" stopColor="#22C55E" stopOpacity={0.4} />
                 <stop offset="95%" stopColor="#22C55E" stopOpacity={0} />
               </linearGradient>
               <linearGradient id="expenseGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#EF4444" stopOpacity={0.3} />
+                <stop offset="5%" stopColor="#EF4444" stopOpacity={0.4} />
                 <stop offset="95%" stopColor="#EF4444" stopOpacity={0} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
             <XAxis dataKey="label" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 11 }} axisLine={false} />
             <YAxis tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 11 }} axisLine={false} tickFormatter={(v) => `$${(v/1000).toFixed(0)}k`} />
-            <Tooltip content={<CustomTooltip currency={currency} />} />
-            <Area type="monotone" dataKey="ingresos" stroke="#22C55E" fill="url(#incomeGrad)" strokeWidth={2} name="Ingresos" />
-            <Area type="monotone" dataKey="gastos" stroke="#EF4444" fill="url(#expenseGrad)" strokeWidth={2} name="Gastos" />
-            <Legend />
+            <Tooltip content={<CustomTooltip currency={currency} />} cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeWidth: 2 }} />
+            <Area type="monotone" dataKey="ingresos" stroke="#22C55E" fill="url(#incomeGrad)" strokeWidth={3} name="Ingresos" animationDuration={800} dot={{ fill: '#22C55E', r: 3 }} />
+            <Area type="monotone" dataKey="gastos" stroke="#EF4444" fill="url(#expenseGrad)" strokeWidth={3} name="Gastos" animationDuration={800} dot={{ fill: '#EF4444', r: 3 }} />
+            <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
           </AreaChart>
         </ResponsiveContainer>
       );
@@ -297,21 +336,21 @@ export const FlexibleChart: React.FC<FlexibleChartProps> = ({
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
           <XAxis dataKey="label" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 11 }} axisLine={false} />
           <YAxis tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 11 }} axisLine={false} tickFormatter={(v) => `$${(v/1000).toFixed(0)}k`} />
-          <Tooltip content={<CustomTooltip currency={currency} />} />
+          <Tooltip content={<CustomTooltip currency={currency} />} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
           {dataMode !== 'categories' && (
             <>
-              <Bar dataKey="ingresos" fill="#22C55E" radius={[4, 4, 0, 0]} name="Ingresos" />
-              <Bar dataKey="gastos" fill="#EF4444" radius={[4, 4, 0, 0]} name="Gastos" />
+              <Bar dataKey="ingresos" fill="#22C55E" radius={[4, 4, 0, 0]} name="Ingresos" animationDuration={800} />
+              <Bar dataKey="gastos" fill="#EF4444" radius={[4, 4, 0, 0]} name="Gastos" animationDuration={800} />
             </>
           )}
           {dataMode === 'categories' && (
-            <Bar dataKey="value" radius={[4, 4, 0, 0]} name="Monto">
+            <Bar dataKey="value" radius={[4, 4, 0, 0]} name="Monto" animationDuration={800}>
               {chartData.map((entry: any, index: number) => (
                 <Cell key={index} fill={entry.fill || CHART_COLORS[index % CHART_COLORS.length]} />
               ))}
             </Bar>
           )}
-          <Legend />
+          <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
         </BarChart>
       </ResponsiveContainer>
     );

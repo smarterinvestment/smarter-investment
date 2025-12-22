@@ -219,7 +219,7 @@ export const RecurringPage: React.FC = () => {
   const summary = useMemo(() => {
     const activeItems = safeRecurring.filter(r => r.isActive);
     const getMonthlyAmount = (r: RecurringTransaction) => {
-      const mult = r.frequency === 'daily' ? 30 : r.frequency === 'weekly' ? 4 : r.frequency === 'biweekly' ? 2 : r.frequency === 'yearly' ? 1/12 : 1;
+      const mult = r.frequency === 'daily' ? 30 : r.frequency === 'weekly' ? 4.33 : r.frequency === 'biweekly' ? 2.17 : r.frequency === 'yearly' ? 1/12 : 1;
       return r.amount * mult;
     };
     
@@ -234,9 +234,9 @@ export const RecurringPage: React.FC = () => {
   // Chart data - by category
   const categoryChartData = useMemo(() => {
     const catTotals: Record<string, { name: string; expense: number; income: number }> = {};
-    
+
     safeRecurring.filter(r => r.isActive).forEach(r => {
-      const mult = r.frequency === 'daily' ? 30 : r.frequency === 'weekly' ? 4 : r.frequency === 'biweekly' ? 2 : r.frequency === 'yearly' ? 1/12 : 1;
+      const mult = r.frequency === 'daily' ? 30 : r.frequency === 'weekly' ? 4.33 : r.frequency === 'biweekly' ? 2.17 : r.frequency === 'yearly' ? 1/12 : 1;
       const monthly = r.amount * mult;
       
       if (!catTotals[r.category]) {
@@ -341,35 +341,39 @@ export const RecurringPage: React.FC = () => {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="text-center p-4">
-          <ArrowUpRight className="w-8 h-8 mx-auto mb-2 text-success-400" />
-          <p className="text-xs text-white/50">{t.recur_fixedIncome}</p>
-          <p className="text-lg font-bold text-success-400">{formatCurrency(summary.monthlyIncome, currency)}</p>
-        </Card>
-        <Card className="text-center p-4">
-          <ArrowDownRight className="w-8 h-8 mx-auto mb-2 text-danger-400" />
-          <p className="text-xs text-white/50">{t.recur_fixedExpenses}</p>
-          <p className="text-lg font-bold text-danger-400">{formatCurrency(summary.monthlyExpenses, currency)}</p>
-        </Card>
-        <Card className="text-center p-4">
-          <TrendingUp className="w-8 h-8 mx-auto mb-2" style={{ color: summary.net >= 0 ? '#22C55E' : '#EF4444' }} />
-          <p className="text-xs text-white/50">{t.recur_fixedBalance}</p>
-          <p className={cn('text-lg font-bold', summary.net >= 0 ? 'text-success-400' : 'text-danger-400')}>
-            {formatCurrency(summary.net, currency)}
-          </p>
-        </Card>
-        <Card className="text-center p-4">
-          <RefreshCw className="w-8 h-8 mx-auto mb-2" style={{ color: themeColors.primary }} />
-          <p className="text-xs text-white/50">{t.recur_totalActive}</p>
-          <p className="text-lg font-bold text-white">{safeRecurring.filter(r => r.isActive).length}</p>
-        </Card>
+        {[
+          { icon: <ArrowUpRight className="w-8 h-8" />, label: t.recur_fixedIncome, value: formatCurrency(summary.monthlyIncome, currency), color: 'text-success-400', delay: 0 },
+          { icon: <ArrowDownRight className="w-8 h-8" />, label: t.recur_fixedExpenses, value: formatCurrency(summary.monthlyExpenses, currency), color: 'text-danger-400', delay: 0.1 },
+          { icon: <TrendingUp className="w-8 h-8" />, label: t.recur_fixedBalance, value: formatCurrency(summary.net, currency), color: summary.net >= 0 ? 'text-success-400' : 'text-danger-400', delay: 0.2 },
+          { icon: <RefreshCw className="w-8 h-8" />, label: t.recur_totalActive, value: safeRecurring.filter(r => r.isActive).length, color: 'text-white', delay: 0.3, customColor: themeColors.primary },
+        ].map((card, idx) => (
+          <motion.div
+            key={idx}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: card.delay }}
+          >
+            <Card className="text-center p-4 hover:shadow-lg hover:scale-105 transition-all duration-300 cursor-default">
+              <div className={cn('mx-auto mb-2', card.color)} style={card.customColor ? { color: card.customColor } : {}}>
+                {card.icon}
+              </div>
+              <p className="text-xs text-white/50">{card.label}</p>
+              <p className={cn('text-lg font-bold', card.color)}>{card.value}</p>
+            </Card>
+          </motion.div>
+        ))}
       </div>
 
       {/* Charts */}
       {safeRecurring.length > 0 && (
-        <div className="grid lg:grid-cols-2 gap-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="grid lg:grid-cols-2 gap-6"
+        >
           {/* Pie Chart */}
-          <Card className="p-4">
+          <Card className="p-4 hover:shadow-lg transition-shadow duration-300">
             <h3 className="font-semibold text-white mb-4 flex items-center gap-2">
               <PieChart className="w-5 h-5" style={{ color: themeColors.primary }} />
               Distribución Mensual
@@ -377,20 +381,38 @@ export const RecurringPage: React.FC = () => {
             <div className="h-48">
               <ResponsiveContainer width="100%" height="100%">
                 <RePieChart>
-                  <Pie data={pieData} cx="50%" cy="50%" innerRadius={40} outerRadius={70} dataKey="value" label={({ name, percent }) => `${(percent * 100).toFixed(0)}%`}>
+                  <Pie
+                    data={pieData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={40}
+                    outerRadius={70}
+                    dataKey="value"
+                    label={({ name, percent }) => `${(percent * 100).toFixed(0)}%`}
+                    animationDuration={800}
+                    paddingAngle={2}
+                  >
                     {pieData.map((entry, index) => (
                       <Cell key={index} fill={entry.fill} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value: number) => formatCurrency(value, currency)} />
-                  <Legend />
+                  <Tooltip
+                    formatter={(value: number) => formatCurrency(value, currency)}
+                    contentStyle={{
+                      backgroundColor: 'rgba(0,0,0,0.9)',
+                      border: '1px solid rgba(255,255,255,0.2)',
+                      borderRadius: '8px',
+                      backdropFilter: 'blur(10px)'
+                    }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
                 </RePieChart>
               </ResponsiveContainer>
             </div>
           </Card>
 
           {/* Bar Chart by Category */}
-          <Card className="p-4">
+          <Card className="p-4 hover:shadow-lg transition-shadow duration-300">
             <h3 className="font-semibold text-white mb-4 flex items-center gap-2">
               <BarChart2 className="w-5 h-5" style={{ color: themeColors.primary }} />
               Por Categoría
@@ -400,14 +422,22 @@ export const RecurringPage: React.FC = () => {
                 <BarChart data={categoryChartData} layout="vertical">
                   <XAxis type="number" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 10 }} tickFormatter={v => `$${(v/1000).toFixed(0)}k`} />
                   <YAxis dataKey="name" type="category" tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 10 }} width={80} />
-                  <Tooltip formatter={(value: number) => formatCurrency(value, currency)} />
-                  <Bar dataKey="income" fill="#22C55E" name="Ingreso" radius={[0, 4, 4, 0]} />
-                  <Bar dataKey="expense" fill="#EF4444" name="Gasto" radius={[0, 4, 4, 0]} />
+                  <Tooltip
+                    formatter={(value: number) => formatCurrency(value, currency)}
+                    contentStyle={{
+                      backgroundColor: 'rgba(0,0,0,0.9)',
+                      border: '1px solid rgba(255,255,255,0.2)',
+                      borderRadius: '8px',
+                      backdropFilter: 'blur(10px)'
+                    }}
+                  />
+                  <Bar dataKey="income" fill="#22C55E" name="Ingreso" radius={[0, 4, 4, 0]} animationDuration={800} />
+                  <Bar dataKey="expense" fill="#EF4444" name="Gasto" radius={[0, 4, 4, 0]} animationDuration={800} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </Card>
-        </div>
+        </motion.div>
       )}
 
       {/* Tabs */}
@@ -447,19 +477,27 @@ export const RecurringPage: React.FC = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ delay: index * 0.05 }}
+                transition={{ delay: index * 0.05, type: "spring", stiffness: 100 }}
+                whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
               >
-                <Card className={cn('p-4', !item.isActive && 'opacity-60')}>
+                <Card className={cn(
+                  'p-4 transition-all duration-300 hover:shadow-xl',
+                  !item.isActive && 'opacity-60'
+                )}>
                   <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={cn('w-12 h-12 rounded-xl flex items-center justify-center text-2xl',
-                        item.type === 'income' ? 'bg-success-500/20' : 'bg-danger-500/20')}>
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <motion.div
+                        className={cn('w-12 h-12 rounded-xl flex items-center justify-center text-2xl transition-all',
+                          item.type === 'income' ? 'bg-success-500/20' : 'bg-danger-500/20')}
+                        whileHover={{ scale: 1.1, rotate: 5 }}
+                        transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                      >
                         {getCategoryIcon(item.category, item.type)}
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-white">{item.name}</h3>
-                        <p className="text-sm text-white/50">{item.category}</p>
-                        <div className="flex items-center gap-2 mt-1">
+                      </motion.div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-white truncate">{item.name}</h3>
+                        <p className="text-sm text-white/50 truncate">{item.category}</p>
+                        <div className="flex items-center gap-2 mt-1 flex-wrap">
                           <Badge variant={item.type === 'income' ? 'success' : 'danger'}>
                             {item.type === 'income' ? '+' : '-'}{formatCurrency(item.amount, currency)}
                           </Badge>
@@ -467,20 +505,32 @@ export const RecurringPage: React.FC = () => {
                         </div>
                       </div>
                     </div>
-                    <div className="flex gap-1">
-                      <button onClick={() => handleToggleActive(item)}
-                        className={cn('p-2 rounded-lg transition-colors',
-                          item.isActive ? 'hover:bg-warning-500/20 text-success-400' : 'hover:bg-success-500/20 text-white/50')}>
+                    <div className="flex gap-1 flex-shrink-0">
+                      <motion.button
+                        onClick={() => handleToggleActive(item)}
+                        className={cn('p-2 rounded-lg transition-all',
+                          item.isActive ? 'hover:bg-warning-500/20 text-success-400' : 'hover:bg-success-500/20 text-white/50')}
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
                         {item.isActive ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                      </button>
-                      <button onClick={() => setEditingRecurring(item)}
-                        className="p-2 rounded-lg hover:bg-white/10 text-white/50 hover:text-white">
+                      </motion.button>
+                      <motion.button
+                        onClick={() => setEditingRecurring(item)}
+                        className="p-2 rounded-lg hover:bg-white/10 text-white/50 hover:text-white transition-all"
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
                         <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button onClick={() => setDeletingRecurring(item)}
-                        className="p-2 rounded-lg hover:bg-danger-500/20 text-white/50 hover:text-danger-400">
+                      </motion.button>
+                      <motion.button
+                        onClick={() => setDeletingRecurring(item)}
+                        className="p-2 rounded-lg hover:bg-danger-500/20 text-white/50 hover:text-danger-400 transition-all"
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
                         <Trash2 className="w-4 h-4" />
-                      </button>
+                      </motion.button>
                     </div>
                   </div>
                 </Card>
@@ -508,6 +558,24 @@ export const RecurringPage: React.FC = () => {
           </div>
         </div>
       </Modal>
+
+      {/* Floating Action Button */}
+      <motion.div
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        className="fixed bottom-24 right-4 lg:bottom-8 z-30"
+      >
+        <Button
+          onClick={() => setShowForm(true)}
+          className="w-14 h-14 rounded-full shadow-lg"
+          style={{
+            boxShadow: `0 0 30px ${themeColors.primary}40`,
+          }}
+          aria-label="Crear recurrente"
+        >
+          <Plus className="w-6 h-6" />
+        </Button>
+      </motion.div>
     </div>
   );
 };

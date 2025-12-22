@@ -107,7 +107,7 @@ export const useTransactions = () => {
   const add = async (transaction: any) => {
     try {
       const id = await transactionService.add(transaction);
-      addTransaction({ ...transaction, id });
+      // Don't update local store - Firebase real-time listener will handle it
       return id;
     } catch (error) {
       showError('Error al agregar transacción');
@@ -118,7 +118,7 @@ export const useTransactions = () => {
   const update = async (id: string, type: 'expense' | 'income', data: any) => {
     try {
       await transactionService.update(id, type, data);
-      updateTransaction(id, data);
+      // Don't update local store - Firebase real-time listener will handle it
     } catch (error) {
       showError('Error al actualizar transacción');
       throw error;
@@ -128,7 +128,7 @@ export const useTransactions = () => {
   const remove = async (id: string, type: 'expense' | 'income') => {
     try {
       await transactionService.delete(id, type);
-      deleteTransaction(id, type);
+      // Don't update local store - Firebase real-time listener will handle it
     } catch (error) {
       showError('Error al eliminar transacción');
       throw error;
@@ -190,7 +190,7 @@ export const useGoals = () => {
   const add = async (goal: any) => {
     try {
       const id = await goalService.add(goal);
-      addGoal({ ...goal, id });
+      // Don't update local store - Firebase real-time listener will handle it
       return id;
     } catch (error) {
       showError('Error al crear meta');
@@ -201,7 +201,7 @@ export const useGoals = () => {
   const update = async (id: string, data: any) => {
     try {
       await goalService.update(id, data);
-      updateGoal(id, data);
+      // Don't update local store - Firebase real-time listener will handle it
     } catch (error) {
       showError('Error al actualizar meta');
       throw error;
@@ -211,7 +211,7 @@ export const useGoals = () => {
   const remove = async (id: string) => {
     try {
       await goalService.delete(id);
-      deleteGoal(id);
+      // Don't update local store - Firebase real-time listener will handle it
     } catch (error) {
       showError('Error al eliminar meta');
       throw error;
@@ -221,7 +221,7 @@ export const useGoals = () => {
   const contribute = async (id: string, amount: number) => {
     try {
       await goalService.addContribution(id, amount);
-      addContribution(id, amount);
+      // Don't update local store - Firebase real-time listener will handle it
     } catch (error) {
       showError('Error al agregar aporte');
       throw error;
@@ -253,7 +253,7 @@ export const useRecurring = () => {
     try {
       const id = await recurringService.add(recurring);
       console.log('✅ useRecurring.add success, id:', id);
-      addRecurring({ ...recurring, id });
+      // Don't update local store - Firebase real-time listener will handle it
       return id;
     } catch (error: any) {
       console.error('❌ useRecurring.add error:', error);
@@ -268,7 +268,7 @@ export const useRecurring = () => {
     console.log('🔄 useRecurring.update called:', id, data);
     try {
       await recurringService.update(id, data);
-      updateRecurring(id, data);
+      // Don't update local store - Firebase real-time listener will handle it
     } catch (error: any) {
       console.error('❌ useRecurring.update error:', error);
       showError(`Error al actualizar: ${error?.message || 'Unknown error'}`);
@@ -280,7 +280,7 @@ export const useRecurring = () => {
     console.log('🔄 useRecurring.remove called:', id);
     try {
       await recurringService.delete(id);
-      deleteRecurring(id);
+      // Don't update local store - Firebase real-time listener will handle it
     } catch (error: any) {
       console.error('❌ useRecurring.remove error:', error);
       showError(`Error al eliminar: ${error?.message || 'Unknown error'}`);
