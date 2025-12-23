@@ -16,6 +16,7 @@ import {
 } from 'recharts';
 import { useStore, getThemeColors } from '../../stores/useStore';
 import { Card, Button, Badge } from '../../components/ui';
+import { ChartSelector } from '../../components/ui/ChartSelector';
 import { cn } from '../../utils/cn';
 import { formatCurrency } from '../../utils/financial';
 
@@ -60,7 +61,6 @@ export const ReportsPage: React.FC = () => {
   const themeColors = getThemeColors(theme);
 
   const [selectedPeriod, setSelectedPeriod] = useState('month');
-  const [chartType, setChartType] = useState('bar');
 
   // Safe arrays
   const safeExpenses = Array.isArray(expenses) ? expenses : [];
@@ -215,44 +215,15 @@ export const ReportsPage: React.FC = () => {
     }));
   }, [safeGoals]);
 
-  // Render trend chart based on type
+  // Render trend chart using ChartSelector
   const renderTrendChart = () => {
-    const commonProps = {
-      data: trendData,
-      margin: { top: 10, right: 10, left: -10, bottom: 0 }
-    };
-
-    const ChartComponent = chartType === 'bar' ? BarChart : chartType === 'line' ? LineChart : AreaChart;
-    
     return (
-      <ResponsiveContainer width="100%" height={200}>
-        <ChartComponent {...commonProps}>
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-          <XAxis dataKey="name" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 10 }} />
-          <YAxis tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 10 }} tickFormatter={v => `$${(v/1000).toFixed(0)}k`} />
-          <Tooltip content={<CustomTooltip currency={currency} />} />
-          <Legend wrapperStyle={{ fontSize: '11px' }} />
-          
-          {chartType === 'bar' && (
-            <>
-              <Bar dataKey="Ingresos" fill="#22C55E" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="Gastos" fill="#EF4444" radius={[4, 4, 0, 0]} />
-            </>
-          )}
-          {chartType === 'line' && (
-            <>
-              <Line type="monotone" dataKey="Ingresos" stroke="#22C55E" strokeWidth={2} dot={{ fill: '#22C55E' }} />
-              <Line type="monotone" dataKey="Gastos" stroke="#EF4444" strokeWidth={2} dot={{ fill: '#EF4444' }} />
-            </>
-          )}
-          {chartType === 'area' && (
-            <>
-              <Area type="monotone" dataKey="Ingresos" fill="#22C55E" fillOpacity={0.3} stroke="#22C55E" strokeWidth={2} />
-              <Area type="monotone" dataKey="Gastos" fill="#EF4444" fillOpacity={0.3} stroke="#EF4444" strokeWidth={2} />
-            </>
-          )}
-        </ChartComponent>
-      </ResponsiveContainer>
+      <ChartSelector
+        data={trendData}
+        title="📈 Tendencia de Ingresos y Gastos"
+        colors={['#22C55E', '#EF4444']}
+        themeColors={themeColors}
+      />
     );
   };
 
@@ -379,43 +350,21 @@ export const ReportsPage: React.FC = () => {
 
       {/* Category Distribution */}
       <Card className="p-4">
-        <h3 className="font-semibold text-white mb-4 text-center">🎯 Distribución de Gastos</h3>
         {categoryData.length > 0 ? (
-          <div className="grid md:grid-cols-2 gap-4">
-            <ResponsiveContainer width="100%" height={200}>
-              <RechartsPie>
-                <Pie
-                  data={categoryData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={40}
-                  outerRadius={80}
-                  paddingAngle={3}
-                  dataKey="value"
-                >
-                  {categoryData.map((entry, index) => (
-                    <Cell key={index} fill={entry.fill} />
-                  ))}
-                </Pie>
-                <Tooltip content={<CustomTooltip currency={currency} />} />
-              </RechartsPie>
-            </ResponsiveContainer>
-            
-            <div className="space-y-2">
-              {categoryData.slice(0, 5).map((cat, idx) => (
-                <div key={idx} className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: cat.fill }} />
-                  <span className="text-sm text-white/80 flex-1 truncate">{cat.name}</span>
-                  <span className="text-sm font-medium text-white">{cat.percentage.toFixed(0)}%</span>
-                </div>
-              ))}
-            </div>
-          </div>
+          <ChartSelector
+            data={categoryData}
+            title="🎯 Distribución de Gastos por Categoría"
+            colors={CHART_COLORS}
+            themeColors={themeColors}
+          />
         ) : (
-          <div className="h-[200px] flex items-center justify-center text-white/50">
-            <div className="text-center">
-              <PieChart className="w-12 h-12 mx-auto mb-2 opacity-50" />
-              <p>Agrega gastos para ver la distribución</p>
+          <div>
+            <h3 className="font-semibold text-white mb-4 text-center">🎯 Distribución de Gastos</h3>
+            <div className="h-[200px] flex items-center justify-center text-white/50">
+              <div className="text-center">
+                <PieChart className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                <p>Agrega gastos para ver la distribución</p>
+              </div>
             </div>
           </div>
         )}

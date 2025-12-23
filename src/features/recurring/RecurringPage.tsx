@@ -327,16 +327,24 @@ export const RecurringPage: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-8">
+      {/* Botón Nuevo - Siempre Visible */}
+      <motion.button
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+        onClick={() => setShowForm(true)}
+        className="w-full flex items-center justify-center gap-2 py-4 px-6 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all"
+      >
+        <Plus className="w-5 h-5" />
+        {t.new || 'Nuevo Recurrente'}
+      </motion.button>
+
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <RefreshCw className="w-6 h-6" style={{ color: themeColors.primary }} />
-            {t.recur_title}
-          </h1>
-          <p className="text-white/60 mt-1">{safeRecurring.length} {t.nav_transactions.toLowerCase()}</p>
-        </div>
-        <Button leftIcon={<Plus className="w-4 h-4" />} onClick={() => setShowForm(true)}>{t.new}</Button>
+      <div>
+        <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+          <RefreshCw className="w-6 h-6" style={{ color: themeColors.primary }} />
+          {t.recur_title}
+        </h1>
+        <p className="text-white/60 mt-1">{safeRecurring.length} {t.nav_transactions.toLowerCase()}</p>
       </div>
 
       {/* Summary Cards */}

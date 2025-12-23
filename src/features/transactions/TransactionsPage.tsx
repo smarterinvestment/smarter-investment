@@ -337,6 +337,9 @@ export const TransactionsPage: React.FC = () => {
 
   // Handlers
   const handleAdd = async (data: Partial<Transaction>) => {
+    // Prevenir doble submit
+    if (isSubmitting) return;
+    
     setIsSubmitting(true);
     try {
       await add({ 
@@ -358,6 +361,9 @@ export const TransactionsPage: React.FC = () => {
 
   const handleEdit = async (data: Partial<Transaction>) => {
     if (!editingTransaction) return;
+    // Prevenir doble submit
+    if (isSubmitting) return;
+    
     setIsSubmitting(true);
     try {
       await update(editingTransaction.id, editingTransaction.type, { 

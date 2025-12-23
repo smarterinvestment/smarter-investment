@@ -22,6 +22,7 @@ import { LineChart, Line, AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveCont
 import { useStore, getThemeColors } from '../../stores/useStore';
 import { useTransactions } from '../../hooks/useFirebaseData';
 import { Card, StatCard, Button, ProgressBar, Badge, EmptyState, Modal, Input } from '../../components/ui';
+import { ChartSelector } from '../../components/ui/ChartSelector';
 import { cn } from '../../utils/cn';
 import {
   formatCurrency,
@@ -306,9 +307,9 @@ const IncomeVsExpensesChart: React.FC<{
         .reduce((sum, inc) => sum + inc.amount, 0);
 
       months.push({
-        month: monthLabel,
-        ingresos: monthIncomes,
-        gastos: monthExpenses,
+        name: monthLabel,
+        Ingresos: monthIncomes,
+        Gastos: monthExpenses,
       });
     }
     
@@ -316,40 +317,12 @@ const IncomeVsExpensesChart: React.FC<{
   }, [expenses, incomes]);
 
   return (
-    <div className="card-neon">
-      <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-        <BarChart3 className="w-5 h-5" style={{ color: themeColors.primary }} />
-        Ingresos vs Gastos
-      </h3>
-      <div className="h-48">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={chartData} barGap={8}>
-            <XAxis 
-              dataKey="month" 
-              axisLine={false}
-              tickLine={false}
-              tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 12 }}
-            />
-            <YAxis 
-              axisLine={false}
-              tickLine={false}
-              tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 12 }}
-              tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
-            />
-            <Tooltip
-              contentStyle={{
-                background: 'rgba(0, 24, 69, 0.95)',
-                border: '1px solid rgba(5, 191, 219, 0.3)',
-                borderRadius: '12px',
-              }}
-              formatter={(value: number) => formatCurrency(value, currency)}
-            />
-            <Bar dataKey="ingresos" fill="#22C55E" radius={[4, 4, 0, 0]} name="Ingresos" />
-            <Bar dataKey="gastos" fill="#EF4444" radius={[4, 4, 0, 0]} name="Gastos" />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-    </div>
+    <ChartSelector
+      data={chartData}
+      title="📊 Ingresos vs Gastos"
+      colors={['#22C55E', '#EF4444']}
+      themeColors={themeColors}
+    />
   );
 };
 
@@ -378,8 +351,6 @@ const ExpenseDistributionChart: React.FC<{
     return sorted;
   }, [expenses]);
 
-  const COLORS = ['#05BFDB', '#22C55E', '#F59E0B', '#EF4444', '#a855f7'];
-
   if (chartData.length === 0) {
     return (
       <div className="card-neon">
@@ -390,45 +361,12 @@ const ExpenseDistributionChart: React.FC<{
   }
 
   return (
-    <div className="card-neon">
-      <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-        <PiggyBank className="w-5 h-5" style={{ color: themeColors.primary }} />
-        Top 5 Categorías
-      </h3>
-      <div className="flex items-center gap-4">
-        <div className="w-32 h-32">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={chartData}
-                cx="50%"
-                cy="50%"
-                innerRadius={30}
-                outerRadius={50}
-                paddingAngle={2}
-                dataKey="value"
-              >
-                {chartData.map((_, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-        <div className="flex-1 space-y-2">
-          {chartData.map((item, index) => (
-            <div key={item.name} className="flex items-center gap-2">
-              <div 
-                className="w-3 h-3 rounded-full"
-                style={{ background: COLORS[index % COLORS.length] }}
-              />
-              <span className="text-sm text-white/70 flex-1 truncate">{item.name}</span>
-              <span className="text-sm font-medium text-white">{formatCurrency(item.value, currency)}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
+    <ChartSelector
+      data={chartData}
+      title="💸 Top 5 Categorías de Gastos"
+      colors={['#05BFDB', '#22C55E', '#F59E0B', '#EF4444', '#a855f7']}
+      themeColors={themeColors}
+    />
   );
 };
 
