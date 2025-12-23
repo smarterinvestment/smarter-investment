@@ -1,6 +1,5 @@
 // ============================================
-// 🪝 USE FIREBASE DATA HOOK - FIXED VERSION
-// ✅ Corregido: Eliminada duplicación de datos
+// 🪝 USE FIREBASE DATA HOOK
 // ============================================
 import { useEffect, useCallback } from 'react';
 import { useStore } from '../stores/useStore';
@@ -99,7 +98,7 @@ export const useFirebaseData = () => {
 // 🪝 USE TRANSACTIONS HOOK
 // ============================================
 export const useTransactions = () => {
-  const { expenses, incomes } = useStore();
+  const { expenses, incomes, addTransaction, updateTransaction, deleteTransaction } = useStore();
 
   // Ensure arrays are never undefined
   const safeExpenses = Array.isArray(expenses) ? expenses : [];
@@ -108,8 +107,7 @@ export const useTransactions = () => {
   const add = async (transaction: any) => {
     try {
       const id = await transactionService.add(transaction);
-      // ✅ FIX: NO agregamos manualmente al store
-      // El listener de tiempo real lo hará automáticamente
+      addTransaction({ ...transaction, id });
       return id;
     } catch (error) {
       showError('Error al agregar transacción');
@@ -120,8 +118,7 @@ export const useTransactions = () => {
   const update = async (id: string, type: 'expense' | 'income', data: any) => {
     try {
       await transactionService.update(id, type, data);
-      // ✅ FIX: NO actualizamos manualmente el store
-      // El listener de tiempo real lo hará automáticamente
+      updateTransaction(id, data);
     } catch (error) {
       showError('Error al actualizar transacción');
       throw error;
@@ -131,8 +128,7 @@ export const useTransactions = () => {
   const remove = async (id: string, type: 'expense' | 'income') => {
     try {
       await transactionService.delete(id, type);
-      // ✅ FIX: NO eliminamos manualmente del store
-      // El listener de tiempo real lo hará automáticamente
+      deleteTransaction(id, type);
     } catch (error) {
       showError('Error al eliminar transacción');
       throw error;
@@ -153,12 +149,12 @@ export const useTransactions = () => {
 // 🪝 USE BUDGETS HOOK
 // ============================================
 export const useBudgets = () => {
-  const { budgets } = useStore();
+  const { budgets, updateBudget, deleteBudget } = useStore();
 
   const update = async (category: string, amount: number) => {
     try {
       await budgetService.update(category, amount);
-      // ✅ Los budgets se actualizan por listener
+      updateBudget(category, amount);
     } catch (error) {
       showError('Error al actualizar presupuesto');
       throw error;
@@ -168,7 +164,7 @@ export const useBudgets = () => {
   const remove = async (category: string) => {
     try {
       await budgetService.delete(category);
-      // ✅ Los budgets se actualizan por listener
+      deleteBudget(category);
     } catch (error) {
       showError('Error al eliminar presupuesto');
       throw error;
@@ -186,7 +182,7 @@ export const useBudgets = () => {
 // 🪝 USE GOALS HOOK
 // ============================================
 export const useGoals = () => {
-  const { goals } = useStore();
+  const { goals, addGoal, updateGoal, deleteGoal, addContribution } = useStore();
 
   // Ensure array is never undefined
   const safeGoals = Array.isArray(goals) ? goals : [];
@@ -194,8 +190,7 @@ export const useGoals = () => {
   const add = async (goal: any) => {
     try {
       const id = await goalService.add(goal);
-      // ✅ FIX: NO agregamos manualmente al store
-      // El listener de tiempo real lo hará automáticamente
+      addGoal({ ...goal, id });
       return id;
     } catch (error) {
       showError('Error al crear meta');
@@ -206,8 +201,7 @@ export const useGoals = () => {
   const update = async (id: string, data: any) => {
     try {
       await goalService.update(id, data);
-      // ✅ FIX: NO actualizamos manualmente el store
-      // El listener de tiempo real lo hará automáticamente
+      updateGoal(id, data);
     } catch (error) {
       showError('Error al actualizar meta');
       throw error;
@@ -217,8 +211,7 @@ export const useGoals = () => {
   const remove = async (id: string) => {
     try {
       await goalService.delete(id);
-      // ✅ FIX: NO eliminamos manualmente del store
-      // El listener de tiempo real lo hará automáticamente
+      deleteGoal(id);
     } catch (error) {
       showError('Error al eliminar meta');
       throw error;
@@ -228,7 +221,7 @@ export const useGoals = () => {
   const contribute = async (id: string, amount: number) => {
     try {
       await goalService.addContribution(id, amount);
-      // ✅ El listener actualizará automáticamente
+      addContribution(id, amount);
     } catch (error) {
       showError('Error al agregar aporte');
       throw error;
@@ -250,7 +243,7 @@ export const useGoals = () => {
 // 🪝 USE RECURRING HOOK
 // ============================================
 export const useRecurring = () => {
-  const { recurringTransactions } = useStore();
+  const { recurringTransactions, addRecurring, updateRecurring, deleteRecurring } = useStore();
 
   // Ensure array is never undefined
   const safeRecurring = Array.isArray(recurringTransactions) ? recurringTransactions : [];
@@ -260,8 +253,7 @@ export const useRecurring = () => {
     try {
       const id = await recurringService.add(recurring);
       console.log('✅ useRecurring.add success, id:', id);
-      // ✅ FIX: NO agregamos manualmente al store
-      // El listener de tiempo real lo hará automáticamente
+      addRecurring({ ...recurring, id });
       return id;
     } catch (error: any) {
       console.error('❌ useRecurring.add error:', error);
@@ -276,8 +268,7 @@ export const useRecurring = () => {
     console.log('🔄 useRecurring.update called:', id, data);
     try {
       await recurringService.update(id, data);
-      // ✅ FIX: NO actualizamos manualmente el store
-      // El listener de tiempo real lo hará automáticamente
+      updateRecurring(id, data);
     } catch (error: any) {
       console.error('❌ useRecurring.update error:', error);
       showError(`Error al actualizar: ${error?.message || 'Unknown error'}`);
@@ -289,8 +280,7 @@ export const useRecurring = () => {
     console.log('🔄 useRecurring.remove called:', id);
     try {
       await recurringService.delete(id);
-      // ✅ FIX: NO eliminamos manualmente del store
-      // El listener de tiempo real lo hará automáticamente
+      deleteRecurring(id);
     } catch (error: any) {
       console.error('❌ useRecurring.remove error:', error);
       showError(`Error al eliminar: ${error?.message || 'Unknown error'}`);
@@ -311,7 +301,7 @@ export const useRecurring = () => {
 // 🪝 USE NOTIFICATIONS HOOK
 // ============================================
 export const useNotifications = () => {
-  const { notifications, markNotificationRead, markAllNotificationsRead } = useStore();
+  const { notifications, addNotification, markNotificationRead, markAllNotificationsRead } = useStore();
 
   // Ensure array is never undefined
   const safeNotifications = Array.isArray(notifications) ? notifications : [];
