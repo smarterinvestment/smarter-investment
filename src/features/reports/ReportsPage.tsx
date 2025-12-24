@@ -1,6 +1,6 @@
 // ============================================
-// 📊 REPORTS PAGE v21 - Complete with Filters
-// Period filters, chart types, full data integration
+// 📊 REPORTS PAGE v22 - FIXED
+// ✅ Gráfico de tendencia corregido
 // ============================================
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
@@ -17,6 +17,7 @@ import {
 import { useStore, getThemeColors } from '../../stores/useStore';
 import { Card, Button, Badge } from '../../components/ui';
 import { ChartSelector } from '../../components/ui/ChartSelector';
+import { MultiSeriesChart } from '../../components/ui/MultiSeriesChart';
 import { cn } from '../../utils/cn';
 import { formatCurrency } from '../../utils/financial';
 
@@ -199,7 +200,7 @@ export const ReportsPage: React.FC = () => {
         limit: Number(limit),
         spent,
         percentage,
-        status: percentage >= 100 ? 'exceeded' : percentage >= 80 ? 'warning' : 'safe'
+        status: percentage >= 100 ? 'exceeded' : percentage >= 80 ? 'warning' : 'ok'
       };
     });
   }, [safeBudgets, categoryData]);
@@ -208,20 +209,23 @@ export const ReportsPage: React.FC = () => {
   const goalsProgress = useMemo(() => {
     return safeGoals.slice(0, 6).map(g => ({
       name: g.name,
-      current: Number(g.currentAmount) || 0,
-      target: Number(g.targetAmount) || 1,
-      percentage: Math.min(((Number(g.currentAmount) || 0) / (Number(g.targetAmount) || 1)) * 100, 100),
-      icon: g.icon || '🎯'
+      icon: g.icon || '🎯',
+      current: g.currentAmount || 0,
+      target: g.targetAmount,
+      percentage: g.targetAmount > 0 ? ((g.currentAmount || 0) / g.targetAmount) * 100 : 0
     }));
   }, [safeGoals]);
 
-  // Render trend chart using ChartSelector
+  // ✅ FIXED: Render trend chart with MultiSeriesChart
   const renderTrendChart = () => {
     return (
-      <ChartSelector
+      <MultiSeriesChart
         data={trendData}
         title="📈 Tendencia de Ingresos y Gastos"
-        colors={['#22C55E', '#EF4444']}
+        series={[
+          { dataKey: 'Ingresos', name: 'Ingresos', color: '#22C55E' },
+          { dataKey: 'Gastos', name: 'Gastos', color: '#EF4444' }
+        ]}
         themeColors={themeColors}
       />
     );
@@ -244,8 +248,8 @@ export const ReportsPage: React.FC = () => {
           <Calendar className="w-4 h-4 text-white/60" />
           <span className="text-sm text-white/60">Período</span>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {PERIOD_OPTIONS.map(period => (
+        <div className="grid grid-cols-3 gap-2">
+          {PERIOD_OPTIONS.map((period) => (
             <Button
               key={period.value}
               size="sm"
