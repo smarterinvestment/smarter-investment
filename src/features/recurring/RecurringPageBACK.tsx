@@ -327,22 +327,19 @@ export const RecurringPage: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-8">
-      {/* ✅ Botón Nuevo - SIEMPRE VISIBLE con efecto glassmorphism */}
+      {/* Botón Nuevo - SIEMPRE VISIBLE con efecto glassmorphism */}
       <motion.button
-        whileHover={{ scale: 1.02 }}
+        whileHover={{ scale: 1.02, boxShadow: '0 0 40px rgba(5, 191, 219, 0.4)' }}
         whileTap={{ scale: 0.98 }}
         onClick={() => setShowForm(true)}
-        className="w-full flex items-center justify-center gap-3 py-5 px-6 rounded-2xl font-bold text-lg transition-all relative overflow-hidden group shadow-lg"
+        className="card-neon w-full flex items-center justify-center gap-3 py-5 px-6 text-white font-bold text-lg transition-all relative overflow-hidden group"
         style={{
-          background: 'rgba(5, 191, 219, 0.15)',
-          backdropFilter: 'blur(16px)',
-          WebkitBackdropFilter: 'blur(16px)',
-          border: '1px solid rgba(5, 191, 219, 0.3)',
-          boxShadow: `0 8px 32px 0 rgba(5, 191, 219, 0.2), inset 0 1px 1px 0 rgba(255, 255, 255, 0.1)`,
+          background: 'linear-gradient(135deg, rgba(5, 191, 219, 0.15) 0%, rgba(8, 131, 149, 0.1) 100%)',
+          backdropFilter: 'blur(20px)',
         }}
       >
         <Plus className="w-6 h-6 group-hover:rotate-90 transition-transform duration-300" style={{ color: themeColors.primary }} />
-        <span className="text-white font-semibold">{t.new || '✨ Nuevo Recurrente'}</span>
+        <span className="text-neon">{t.new || '✨ Nuevo Recurrente'}</span>
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-700"></div>
       </motion.button>
 
