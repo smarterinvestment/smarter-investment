@@ -1,6 +1,6 @@
 // ============================================
-// ⚙️ SETTINGS PAGE v22 - Complete Configuration + Bank Integration
-// Full settings with smart alerts configuration + Plaid bank connection
+// ⚙️ SETTINGS PAGE v21.2 - Complete Configuration
+// Full settings with smart alerts configuration
 // ============================================
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -8,12 +8,10 @@ import {
   User, Bell, Palette, Globe, DollarSign, Shield, Download, Trash2, LogOut, 
   ChevronRight, Moon, Sparkles, Heart, Check, CreditCard, HelpCircle, Mail,
   AlertTriangle, Target, TrendingUp, Calendar, Percent, PiggyBank, Wallet,
-  Volume2, VolumeX, Smartphone, Clock, RefreshCw, FileText, Database, X,
-  Building2
+  Volume2, VolumeX, Smartphone, Clock, RefreshCw, FileText, Database, X
 } from 'lucide-react';
 import { useStore, applyTheme, getThemeColors } from '../../stores/useStore';
 import { Card, Button, Input, Select, Modal, Badge, Avatar } from '../../components/ui';
-import { BankConnection } from '../../components/BankConnection';
 import { cn } from '../../utils/cn';
 import { showSuccess, showError } from '../../lib/errorHandler';
 import { useTranslations, LANGUAGE_OPTIONS } from '../../utils/translations';
@@ -225,10 +223,9 @@ export const SettingsPage: React.FC = () => {
     setShowExportModal(false);
   };
 
-  // Tabs - AGREGADO TAB "BANCO"
+  // Tabs
   const tabs = [
     { id: 'general', label: 'General', icon: <Palette className="w-4 h-4" /> },
-    { id: 'bank', label: 'Banco', icon: <Building2 className="w-4 h-4" /> },
     { id: 'alerts', label: 'Alertas', icon: <AlertTriangle className="w-4 h-4" /> },
     { id: 'notifications', label: 'Notificaciones', icon: <Bell className="w-4 h-4" /> },
     { id: 'data', label: 'Datos', icon: <Database className="w-4 h-4" /> },
@@ -331,11 +328,6 @@ export const SettingsPage: React.FC = () => {
             />
           </SettingSection>
         </>
-      )}
-
-      {/* BANK TAB - NUEVO */}
-      {activeTab === 'bank' && (
-        <BankConnection />
       )}
 
       {/* ALERTS TAB */}
