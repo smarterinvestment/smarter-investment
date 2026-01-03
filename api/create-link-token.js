@@ -1,5 +1,5 @@
 // api/create-link-token.js
-const { Configuration, PlaidApi, PlaidEnvironments } = require('plaid');
+import { Configuration, PlaidApi, PlaidEnvironments } from 'plaid';
 
 const configuration = new Configuration({
   basePath: PlaidEnvironments[process.env.PLAID_ENV || 'sandbox'],
