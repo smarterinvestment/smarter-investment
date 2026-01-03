@@ -1,8 +1,3 @@
-# Eliminar el archivo viejo
-rm src/components/BankConnection.tsx
-
-# Crear el archivo LIMPIO (copia TODO hasta EOF)
-cat > src/components/BankConnection.tsx << 'EOF'
 // ============================================
 // 🏦 BANK CONNECTION COMPONENT
 // Plaid integration for automatic bank sync
@@ -17,7 +12,7 @@ import { Card, Button, Badge } from './ui';
 import { showSuccess, showError } from '../lib/errorHandler';
 
 // Plaid Link
-// import { usePlaidLink } from 'react-plaid-link';
+import { usePlaidLink } from 'react-plaid-link';
 
 interface BankAccount {
   id: string;
@@ -53,7 +48,6 @@ export const BankConnection: React.FC = () => {
   }, []);
 
   // Configurar Plaid Link
-  /*
   const { open, ready } = usePlaidLink({
     token: linkToken,
     onSuccess: async (publicToken, metadata) => {
@@ -75,7 +69,6 @@ export const BankConnection: React.FC = () => {
       }
     },
   });
-  */
 
   const loadConnectedAccounts = () => {
     // TODO: Cargar cuentas desde Firebase
@@ -99,9 +92,9 @@ export const BankConnection: React.FC = () => {
       return;
     }
     
-    // if (ready) {
-    //   open();
-    // }
+    if (ready) {
+      open();
+    }
   };
 
   const handleDisconnectBank = async (accountId: string) => {
@@ -310,4 +303,3 @@ export const BankConnection: React.FC = () => {
 };
 
 export default BankConnection;
-EOF
