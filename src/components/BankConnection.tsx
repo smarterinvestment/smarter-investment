@@ -1,4 +1,7 @@
-// src/components/BankConnection.tsx
+// ============================================
+// 🏦 BANK CONNECTION COMPONENT
+// Plaid integration for automatic bank sync
+// ============================================
 import React, { useState, useEffect } from 'react';
 import {
   Building2, CheckCircle2, XCircle, RefreshCw, AlertCircle,
@@ -7,6 +10,8 @@ import {
 import { Card, Button, Badge } from './ui';
 import { showSuccess, showError } from '../lib/errorHandler';
 import { usePlaidLink } from 'react-plaid-link';
+import { auth, db } from '../lib/firebase';
+import { doc, setDoc, writeBatch, getDoc } from 'firebase/firestore';
 
 interface BankAccount {
   id: string;
@@ -22,20 +27,44 @@ export const BankConnection: React.FC = () => {
   const [linkToken, setLinkToken] = useState<string | null>(null);
   const [connectedAccounts, setConnectedAccounts] = useState<BankAccount[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
 
-  // Crear link token llamando a nuestra API serverless
+  // Cargar access_token si ya existe
+  useEffect(() => {
+    const loadAccessToken = async () => {
+      const userId = auth.currentUser?.uid;
+      if (!userId) return;
+
+      try {
+        const docRef = doc(db, 'plaidAccounts', userId);
+        const docSnap = await getDoc(docRef);
+        
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          setAccessToken(data.access_token);
+          loadConnectedAccounts(data.access_token);
+        }
+      } catch (error) {
+        console.error('Error loading access token:', error);
+      }
+    };
+
+    loadAccessToken();
+  }, []);
+
+  // Crear link token cuando el componente monta
   useEffect(() => {
     const fetchLinkToken = async () => {
       try {
         setIsLoading(true);
-        
+
         const response = await fetch('/api/create-link-token', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            userId: 'user-123', // TODO: Obtener del usuario autenticado
+            userId: auth.currentUser?.uid || 'user-123',
           }),
         });
 
@@ -56,6 +85,58 @@ export const BankConnection: React.FC = () => {
     fetchLinkToken();
   }, []);
 
+  // Función para sincronizar transacciones
+  const syncTransactions = async (access_token: string) => {
+    try {
+      const response = await fetch('/api/get-transactions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          access_token: access_token,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get transactions');
+      }
+
+      const data = await response.json();
+
+      // Guardar transacciones en Firebase
+      const userId = auth.currentUser?.uid;
+      if (userId && data.transactions) {
+        const batch = writeBatch(db);
+
+        data.transactions.forEach((transaction: any) => {
+          const transactionRef = doc(db, 'transactions', transaction.transaction_id);
+          batch.set(transactionRef, {
+            userId,
+            plaid_transaction_id: transaction.transaction_id,
+            account_id: transaction.account_id,
+            amount: transaction.amount,
+            date: transaction.date,
+            name: transaction.name,
+            merchant_name: transaction.merchant_name,
+            category: transaction.category,
+            pending: transaction.pending,
+            payment_channel: transaction.payment_channel,
+            created_at: new Date(),
+            synced_from_plaid: true,
+          });
+        });
+
+        await batch.commit();
+        console.log(`✅ ${data.transactions.length} transacciones sincronizadas`);
+        showSuccess(`${data.transactions.length} transacciones sincronizadas`);
+      }
+    } catch (error) {
+      console.error('Error syncing transactions:', error);
+      showError('Error al sincronizar transacciones');
+    }
+  };
+
   // Configurar Plaid Link
   const { open, ready } = usePlaidLink({
     token: linkToken,
@@ -63,7 +144,9 @@ export const BankConnection: React.FC = () => {
       console.log('✅ Banco conectado:', metadata);
 
       try {
-        // Intercambiar public_token por access_token
+        setIsLoading(true);
+
+        // 1. Intercambiar public_token por access_token
         const response = await fetch('/api/exchange-public-token', {
           method: 'POST',
           headers: {
@@ -79,15 +162,38 @@ export const BankConnection: React.FC = () => {
         }
 
         const data = await response.json();
-        console.log('Access token:', data.access_token);
+        const newAccessToken = data.access_token;
+        setAccessToken(newAccessToken);
 
-        // TODO: Guardar access_token en Firebase
+        // 2. Guardar access_token en Firebase
+        const userId = auth.currentUser?.uid;
+        if (userId) {
+          await setDoc(doc(db, 'plaidAccounts', userId), {
+            access_token: newAccessToken,
+            item_id: metadata.institution?.institution_id,
+            institution_name: metadata.institution?.name,
+            accounts: metadata.accounts.map(acc => ({
+              id: acc.id,
+              name: acc.name,
+              mask: acc.mask,
+              type: acc.type,
+              subtype: acc.subtype,
+            })),
+            connected_at: new Date(),
+            updated_at: new Date(),
+          });
+        }
+
+        // 3. Sincronizar transacciones
+        await syncTransactions(newAccessToken);
 
         showSuccess('¡Banco conectado exitosamente!');
-        loadConnectedAccounts();
+        loadConnectedAccounts(newAccessToken);
       } catch (error) {
         console.error('Error exchanging token:', error);
         showError('Error al guardar la conexión');
+      } finally {
+        setIsLoading(false);
       }
     },
     onExit: (err, metadata) => {
@@ -98,19 +204,40 @@ export const BankConnection: React.FC = () => {
     },
   });
 
-  const loadConnectedAccounts = () => {
-    // TODO: Cargar cuentas desde Firebase
-    setConnectedAccounts([
-      {
-        id: '1',
-        name: 'Chase Checking',
-        mask: '1234',
-        type: 'checking',
-        balance: 5420.50,
-        lastSync: new Date(),
-        status: 'active',
-      },
-    ]);
+  const loadConnectedAccounts = async (access_token: string) => {
+    try {
+      const response = await fetch('/api/get-transactions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          access_token: access_token,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to load accounts');
+      }
+
+      const data = await response.json();
+
+      if (data.accounts) {
+        const accounts: BankAccount[] = data.accounts.map((acc: any) => ({
+          id: acc.account_id,
+          name: acc.name,
+          mask: acc.mask,
+          type: acc.type,
+          balance: acc.balances.current || 0,
+          lastSync: new Date(),
+          status: 'active',
+        }));
+
+        setConnectedAccounts(accounts);
+      }
+    } catch (error) {
+      console.error('Error loading accounts:', error);
+    }
   };
 
   const handleConnectBank = () => {
@@ -127,8 +254,17 @@ export const BankConnection: React.FC = () => {
   const handleDisconnectBank = async (accountId: string) => {
     try {
       setIsLoading(true);
-      // TODO: Eliminar de Firebase
-      setConnectedAccounts(prev => prev.filter(a => a.id !== accountId));
+
+      const userId = auth.currentUser?.uid;
+      if (userId) {
+        await setDoc(doc(db, 'plaidAccounts', userId), {
+          access_token: null,
+          disconnected_at: new Date(),
+        });
+      }
+
+      setConnectedAccounts([]);
+      setAccessToken(null);
       showSuccess('Banco desconectado');
     } catch (error) {
       showError('Error al desconectar banco');
@@ -138,10 +274,15 @@ export const BankConnection: React.FC = () => {
   };
 
   const handleSyncNow = async (accountId: string) => {
+    if (!accessToken) {
+      showError('No hay token de acceso');
+      return;
+    }
+
     try {
       setIsLoading(true);
-      // TODO: Sincronizar transacciones
-      showSuccess('Transacciones sincronizadas');
+      await syncTransactions(accessToken);
+      await loadConnectedAccounts(accessToken);
     } catch (error) {
       showError('Error al sincronizar');
     } finally {
@@ -310,9 +451,9 @@ export const BankConnection: React.FC = () => {
             <>
               <RefreshCw className="w-5 h-5 text-yellow-400 mt-0.5 flex-shrink-0 animate-spin" />
               <div className="text-sm">
-                <p className="font-semibold text-yellow-200 mb-1">⏳ Inicializando...</p>
+                <p className="font-semibold text-yellow-200 mb-1">⏳ Sincronizando...</p>
                 <p className="text-yellow-200/70">
-                  Conectando con Plaid de forma segura
+                  Obteniendo transacciones de tu banco
                 </p>
               </div>
             </>

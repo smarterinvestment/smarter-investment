@@ -25,7 +25,6 @@ export default async function handler(req, res) {
       public_token,
     });
 
-    // TODO: Guardar access_token en Firebase para el usuario
     const access_token = response.data.access_token;
 
     res.status(200).json({ access_token });

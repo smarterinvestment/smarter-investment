@@ -14,7 +14,6 @@ const configuration = new Configuration({
 const plaidClient = new PlaidApi(configuration);
 
 export default async function handler(req, res) {
-  // Solo permitir POST
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
