@@ -1,3 +1,5 @@
+# Crear el archivo del servicio
+cat > src/services/plaidService.ts << 'EOF'
 import { Configuration, PlaidApi, PlaidEnvironments } from 'plaid';
 
 const configuration = new Configuration({
@@ -53,3 +55,4 @@ export const getBalances = async (accessToken: string) => {
   
   return response.data.accounts;
 };
+EOF
