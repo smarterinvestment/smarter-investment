@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { Card, Button, Badge } from './ui';
 import { showSuccess, showError } from '../lib/errorHandler';
+import { createLinkToken, exchangePublicToken } from '../services/plaidService';
 
 // Plaid Link
 import { usePlaidLink } from 'react-plaid-link';
@@ -33,12 +34,9 @@ export const BankConnection: React.FC = () => {
   useEffect(() => {
     const fetchLinkToken = async () => {
       try {
-        // TODO: Cuando tengas las API keys configuradas, descomenta esto
-        // const userId = 'user-123'; // Obtener del usuario autenticado
-        // const response = await createLinkToken(userId);
-        // setLinkToken(response.link_token);
-        
-        console.log('🔧 Configura tus API keys de Plaid en .env');
+        const userId = 'user-123';
+        const response = await createLinkToken(userId);
+        setLinkToken(response.link_token);
       } catch (error) {
         showError('Error al conectar con Plaid');
       }
@@ -53,15 +51,18 @@ export const BankConnection: React.FC = () => {
     onSuccess: async (publicToken, metadata) => {
       console.log('✅ Banco conectado:', metadata);
       
-      // TODO: Intercambiar public token por access token
-      // const accessToken = await exchangePublicToken(publicToken);
-      
-      // TODO: Guardar access_token en Firebase
-      
-      showSuccess('¡Banco conectado exitosamente!');
-      
-      // Recargar cuentas
-      loadConnectedAccounts();
+      try {
+        const accessToken = await exchangePublicToken(publicToken);
+        
+        // TODO: Guardar access_token en Firebase
+        
+        showSuccess('¡Banco conectado exitosamente!');
+        
+        // Recargar cuentas
+        loadConnectedAccounts();
+      } catch (error) {
+        showError('Error al guardar la conexión');
+      }
     },
     onExit: (err, metadata) => {
       if (err) {
@@ -287,13 +288,13 @@ export const BankConnection: React.FC = () => {
       </Card>
 
       {/* Setup Instructions */}
-      <Card className="bg-yellow-500/10 border border-yellow-500/20">
+      <Card className="bg-green-500/10 border border-green-500/20">
         <div className="flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-yellow-400 mt-0.5 flex-shrink-0" />
+          <CheckCircle2 className="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" />
           <div className="text-sm">
-            <p className="font-semibold text-yellow-200 mb-1">⚙️ Configuración Pendiente</p>
-            <p className="text-yellow-200/70">
-              Para activar esta función, configura tus API keys de Plaid en el archivo .env
+            <p className="font-semibold text-green-200 mb-1">✅ Plaid Configurado</p>
+            <p className="text-green-200/70">
+              Haz click en "Conectar mi Banco" para sincronizar tus cuentas
             </p>
           </div>
         </div>
