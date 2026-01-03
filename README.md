@@ -255,3 +255,4 @@ Comparte estos archivos:
 
 **Esta versión corrige los gráficos y el error de Reports.**  
 **Para gastos duplicados: verifica Firebase primero!** 🔍
+
