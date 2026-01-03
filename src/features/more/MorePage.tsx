@@ -3,8 +3,8 @@
 // ============================================
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  Settings, RefreshCw, Bell, CreditCard, Download, Upload, 
+import {
+  Settings, RefreshCw, Bell, CreditCard, Download, Upload,
   Shield, HelpCircle, LogOut, ChevronRight, User, Palette,
   Globe, DollarSign, Repeat, TrendingUp, TrendingDown,
   FileText, PieChart, Calendar, Sparkles, Moon, Heart
@@ -44,6 +44,7 @@ const MENU_SECTIONS = [
     title: 'Configuración Avanzada',
     items: [
       { id: 'settings', icon: Settings, label: '⚙️ Configuración Completa', description: 'Alertas, notificaciones, datos', color: '#05BFDB', page: 'settings', settingsTab: 'general' },
+      { id: 'bank', icon: CreditCard, label: '🏦 Conexión Bancaria', description: 'Sincroniza tus cuentas con Plaid', color: '#10B981', page: 'settings', settingsTab: 'bank' },
       { id: 'alerts', icon: Bell, label: '🔔 Alertas Inteligentes', description: 'Umbrales y avisos financieros', color: '#F59E0B', page: 'settings', settingsTab: 'alerts' },
       { id: 'notifications', icon: Bell, label: '📱 Notificaciones', description: 'Push, email, recordatorios', color: '#8B5CF6', page: 'settings', settingsTab: 'notifications' },
       { id: 'data', icon: Download, label: '💾 Gestión de Datos', description: 'Exportar, sincronizar, eliminar', color: '#EF4444', page: 'settings', settingsTab: 'data' },
@@ -94,13 +95,13 @@ const LANGUAGES: Array<{ id: Language; name: string; flag: string }> = [
 ];
 
 export const MorePage: React.FC = () => {
-  const { 
-    user, theme, currency, language, 
-    setTheme, setCurrency, setLanguage, setActivePage, setSettingsTab, logout 
+  const {
+    user, theme, currency, language,
+    setTheme, setCurrency, setLanguage, setActivePage, setSettingsTab, logout
   } = useStore();
   const themeColors = getThemeColors(theme);
   const t = useTranslations(language);
-  
+
   const [showThemeModal, setShowThemeModal] = useState(false);
   const [showCurrencyModal, setShowCurrencyModal] = useState(false);
   const [showLanguageModal, setShowLanguageModal] = useState(false);
@@ -136,6 +137,7 @@ export const MorePage: React.FC = () => {
       title: t.more_advancedSettings,
       items: [
         { id: 'settings', icon: Settings, label: `⚙️ ${t.more_fullSettings}`, description: t.settings_alerts, color: '#05BFDB', page: 'settings', settingsTab: 'general' },
+        { id: 'bank', icon: CreditCard, label: `🏦 Conexión Bancaria`, description: 'Plaid sync', color: '#10B981', page: 'settings', settingsTab: 'bank' },
         { id: 'alerts', icon: Bell, label: `🔔 ${t.more_smartAlerts}`, description: t.settings_budgetAlerts, color: '#F59E0B', page: 'settings', settingsTab: 'alerts' },
         { id: 'notifications', icon: Bell, label: `📱 ${t.settings_notifications}`, description: 'Push, email', color: '#8B5CF6', page: 'settings', settingsTab: 'notifications' },
         { id: 'data', icon: Download, label: `💾 ${t.more_dataManagement}`, description: t.settings_export, color: '#EF4444', page: 'settings', settingsTab: 'data' },
@@ -166,7 +168,7 @@ export const MorePage: React.FC = () => {
         case 'profile': setSettingsTab('general'); setActivePage('settings'); break;
         case 'notifications': setSettingsTab('notifications'); setActivePage('settings'); break;
         case 'security': setSettingsTab('general'); setActivePage('settings'); break;
-        case 'tutorial': 
+        case 'tutorial':
           // Call the global function to open tutorial
           if ((window as any).openTutorial) {
             (window as any).openTutorial();
@@ -204,7 +206,7 @@ export const MorePage: React.FC = () => {
       {/* User Profile Card */}
       <Card className="p-4">
         <div className="flex items-center gap-4">
-          <div 
+          <div
             className="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-bold text-white"
             style={{ background: `linear-gradient(135deg, ${themeColors.primary}, ${themeColors.secondary})` }}
           >
@@ -241,15 +243,15 @@ export const MorePage: React.FC = () => {
                   onClick={() => handleItemClick(item)}
                   className="w-full flex items-center gap-4 p-4 hover:bg-white/5 transition-colors text-left"
                 >
-                  <div 
+                  <div
                     className="w-10 h-10 rounded-xl flex items-center justify-center"
-                    style={{ 
+                    style={{
                       background: item.color ? `${item.color}20` : `rgba(var(--primary-rgb), 0.2)`,
                     }}
                   >
-                    <item.icon 
-                      className="w-5 h-5" 
-                      style={{ color: item.color || 'var(--primary)' }} 
+                    <item.icon
+                      className="w-5 h-5"
+                      style={{ color: item.color || 'var(--primary)' }}
                     />
                   </div>
                   <div className="flex-1">
@@ -289,12 +291,12 @@ export const MorePage: React.FC = () => {
               onClick={() => { setTheme(t.id); setShowThemeModal(false); }}
               className={cn(
                 'w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all',
-                theme === t.id 
-                  ? 'border-white/50 bg-white/10' 
+                theme === t.id
+                  ? 'border-white/50 bg-white/10'
                   : 'border-white/10 hover:border-white/30'
               )}
             >
-              <div 
+              <div
                 className="w-10 h-10 rounded-full"
                 style={{ backgroundColor: t.color, boxShadow: `0 0 20px ${t.color}50` }}
               />
@@ -316,8 +318,8 @@ export const MorePage: React.FC = () => {
               onClick={() => { setCurrency(c.id); setShowCurrencyModal(false); }}
               className={cn(
                 'w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all',
-                currency === c.id 
-                  ? 'border-white/50 bg-white/10' 
+                currency === c.id
+                  ? 'border-white/50 bg-white/10'
                   : 'border-white/10 hover:border-white/30'
               )}
             >
@@ -343,8 +345,8 @@ export const MorePage: React.FC = () => {
               onClick={() => { setLanguage(l.id); setShowLanguageModal(false); }}
               className={cn(
                 'w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all',
-                language === l.id 
-                  ? 'border-white/50 bg-white/10' 
+                language === l.id
+                  ? 'border-white/50 bg-white/10'
                   : 'border-white/10 hover:border-white/30'
               )}
             >
