@@ -45,3 +45,11 @@ export const getTransactions = async (
   
   return response.data.transactions;
 };
+
+export const getBalances = async (accessToken: string) => {
+  const response = await plaidClient.accountsBalanceGet({
+    access_token: accessToken,
+  });
+  
+  return response.data.accounts;
+};
