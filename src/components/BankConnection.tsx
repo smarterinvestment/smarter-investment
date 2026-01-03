@@ -1,18 +1,11 @@
-// ============================================
-// 🏦 BANK CONNECTION COMPONENT
-// Plaid integration for automatic bank sync
-// ============================================
+// src/components/BankConnection.tsx
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import {
   Building2, CheckCircle2, XCircle, RefreshCw, AlertCircle,
-  CreditCard, DollarSign, TrendingUp, Clock, Shield, Zap
+  CreditCard, DollarSign, Clock, Shield, Zap
 } from 'lucide-react';
 import { Card, Button, Badge } from './ui';
 import { showSuccess, showError } from '../lib/errorHandler';
-import { createLinkToken, exchangePublicToken } from '../services/plaidService';
-
-// Plaid Link
 import { usePlaidLink } from 'react-plaid-link';
 
 interface BankAccount {
@@ -30,18 +23,36 @@ export const BankConnection: React.FC = () => {
   const [connectedAccounts, setConnectedAccounts] = useState<BankAccount[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Crear link token cuando el componente monta
+  // Crear link token llamando a nuestra API serverless
   useEffect(() => {
     const fetchLinkToken = async () => {
       try {
-        const userId = 'user-123';
-        const response = await createLinkToken(userId);
-        setLinkToken(response.link_token);
+        setIsLoading(true);
+        
+        const response = await fetch('/api/create-link-token', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId: 'user-123', // TODO: Obtener del usuario autenticado
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to create link token');
+        }
+
+        const data = await response.json();
+        setLinkToken(data.link_token);
       } catch (error) {
-        showError('Error al conectar con Plaid');
+        console.error('Error fetching link token:', error);
+        showError('Error al inicializar Plaid');
+      } finally {
+        setIsLoading(false);
       }
     };
-    
+
     fetchLinkToken();
   }, []);
 
@@ -50,22 +61,38 @@ export const BankConnection: React.FC = () => {
     token: linkToken,
     onSuccess: async (publicToken, metadata) => {
       console.log('✅ Banco conectado:', metadata);
-      
+
       try {
-        const accessToken = await exchangePublicToken(publicToken);
-        
+        // Intercambiar public_token por access_token
+        const response = await fetch('/api/exchange-public-token', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            public_token: publicToken,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to exchange token');
+        }
+
+        const data = await response.json();
+        console.log('Access token:', data.access_token);
+
         // TODO: Guardar access_token en Firebase
-        
+
         showSuccess('¡Banco conectado exitosamente!');
-        
-        // Recargar cuentas
         loadConnectedAccounts();
       } catch (error) {
+        console.error('Error exchanging token:', error);
         showError('Error al guardar la conexión');
       }
     },
     onExit: (err, metadata) => {
       if (err) {
+        console.error('Plaid Link error:', err);
         showError('Error al conectar banco');
       }
     },
@@ -73,7 +100,6 @@ export const BankConnection: React.FC = () => {
 
   const loadConnectedAccounts = () => {
     // TODO: Cargar cuentas desde Firebase
-    // Por ahora, datos de ejemplo
     setConnectedAccounts([
       {
         id: '1',
@@ -89,10 +115,10 @@ export const BankConnection: React.FC = () => {
 
   const handleConnectBank = () => {
     if (!linkToken) {
-      showError('Primero necesitas configurar tus API keys de Plaid en .env');
+      showError('Inicializando Plaid...');
       return;
     }
-    
+
     if (ready) {
       open();
     }
@@ -101,9 +127,7 @@ export const BankConnection: React.FC = () => {
   const handleDisconnectBank = async (accountId: string) => {
     try {
       setIsLoading(true);
-      
       // TODO: Eliminar de Firebase
-      
       setConnectedAccounts(prev => prev.filter(a => a.id !== accountId));
       showSuccess('Banco desconectado');
     } catch (error) {
@@ -116,9 +140,7 @@ export const BankConnection: React.FC = () => {
   const handleSyncNow = async (accountId: string) => {
     try {
       setIsLoading(true);
-      
-      // TODO: Sincronizar transacciones con Plaid
-      
+      // TODO: Sincronizar transacciones
       showSuccess('Transacciones sincronizadas');
     } catch (error) {
       showError('Error al sincronizar');
@@ -180,7 +202,7 @@ export const BankConnection: React.FC = () => {
                 <div className="w-10 h-10 rounded-lg bg-primary-500/20 flex items-center justify-center flex-shrink-0">
                   <CreditCard className="w-5 h-5 text-primary-400" />
                 </div>
-                
+
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <h5 className="font-semibold text-white">{account.name}</h5>
@@ -190,18 +212,12 @@ export const BankConnection: React.FC = () => {
                         Activa
                       </Badge>
                     )}
-                    {account.status === 'error' && (
-                      <Badge variant="danger" size="sm">
-                        <AlertCircle className="w-3 h-3 mr-1" />
-                        Error
-                      </Badge>
-                    )}
                   </div>
-                  
+
                   <p className="text-sm text-white/50">
                     •••• {account.mask}
                   </p>
-                  
+
                   <div className="flex items-center gap-4 mt-2">
                     <div className="flex items-center gap-1.5 text-sm">
                       <DollarSign className="w-4 h-4 text-primary-400" />
@@ -209,7 +225,7 @@ export const BankConnection: React.FC = () => {
                         ${account.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                       </span>
                     </div>
-                    
+
                     <div className="flex items-center gap-1.5 text-xs text-white/50">
                       <Clock className="w-3 h-3" />
                       Sincronizado hace {Math.floor((Date.now() - account.lastSync.getTime()) / 60000)} min
@@ -226,7 +242,7 @@ export const BankConnection: React.FC = () => {
                   >
                     <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
                   </Button>
-                  
+
                   <Button
                     size="sm"
                     variant="danger"
@@ -242,14 +258,14 @@ export const BankConnection: React.FC = () => {
         </div>
       )}
 
-      {/* Connect Button - SIEMPRE VISIBLE CON GLASSMORPHISM */}
+      {/* Connect Button - SIEMPRE VISIBLE */}
       <div className="relative group">
-        <div 
+        <div
           className="absolute -inset-0.5 bg-gradient-to-r from-primary-400 to-primary-600 rounded-2xl blur opacity-30 group-hover:opacity-50 transition duration-300"
         />
         <button
           onClick={handleConnectBank}
-          disabled={isLoading}
+          disabled={isLoading || !ready}
           className="relative w-full px-6 py-4 rounded-2xl font-semibold text-white transition-all duration-300
                      bg-white/10 backdrop-blur-xl border border-white/20
                      hover:bg-white/20 hover:border-primary-400/50 hover:scale-[1.02]
@@ -280,23 +296,37 @@ export const BankConnection: React.FC = () => {
           <div className="text-xs text-white/50">
             <p className="font-semibold text-white/70 mb-1">Conexión 100% Segura</p>
             <p>
-              Usamos Plaid, la misma tecnología de Venmo y Robinhood. 
+              Usamos Plaid, la misma tecnología de Venmo y Robinhood.
               Tus credenciales nunca son almacenadas y toda la comunicación está encriptada.
             </p>
           </div>
         </div>
       </Card>
 
-      {/* Setup Instructions */}
-      <Card className="bg-green-500/10 border border-green-500/20">
+      {/* Status */}
+      <Card className={`${isLoading ? 'bg-yellow-500/10 border-yellow-500/20' : 'bg-green-500/10 border-green-500/20'}`}>
         <div className="flex items-start gap-3">
-          <CheckCircle2 className="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" />
-          <div className="text-sm">
-            <p className="font-semibold text-green-200 mb-1">✅ Plaid Configurado</p>
-            <p className="text-green-200/70">
-              Haz click en "Conectar mi Banco" para sincronizar tus cuentas
-            </p>
-          </div>
+          {isLoading ? (
+            <>
+              <RefreshCw className="w-5 h-5 text-yellow-400 mt-0.5 flex-shrink-0 animate-spin" />
+              <div className="text-sm">
+                <p className="font-semibold text-yellow-200 mb-1">⏳ Inicializando...</p>
+                <p className="text-yellow-200/70">
+                  Conectando con Plaid de forma segura
+                </p>
+              </div>
+            </>
+          ) : (
+            <>
+              <CheckCircle2 className="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" />
+              <div className="text-sm">
+                <p className="font-semibold text-green-200 mb-1">✅ Listo para Conectar</p>
+                <p className="text-green-200/70">
+                  Haz click en "Conectar mi Banco" para comenzar
+                </p>
+              </div>
+            </>
+          )}
         </div>
       </Card>
     </div>
