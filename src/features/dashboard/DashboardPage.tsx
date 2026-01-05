@@ -60,42 +60,58 @@ export const DashboardPage: React.FC = () => {
 
   useEffect(() => {
     const userId = auth.currentUser?.uid;
-    if (!userId) return;
+    if (!userId) {
+      setLoading(false);
+      return;
+    }
 
-    // Query SIN orderBy (para evitar índice compuesto)
     const txQuery = query(
       collection(db, 'transactions'),
       where('userId', '==', userId)
     );
 
-    const unsubTx = onSnapshot(txQuery, (snapshot) => {
-      const txns: Transaction[] = [];
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-        if (!data.recurring) {
-          txns.push({ id: doc.id, ...data } as Transaction);
+    const unsubTx = onSnapshot(
+      txQuery,
+      (snapshot) => {
+        const txns: Transaction[] = [];
+        snapshot.forEach((doc) => {
+          const data = doc.data();
+          if (!data.recurring) {
+            txns.push({ id: doc.id, ...data } as Transaction);
+          }
+        });
+        
+        txns.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        setTransactions(txns.slice(0, 100));
+        setLoading(false);
+      },
+      (error) => {
+        console.error('Error en transacciones listener:', error);
+        if (error.code === 'permission-denied') {
+          console.error('❌ Error de permisos. Verifica las reglas de Firebase.');
         }
-      });
-      
-      // Ordenar en el frontend
-      txns.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-      
-      setTransactions(txns.slice(0, 100));
-      setLoading(false);
-    });
+        setLoading(false);
+      }
+    );
 
     const goalsQuery = query(
       collection(db, 'goals'),
       where('userId', '==', userId)
     );
 
-    const unsubGoals = onSnapshot(goalsQuery, (snapshot) => {
-      const goalsData: Goal[] = [];
-      snapshot.forEach((doc) => {
-        goalsData.push({ id: doc.id, ...doc.data() } as Goal);
-      });
-      setGoals(goalsData.slice(0, 3));
-    });
+    const unsubGoals = onSnapshot(
+      goalsQuery,
+      (snapshot) => {
+        const goalsData: Goal[] = [];
+        snapshot.forEach((doc) => {
+          goalsData.push({ id: doc.id, ...doc.data() } as Goal);
+        });
+        setGoals(goalsData.slice(0, 3));
+      },
+      (error) => {
+        console.error('Error en metas listener:', error);
+      }
+    );
 
     return () => {
       unsubTx();
@@ -212,7 +228,6 @@ export const DashboardPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-2">
@@ -226,9 +241,7 @@ export const DashboardPage: React.FC = () => {
           </Button>
         </div>
 
-        {/* Summary Cards CON GLASSMORPHISM */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          {/* Net Worth - Glassmorphism */}
           <div className="relative group">
             <div className="absolute -inset-0.5 bg-gradient-to-r from-primary-400 to-primary-600 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-300" />
             <Card 
@@ -267,7 +280,6 @@ export const DashboardPage: React.FC = () => {
             </Card>
           </div>
 
-          {/* Income - Glassmorphism */}
           <div className="relative group">
             <div className="absolute -inset-0.5 bg-gradient-to-r from-green-400 to-green-600 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-300" />
             <Card 
@@ -291,7 +303,6 @@ export const DashboardPage: React.FC = () => {
             </Card>
           </div>
 
-          {/* Expenses - Glassmorphism */}
           <div className="relative group">
             <div className="absolute -inset-0.5 bg-gradient-to-r from-red-400 to-red-600 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-300" />
             <Card 
@@ -316,7 +327,6 @@ export const DashboardPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Time Range */}
         <Card className="p-2 mb-6">
           <div className="flex items-center gap-2">
             <Calendar className="w-5 h-5 text-white/50" />
@@ -340,7 +350,6 @@ export const DashboardPage: React.FC = () => {
         </Card>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          {/* Chart */}
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
@@ -391,7 +400,6 @@ export const DashboardPage: React.FC = () => {
             </ResponsiveContainer>
           </Card>
 
-          {/* Categories */}
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
@@ -443,7 +451,6 @@ export const DashboardPage: React.FC = () => {
           </Card>
         </div>
 
-        {/* Recent & Goals */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">

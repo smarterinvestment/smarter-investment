@@ -50,6 +50,14 @@ interface Transaction {
   recurring?: boolean;
 }
 
+interface Goal {
+  id: string;
+  name: string;
+  targetAmount: number;
+  currentAmount: number;
+  deadline: string;
+}
+
 const CustomTooltip = ({ active, payload, label, currency }: any) => {
   if (active && payload && payload.length) {
     return (
@@ -75,30 +83,42 @@ export const ReportsPage: React.FC = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Consultar Firebase directamente
   useEffect(() => {
     const userId = auth.currentUser?.uid;
-    if (!userId) return;
+    if (!userId) {
+      setLoading(false);
+      return;
+    }
 
     const q = query(
       collection(db, 'transactions'),
       where('userId', '==', userId)
     );
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const txns: Transaction[] = [];
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-        // Excluir recurrentes
-        if (!data.recurring) {
-          txns.push({ id: doc.id, ...data } as Transaction);
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const txns: Transaction[] = [];
+        snapshot.forEach((doc) => {
+          const data = doc.data();
+          if (!data.recurring) {
+            txns.push({ id: doc.id, ...data } as Transaction);
+          }
+        });
+        
+        txns.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        setTransactions(txns);
+        setLoading(false);
+      },
+      (error) => {
+        console.error('Error en reportes listener:', error);
+        if (error.code === 'permission-denied') {
+          console.error('❌ Error de permisos en reportes.');
         }
-      });
-      
-      txns.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-      setTransactions(txns);
-      setLoading(false);
-    });
+        setLoading(false);
+        setTransactions([]);
+      }
+    );
 
     return () => unsubscribe();
   }, []);
@@ -109,7 +129,6 @@ export const ReportsPage: React.FC = () => {
 
   const periodConfig = PERIOD_OPTIONS.find(p => p.value === selectedPeriod) || PERIOD_OPTIONS[3];
 
-  // Funciones helper
   const getTransactionType = (tx: Transaction): 'income' | 'expense' => {
     if (tx.synced_from_plaid) {
       return tx.amount > 0 ? 'expense' : 'income';
@@ -124,7 +143,6 @@ export const ReportsPage: React.FC = () => {
     return tx.category as string || 'Otros';
   };
 
-  // Filtrar por período
   const filteredData = useMemo(() => {
     const now = new Date();
     const fromDate = new Date();
@@ -141,7 +159,6 @@ export const ReportsPage: React.FC = () => {
     return { incomes, expenses };
   }, [transactions, periodConfig.days]);
 
-  // Totales recurrentes
   const recurringTotals = useMemo(() => {
     let income = 0;
     let expense = 0;
@@ -171,7 +188,6 @@ export const ReportsPage: React.FC = () => {
     return { income, expense };
   }, [safeRecurring, periodConfig.days]);
 
-  // Totales
   const totals = useMemo(() => {
     const baseIncome = filteredData.incomes.reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
     const baseExpense = filteredData.expenses.reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
@@ -184,7 +200,6 @@ export const ReportsPage: React.FC = () => {
     return { totalIncome, totalExpense, balance, savingsRate, baseIncome, baseExpense };
   }, [filteredData, recurringTotals]);
 
-  // Datos por categoría
   const categoryData = useMemo(() => {
     const categoryTotals: Record<string, number> = {};
     
@@ -203,7 +218,6 @@ export const ReportsPage: React.FC = () => {
       .sort((a, b) => b.value - a.value);
   }, [filteredData.expenses, totals.totalExpense]);
 
-  // Datos de tendencia
   const trendData = useMemo(() => {
     const groupedData: Record<string, { income: number; expenses: number }> = {};
     
@@ -236,7 +250,6 @@ export const ReportsPage: React.FC = () => {
     }));
   }, [filteredData, periodConfig.days]);
 
-  // Estado presupuestos
   const budgetStatus = useMemo(() => {
     return Object.entries(safeBudgets).slice(0, 6).map(([category, limit]) => {
       const spent = categoryData.find(c => c.name.toLowerCase() === category.toLowerCase())?.value || 0;
@@ -251,7 +264,6 @@ export const ReportsPage: React.FC = () => {
     });
   }, [categoryData, safeBudgets]);
 
-  // Progreso metas
   const goalsProgress = useMemo(() => {
     return safeGoals.slice(0, 6).map(g => ({
       name: g.name,
@@ -262,7 +274,6 @@ export const ReportsPage: React.FC = () => {
     }));
   }, [safeGoals]);
 
-  // Render chart
   const renderTrendChart = () => {
     const chartProps = {
       data: trendData,
@@ -325,12 +336,10 @@ export const ReportsPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-4">
       <div className="max-w-6xl mx-auto space-y-4">
-        {/* Header */}
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-white">📊 Reportes</h1>
         </div>
 
-        {/* Period Selector */}
         <Card className="p-2">
           <div className="flex items-center gap-2 overflow-x-auto">
             <Calendar className="w-5 h-5 text-white/50 flex-shrink-0" />
@@ -352,7 +361,6 @@ export const ReportsPage: React.FC = () => {
           </div>
         </Card>
 
-        {/* Stats Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <Card className="p-4 text-center backdrop-blur-xl bg-white/5 border border-white/10">
             <div className="w-10 h-10 mx-auto mb-2 rounded-xl bg-success-500/20 flex items-center justify-center">
@@ -412,7 +420,6 @@ export const ReportsPage: React.FC = () => {
           </Card>
         </div>
 
-        {/* Chart Type Selector */}
         <div className="flex gap-2 justify-center">
           {CHART_TYPES.map(type => {
             const Icon = type.icon;
@@ -434,7 +441,6 @@ export const ReportsPage: React.FC = () => {
           })}
         </div>
 
-        {/* Trend Chart */}
         <Card className="p-4">
           <h3 className="font-semibold text-white mb-4 text-center">📈 Ingresos vs Gastos</h3>
           {trendData.length > 0 ? (
@@ -449,7 +455,6 @@ export const ReportsPage: React.FC = () => {
           )}
         </Card>
 
-        {/* Category Distribution */}
         <Card className="p-4">
           {categoryData.length > 0 ? (
             <ChartSelector
@@ -471,7 +476,6 @@ export const ReportsPage: React.FC = () => {
           )}
         </Card>
 
-        {/* Top Categories */}
         {categoryData.length > 0 && (
           <Card className="p-4">
             <h3 className="font-semibold text-white mb-4 text-center">🏆 Top Categorías</h3>
@@ -497,7 +501,6 @@ export const ReportsPage: React.FC = () => {
           </Card>
         )}
 
-        {/* Budget Status */}
         {budgetStatus.length > 0 && (
           <Card className="p-4">
             <h3 className="font-semibold text-white mb-4 text-center">💰 Estado de Presupuestos</h3>
@@ -531,7 +534,6 @@ export const ReportsPage: React.FC = () => {
           </Card>
         )}
 
-        {/* Goals Progress */}
         {goalsProgress.length > 0 && (
           <Card className="p-4">
             <h3 className="font-semibold text-white mb-4 text-center">🎯 Progreso de Metas</h3>
@@ -560,7 +562,6 @@ export const ReportsPage: React.FC = () => {
           </Card>
         )}
 
-        {/* Recurring Summary */}
         {(recurringTotals.income > 0 || recurringTotals.expense > 0) && (
           <Card className="p-4">
             <h3 className="font-semibold text-white mb-4 text-center">🔄 Recurrentes en el Período</h3>

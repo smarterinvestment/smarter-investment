@@ -13,7 +13,6 @@ import {
   Home,
   Wallet,
   Edit,
-  Filter,
 } from 'lucide-react';
 import { Button, Card, Badge } from '../../components/ui';
 import { TransactionModal } from '../../components/TransactionModal';
@@ -44,26 +43,41 @@ export const TransactionsPage: React.FC = () => {
 
   useEffect(() => {
     const userId = auth.currentUser?.uid;
-    if (!userId) return;
+    if (!userId) {
+      setLoading(false);
+      return;
+    }
 
     const q = query(
       collection(db, 'transactions'),
       where('userId', '==', userId)
     );
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const txns: Transaction[] = [];
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-        if (!data.recurring) {
-          txns.push({ id: doc.id, ...data } as Transaction);
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const txns: Transaction[] = [];
+        snapshot.forEach((doc) => {
+          const data = doc.data();
+          if (!data.recurring) {
+            txns.push({ id: doc.id, ...data } as Transaction);
+          }
+        });
+        
+        txns.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        setTransactions(txns);
+        setLoading(false);
+      },
+      (error) => {
+        console.error('Error en transacciones listener:', error);
+        if (error.code === 'permission-denied') {
+          console.error('❌ Error de permisos en transacciones.');
+          alert('Error: No tienes permisos. Por favor, vuelve a iniciar sesión.');
         }
-      });
-      
-      txns.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-      setTransactions(txns);
-      setLoading(false);
-    });
+        setLoading(false);
+        setTransactions([]);
+      }
+    );
 
     return () => unsubscribe();
   }, []);
@@ -142,7 +156,6 @@ export const TransactionsPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-4 md:p-6">
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-white">
@@ -153,7 +166,6 @@ export const TransactionsPage: React.FC = () => {
             </p>
           </div>
           
-          {/* Botón Nuevo con glassmorphism */}
           <div className="relative group">
             <div className="absolute -inset-0.5 bg-gradient-to-r from-primary-400 to-primary-600 rounded-xl blur opacity-40 group-hover:opacity-70 transition duration-300" />
             <Button 
@@ -166,7 +178,6 @@ export const TransactionsPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Summary Cards con glassmorphism */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           <div className="relative group">
             <div className="absolute -inset-0.5 bg-gradient-to-r from-green-400 to-green-600 rounded-xl blur opacity-20 group-hover:opacity-40 transition duration-300" />
@@ -235,7 +246,6 @@ export const TransactionsPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Search & Filter */}
         <Card className="p-4 mb-6">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1 relative">
@@ -284,7 +294,6 @@ export const TransactionsPage: React.FC = () => {
           </div>
         </Card>
 
-        {/* Transactions List */}
         <div className="space-y-2">
           {filteredTransactions.length === 0 ? (
             <Card className="p-12 text-center">
@@ -370,7 +379,6 @@ export const TransactionsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Modal */}
       <TransactionModal
         isOpen={isModalOpen}
         onClose={handleCloseModal}

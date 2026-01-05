@@ -42,7 +42,6 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
 
   useEffect(() => {
     if (transaction) {
-      // Determinar tipo basado en Plaid o manual
       if (transaction.synced_from_plaid) {
         setType(transaction.amount > 0 ? 'expense' : 'income');
       } else {
@@ -57,7 +56,6 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
         ''
       );
       
-      // Manejar categoría de Plaid (array) o manual (string)
       if (Array.isArray(transaction.category)) {
         setCategory(transaction.category[0] || 'Otros');
       } else {
@@ -66,7 +64,6 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
       
       setDate(transaction.date || new Date().toISOString().split('T')[0]);
     } else {
-      // Reset para nueva transacción
       setType('expense');
       setAmount('');
       setDescription('');
@@ -99,33 +96,27 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
         pending: transaction?.pending || false,
         created_at: transaction?.created_at || new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        manually_categorized: true, // Marcador para saber que fue categorizado manualmente
+        manually_categorized: true,
       };
 
       if (mode === 'edit' && transaction?.id) {
-        // Actualizar transacción existente
         await updateDoc(doc(db, 'transactions', transaction.id), transactionData);
         
-        // Notificación de éxito
         if ('Notification' in window && Notification.permission === 'granted') {
           new Notification('✅ Transacción actualizada', {
             body: `${description} - $${amount}`,
             icon: '/icon-192x192.png',
-            badge: '/icon-192x192.png',
           });
         }
       } else {
-        // Crear nueva transacción
         await addDoc(collection(db, 'transactions'), transactionData);
         
-        // Notificación de nueva transacción
         if ('Notification' in window && Notification.permission === 'granted') {
           new Notification(
             `💰 ${type === 'income' ? 'Nuevo ingreso' : 'Nuevo gasto'}`,
             {
               body: `${description} - $${amount}`,
               icon: '/icon-192x192.png',
-              badge: '/icon-192x192.png',
             }
           );
         }
@@ -151,7 +142,6 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
           boxShadow: '0 8px 32px 0 rgba(5, 191, 219, 0.15)',
         }}
       >
-        {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
             <h2 className="text-2xl font-bold text-white">
@@ -173,7 +163,6 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Tipo */}
           <div>
             <label className="block text-sm font-medium text-white/70 mb-2">
               Tipo
@@ -204,7 +193,6 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
             </div>
           </div>
 
-          {/* Monto */}
           <div>
             <label className="block text-sm font-medium text-white/70 mb-2">
               <DollarSign className="w-4 h-4 inline mr-1" />
@@ -221,7 +209,6 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
             />
           </div>
 
-          {/* Descripción */}
           <div>
             <label className="block text-sm font-medium text-white/70 mb-2">
               <FileText className="w-4 h-4 inline mr-1" />
@@ -237,7 +224,6 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
             />
           </div>
 
-          {/* Categoría */}
           <div>
             <label className="block text-sm font-medium text-white/70 mb-2">
               <Tag className="w-4 h-4 inline mr-1" />
@@ -256,7 +242,6 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
             </select>
           </div>
 
-          {/* Fecha */}
           <div>
             <label className="block text-sm font-medium text-white/70 mb-2">
               <Calendar className="w-4 h-4 inline mr-1" />
@@ -271,7 +256,6 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
             />
           </div>
 
-          {/* Botones */}
           <div className="flex gap-3 pt-4">
             <Button
               type="button"
