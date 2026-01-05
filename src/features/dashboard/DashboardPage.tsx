@@ -1,6 +1,5 @@
 // src/features/dashboard/DashboardPage.tsx
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
   TrendingUp,
   TrendingDown,
@@ -47,7 +46,7 @@ interface Transaction {
   type?: 'income' | 'expense';
   synced_from_plaid?: boolean;
   pending?: boolean;
-  recurring?: boolean; // Excluir transacciones recurrentes
+  recurring?: boolean;
 }
 
 interface Goal {
@@ -59,7 +58,6 @@ interface Goal {
 }
 
 export const DashboardPage: React.FC = () => {
-  const navigate = useNavigate();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [loading, setLoading] = useState(true);
@@ -81,7 +79,7 @@ export const DashboardPage: React.FC = () => {
       const txns: Transaction[] = [];
       snapshot.forEach((doc) => {
         const data = doc.data();
-        // EXCLUIR transacciones recurrentes (son plantillas, no transacciones reales)
+        // EXCLUIR transacciones recurrentes
         if (!data.recurring) {
           txns.push({ id: doc.id, ...data } as Transaction);
         }
@@ -111,16 +109,13 @@ export const DashboardPage: React.FC = () => {
     };
   }, []);
 
-  // Determinar si es ingreso o gasto
   const getTransactionType = (tx: Transaction): 'income' | 'expense' => {
     if (tx.synced_from_plaid) {
-      // En Plaid: amount positivo = gasto, negativo = ingreso
       return tx.amount > 0 ? 'expense' : 'income';
     }
     return tx.type || 'expense';
   };
 
-  // Obtener nombre de la transacción
   const getTransactionName = (tx: Transaction): string => {
     if (tx.synced_from_plaid) {
       return tx.merchant_name || tx.name || 'Transacción';
@@ -128,7 +123,6 @@ export const DashboardPage: React.FC = () => {
     return tx.description || 'Transacción';
   };
 
-  // Obtener categoría como string
   const getTransactionCategory = (tx: Transaction): string => {
     if (tx.synced_from_plaid && Array.isArray(tx.category)) {
       return tx.category[0] || 'Sin categoría';
@@ -136,7 +130,6 @@ export const DashboardPage: React.FC = () => {
     return tx.category as string || 'Sin categoría';
   };
 
-  // Filtrar transacciones por rango de tiempo
   const getFilteredTransactions = () => {
     const now = new Date();
     const ranges = {
@@ -156,7 +149,6 @@ export const DashboardPage: React.FC = () => {
 
   const filteredTransactions = getFilteredTransactions();
 
-  // Calcular totales (SOLO transacciones reales, NO recurrentes)
   const totalIncome = filteredTransactions
     .filter(tx => getTransactionType(tx) === 'income')
     .reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
@@ -167,7 +159,6 @@ export const DashboardPage: React.FC = () => {
 
   const netWorth = totalIncome - totalExpense;
 
-  // Datos para gráfico de línea (últimos 30 días)
   const getLast30DaysData = () => {
     const data: { date: string; income: number; expense: number }[] = [];
     const now = new Date();
@@ -195,7 +186,6 @@ export const DashboardPage: React.FC = () => {
     return data;
   };
 
-  // Datos para gráfico de categorías
   const getCategoryData = () => {
     const categoryTotals: { [key: string]: number } = {};
 
@@ -236,7 +226,7 @@ export const DashboardPage: React.FC = () => {
             </h1>
             <p className="text-white/60 mt-1">Tu resumen financiero</p>
           </div>
-          <Button onClick={() => navigate('/new-transaction')}>
+          <Button onClick={() => window.location.href = '/#/new-transaction'}>
             <Plus className="w-5 h-5 mr-2" />
             Nuevo
           </Button>
@@ -244,7 +234,6 @@ export const DashboardPage: React.FC = () => {
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          {/* Net Worth */}
           <Card className="p-6 bg-gradient-to-br from-primary-500/20 to-primary-600/10 border-primary-500/30">
             <div className="flex items-center justify-between mb-4">
               <p className="text-sm font-medium text-white/70 uppercase tracking-wide">
@@ -272,7 +261,6 @@ export const DashboardPage: React.FC = () => {
             </div>
           </Card>
 
-          {/* Income */}
           <Card className="p-6 bg-gradient-to-br from-green-500/20 to-green-600/10 border-green-500/30">
             <div className="flex items-center justify-between mb-4">
               <p className="text-sm font-medium text-white/70 uppercase tracking-wide">
@@ -285,7 +273,6 @@ export const DashboardPage: React.FC = () => {
             </p>
           </Card>
 
-          {/* Expenses */}
           <Card className="p-6 bg-gradient-to-br from-red-500/20 to-red-600/10 border-red-500/30">
             <div className="flex items-center justify-between mb-4">
               <p className="text-sm font-medium text-white/70 uppercase tracking-wide">
@@ -299,7 +286,7 @@ export const DashboardPage: React.FC = () => {
           </Card>
         </div>
 
-        {/* Time Range Selector */}
+        {/* Time Range */}
         <Card className="p-2 mb-6">
           <div className="flex items-center gap-2">
             <Calendar className="w-5 h-5 text-white/50" />
@@ -323,7 +310,7 @@ export const DashboardPage: React.FC = () => {
         </Card>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          {/* Income vs Expenses Chart */}
+          {/* Chart */}
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
@@ -374,7 +361,7 @@ export const DashboardPage: React.FC = () => {
             </ResponsiveContainer>
           </Card>
 
-          {/* Category Distribution */}
+          {/* Categories */}
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
@@ -382,7 +369,7 @@ export const DashboardPage: React.FC = () => {
                 Distribución de Gastos
               </h3>
               <button
-                onClick={() => navigate('/analytics')}
+                onClick={() => window.location.href = '/#/analytics'}
                 className="text-sm text-primary-400 hover:text-primary-300"
               >
                 Ver todos
@@ -419,26 +406,20 @@ export const DashboardPage: React.FC = () => {
               <div className="flex items-center justify-center h-[300px]">
                 <div className="text-center">
                   <BarChart3 className="w-12 h-12 text-white/20 mx-auto mb-2" />
-                  <p className="text-white/50 text-sm">
-                    Sin datos para este período
-                  </p>
-                  <p className="text-white/30 text-xs mt-1">
-                    Agrega gastos para ver estadísticas
-                  </p>
+                  <p className="text-white/50 text-sm">Sin datos</p>
                 </div>
               </div>
             )}
           </Card>
         </div>
 
-        {/* Recent Transactions & Goals */}
+        {/* Recent & Goals */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Recent Transactions */}
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold text-white">Últimos Movimientos</h3>
               <button
-                onClick={() => navigate('/transactions')}
+                onClick={() => window.location.href = '/#/transactions'}
                 className="text-sm text-primary-400 hover:text-primary-300"
               >
                 Ver todos
@@ -449,10 +430,8 @@ export const DashboardPage: React.FC = () => {
               <div className="flex flex-col items-center justify-center py-12">
                 <CreditCard className="w-12 h-12 text-white/20 mb-3" />
                 <p className="text-white/50 text-sm mb-1">Sin movimientos</p>
-                <p className="text-white/30 text-xs mb-4">
-                  Registra tu primer movimiento
-                </p>
-                <Button size="sm" onClick={() => navigate('/new-transaction')}>
+                <p className="text-white/30 text-xs mb-4">Registra tu primer movimiento</p>
+                <Button size="sm" onClick={() => window.location.href = '/#/new-transaction'}>
                   Añadir
                 </Button>
               </div>
@@ -464,12 +443,12 @@ export const DashboardPage: React.FC = () => {
                   const txCategory = getTransactionCategory(tx);
 
                   return (
-                    <div key={tx.id} className="flex items-center gap-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
-                      <div className="w-10 h-10 rounded-lg bg-primary-500/20 flex items-center justify-center flex-shrink-0">
+                    <div key={tx.id} className="flex items-center gap-3 p-3 rounded-lg bg-white/5">
+                      <div className="w-10 h-10 rounded-lg bg-primary-500/20 flex items-center justify-center">
                         <DollarSign className="w-5 h-5 text-primary-400" />
                       </div>
 
-                      <div className="flex-1 min-w-0">
+                      <div className="flex-1">
                         <p className="font-medium text-white truncate">{txName}</p>
                         <p className="text-xs text-white/50">{txCategory}</p>
                       </div>
@@ -489,7 +468,6 @@ export const DashboardPage: React.FC = () => {
             )}
           </Card>
 
-          {/* Active Goals */}
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
@@ -497,7 +475,7 @@ export const DashboardPage: React.FC = () => {
                 Metas Activas
               </h3>
               <button
-                onClick={() => navigate('/goals')}
+                onClick={() => window.location.href = '/#/goals'}
                 className="text-sm text-primary-400 hover:text-primary-300"
               >
                 Ver todas
@@ -508,10 +486,8 @@ export const DashboardPage: React.FC = () => {
               <div className="flex flex-col items-center justify-center py-12">
                 <Target className="w-12 h-12 text-white/20 mb-3" />
                 <p className="text-white/50 text-sm mb-1">Sin metas</p>
-                <p className="text-white/30 text-xs mb-4">
-                  Crea tu primera meta de ahorro
-                </p>
-                <Button size="sm" onClick={() => navigate('/goals')}>
+                <p className="text-white/30 text-xs mb-4">Crea tu primera meta</p>
+                <Button size="sm" onClick={() => window.location.href = '/#/goals'}>
                   Crear meta
                 </Button>
               </div>
@@ -529,12 +505,12 @@ export const DashboardPage: React.FC = () => {
                       </div>
                       <div className="w-full bg-white/10 rounded-full h-2">
                         <div
-                          className="bg-gradient-to-r from-primary-400 to-primary-600 h-2 rounded-full transition-all"
+                          className="bg-gradient-to-r from-primary-400 to-primary-600 h-2 rounded-full"
                           style={{ width: `${Math.min(progress, 100)}%` }}
                         />
                       </div>
                       <div className="flex items-center justify-between text-xs text-white/50">
-                        <span>{progress.toFixed(0)}% completado</span>
+                        <span>{progress.toFixed(0)}%</span>
                         <span>
                           {new Date(goal.deadline).toLocaleDateString('es-ES', {
                             day: '2-digit',
