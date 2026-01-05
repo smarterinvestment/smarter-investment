@@ -29,6 +29,7 @@ import {
 } from 'recharts';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db, auth } from '../../lib/firebase';
+import { BudgetComparisonChart } from '../../components/BudgetComparisonChart';
 
 interface Transaction {
   id: string;
@@ -348,6 +349,11 @@ export const DashboardPage: React.FC = () => {
             </div>
           </div>
         </Card>
+
+        {/* NUEVA SECCIÓN: Gráfica de Presupuestos vs Gastos Reales */}
+        <div className="mb-6">
+          <BudgetComparisonChart />
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           <Card className="p-6">
