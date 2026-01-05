@@ -1,136 +1,197 @@
 // src/features/settings/SettingsPage.tsx
 import React, { useState } from 'react';
-import { Settings, Lock, Bell, Building2, Receipt, User, Palette, Globe } from 'lucide-react';
+import { Settings, Lock, Bell, Building2, Palette } from 'lucide-react';
 import { Card, Button } from '../../components/ui';
 
 export const SettingsPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('general');
+  const [activeSection, setActiveSection] = useState<string | null>(null);
 
-  const tabs = [
-    { id: 'general', label: 'General', icon: Settings },
-    { id: 'appearance', label: 'Apariencia', icon: Palette },
-    { id: 'notifications', label: 'Notificaciones', icon: Bell },
-    { id: 'bank', label: 'Banco', icon: Building2 },
-    { id: 'security', label: 'Seguridad', icon: Lock },
+  const menuItems = [
+    {
+      id: 'theme',
+      icon: Palette,
+      title: 'Tema',
+      subtitle: 'Apariencia',
+      action: () => setActiveSection('theme')
+    },
+    {
+      id: 'language',
+      icon: Settings,
+      title: 'Idioma',
+      subtitle: 'Español',
+      action: () => setActiveSection('language')
+    },
+    {
+      id: 'currency',
+      icon: Settings,
+      title: 'Moneda',
+      subtitle: 'USD',
+      action: () => setActiveSection('currency')
+    },
+    {
+      id: 'alerts',
+      icon: Bell,
+      title: '⚠️ Alertas Inteligentes',
+      subtitle: 'Alertas de Presupuesto',
+      action: () => setActiveSection('alerts')
+    },
+    {
+      id: 'notifications',
+      icon: Bell,
+      title: '🔔 Notificaciones',
+      subtitle: 'Push, email',
+      action: () => setActiveSection('notifications')
+    },
+    {
+      id: 'bank',
+      icon: Building2,
+      title: '🏦 Conexión Bancaria',
+      subtitle: 'Plaid sync',
+      action: () => setActiveSection('bank')
+    },
   ];
 
+  if (activeSection === 'alerts') {
+    return <AlertasInteligentes onBack={() => setActiveSection(null)} />;
+  }
+
+  if (activeSection === 'notifications') {
+    return <NotificacionesSettings onBack={() => setActiveSection(null)} />;
+  }
+
+  if (activeSection === 'bank') {
+    return <BankSettings onBack={() => setActiveSection(null)} />;
+  }
+
+  if (activeSection === 'theme') {
+    return <ThemeSettings onBack={() => setActiveSection(null)} />;
+  }
+
+  if (activeSection === 'language') {
+    return <LanguageSettings onBack={() => setActiveSection(null)} />;
+  }
+
+  if (activeSection === 'currency') {
+    return <CurrencySettings onBack={() => setActiveSection(null)} />;
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-4 md:p-6">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-4">
+      <div className="max-w-2xl mx-auto">
         <div className="mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-2">
-            <Settings className="w-8 h-8" />
-            Configuración
+          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+            <Settings className="w-7 h-7" />
+            Configuración Completa
           </h1>
-          <p className="text-white/60 mt-1">Administra tu cuenta y preferencias</p>
+          <p className="text-white/60 text-sm mt-1">Alertas</p>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-6">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
+        <div className="space-y-2">
+          {menuItems.map((item) => {
+            const Icon = item.icon;
             return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`p-4 rounded-xl font-medium transition-all ${
-                  activeTab === tab.id
-                    ? 'bg-primary-500 text-white shadow-lg scale-105'
-                    : 'bg-white/5 text-white/70 hover:bg-white/10'
-                }`}
+              <Card
+                key={item.id}
+                className="p-4 hover:bg-white/10 transition-colors cursor-pointer"
+                onClick={item.action}
               >
-                <Icon className="w-5 h-5 mx-auto mb-2" />
-                <span className="text-sm">{tab.label}</span>
-              </button>
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-primary-500/20 flex items-center justify-center">
+                    <Icon className="w-6 h-6 text-primary-400" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-white">{item.title}</h3>
+                    <p className="text-sm text-white/50">{item.subtitle}</p>
+                  </div>
+                  <div className="text-white/30">›</div>
+                </div>
+              </Card>
             );
           })}
         </div>
 
-        <div>
-          {activeTab === 'general' && <GeneralSettings />}
-          {activeTab === 'appearance' && <AppearanceSettings />}
-          {activeTab === 'notifications' && <NotificationsSettings />}
-          {activeTab === 'bank' && <BankSettings />}
-          {activeTab === 'security' && <SecuritySettings />}
+        <Card className="p-6 mt-6 border-red-500/20">
+          <h3 className="text-lg font-semibold text-red-400 mb-4">
+            Gestión de Datos
+          </h3>
+          <p className="text-white/60 text-sm mb-4">Exportar Datos</p>
+          <Button className="w-full bg-red-500 hover:bg-red-600">
+            Cerrar sesión
+          </Button>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+const AlertasInteligentes: React.FC<{ onBack: () => void }> = ({ onBack }) => {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-4">
+      <div className="max-w-2xl mx-auto">
+        <button
+          onClick={onBack}
+          className="mb-4 text-primary-400 hover:text-primary-300 flex items-center gap-2"
+        >
+          ← Volver
+        </button>
+
+        <h1 className="text-2xl font-bold text-white mb-6">⚠️ Alertas Inteligentes</h1>
+
+        <div className="space-y-4">
+          <Card className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-white font-medium">💰 Gasto alto</h3>
+                <p className="text-sm text-white/50">Alertar cuando un gasto supere $100</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" className="sr-only peer" defaultChecked />
+                <div className="w-11 h-6 bg-white/10 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-500"></div>
+              </label>
+            </div>
+
+            <div>
+              <label className="text-sm text-white/70 mb-2 block">Monto de alerta ($)</label>
+              <input
+                type="number"
+                defaultValue="100"
+                className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white"
+              />
+            </div>
+          </Card>
+
+          <Card className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-white font-medium">📊 Alerta de presupuesto</h3>
+                <p className="text-sm text-white/50">Notificar al alcanzar el 80% del presupuesto</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" className="sr-only peer" defaultChecked />
+                <div className="w-11 h-6 bg-white/10 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-500"></div>
+              </label>
+            </div>
+          </Card>
+
+          <Card className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-white font-medium">🎯 Meta próxima</h3>
+                <p className="text-sm text-white/50">Alertar 30 días antes de fecha límite</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" className="sr-only peer" defaultChecked />
+                <div className="w-11 h-6 bg-white/10 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-500"></div>
+              </label>
+            </div>
+          </Card>
         </div>
       </div>
     </div>
   );
 };
 
-const GeneralSettings: React.FC = () => {
-  return (
-    <div className="space-y-4">
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold text-white mb-4">
-          Información de la cuenta
-        </h3>
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-white/70 mb-2">
-              Nombre
-            </label>
-            <input
-              type="text"
-              className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-primary-400"
-              placeholder="Tu nombre"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-white/70 mb-2">
-              Email
-            </label>
-            <input
-              type="email"
-              className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-primary-400"
-              placeholder="tu@email.com"
-            />
-          </div>
-        </div>
-      </Card>
-
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold text-white mb-4">Moneda</h3>
-        <select className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-primary-400">
-          <option value="USD" className="bg-gray-900">USD - Dólar</option>
-          <option value="EUR" className="bg-gray-900">EUR - Euro</option>
-          <option value="MXN" className="bg-gray-900">MXN - Peso Mexicano</option>
-        </select>
-      </Card>
-    </div>
-  );
-};
-
-const AppearanceSettings: React.FC = () => {
-  return (
-    <div className="space-y-4">
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold text-white mb-4">Tema</h3>
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-white font-medium">Modo oscuro</p>
-            <p className="text-xs text-white/50">Usar modo oscuro</p>
-          </div>
-          <label className="relative inline-flex items-center cursor-pointer">
-            <input type="checkbox" className="sr-only peer" defaultChecked />
-            <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-500"></div>
-          </label>
-        </div>
-      </Card>
-
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold text-white mb-4">Idioma</h3>
-        <select className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-primary-400">
-          <option value="es" className="bg-gray-900">Español</option>
-          <option value="en" className="bg-gray-900">English</option>
-        </select>
-      </Card>
-    </div>
-  );
-};
-
-const NotificationsSettings: React.FC = () => {
-  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
-
+const NotificacionesSettings: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const requestPermission = async () => {
     if (!('Notification' in window)) {
       alert('Tu navegador no soporta notificaciones');
@@ -139,99 +200,102 @@ const NotificationsSettings: React.FC = () => {
 
     const result = await Notification.requestPermission();
     if (result === 'granted') {
-      setNotificationsEnabled(true);
       new Notification('🎉 ¡Notificaciones activadas!', {
-        body: 'Ahora recibirás alertas de tus transacciones',
+        body: 'Ahora recibirás alertas',
         icon: '/icon-192x192.png',
       });
     }
   };
 
   return (
-    <div className="space-y-4">
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold text-white mb-4">
-          🔔 Alertas Inteligentes
-        </h3>
-        <p className="text-white/60 text-sm mb-4">
-          Recibe notificaciones sobre tus gastos, presupuestos y metas
-        </p>
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-4">
+      <div className="max-w-2xl mx-auto">
+        <button
+          onClick={onBack}
+          className="mb-4 text-primary-400 hover:text-primary-300 flex items-center gap-2"
+        >
+          ← Volver
+        </button>
+
+        <h1 className="text-2xl font-bold text-white mb-6">🔔 Notificaciones</h1>
 
         <div className="space-y-4">
-          <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
-            <div>
-              <p className="text-white font-medium">Notificaciones del navegador</p>
-              <p className="text-xs text-white/50">
-                {Notification.permission === 'granted' ? 'Activadas ✅' : 'No activadas'}
-              </p>
+          <Card className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-white font-medium">Notificaciones del navegador</h3>
+                <p className="text-sm text-white/50">
+                  {Notification.permission === 'granted' ? 'Activadas ✅' : 'No activadas'}
+                </p>
+              </div>
+              {Notification.permission !== 'granted' && (
+                <Button onClick={requestPermission} size="sm">
+                  Activar
+                </Button>
+              )}
             </div>
-            {Notification.permission !== 'granted' && (
-              <Button onClick={requestPermission} size="sm">
-                Activar
-              </Button>
-            )}
-          </div>
+          </Card>
 
-          <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
-            <div>
-              <p className="text-white font-medium">💰 Nueva transacción</p>
-              <p className="text-xs text-white/50">Notificar cada nueva transacción</p>
+          <Card className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-white font-medium">💰 Nueva transacción</h3>
+                <p className="text-sm text-white/50">Notificar cada transacción nueva</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" className="sr-only peer" defaultChecked />
+                <div className="w-11 h-6 bg-white/10 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-500"></div>
+              </label>
             </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" className="sr-only peer" defaultChecked />
-              <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-500"></div>
-            </label>
-          </div>
+          </Card>
 
-          <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
-            <div>
-              <p className="text-white font-medium">📊 Alerta de presupuesto</p>
-              <p className="text-xs text-white/50">Notificar cuando alcances el 80% del presupuesto</p>
+          <Card className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-white font-medium">📧 Email</h3>
+                <p className="text-sm text-white/50">Resumen semanal por email</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" className="sr-only peer" />
+                <div className="w-11 h-6 bg-white/10 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-500"></div>
+              </label>
             </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" className="sr-only peer" defaultChecked />
-              <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-500"></div>
-            </label>
-          </div>
-
-          <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
-            <div>
-              <p className="text-white font-medium">💸 Gasto alto</p>
-              <p className="text-xs text-white/50">Alertar cuando un gasto supere $100</p>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" className="sr-only peer" defaultChecked />
-              <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-500"></div>
-            </label>
-          </div>
+          </Card>
         </div>
-      </Card>
+      </div>
     </div>
   );
 };
 
-const BankSettings: React.FC = () => {
+const BankSettings: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   return (
-    <div className="space-y-4">
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold text-white mb-4">
-          🏦 Conexión Bancaria
-        </h3>
-        <p className="text-white/60 text-sm mb-4">
-          Conecta tu banco para sincronizar transacciones automáticamente usando Plaid
-        </p>
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-4">
+      <div className="max-w-2xl mx-auto">
+        <button
+          onClick={onBack}
+          className="mb-4 text-primary-400 hover:text-primary-300 flex items-center gap-2"
+        >
+          ← Volver
+        </button>
 
-        <div className="space-y-4">
-          <div className="p-4 bg-white/5 rounded-lg border border-white/10">
-            <div className="flex items-center justify-between mb-2">
+        <h1 className="text-2xl font-bold text-white mb-6">🏦 Conexión Bancaria</h1>
+
+        <Card className="p-6 mb-4">
+          <h3 className="text-lg font-semibold text-white mb-2">Plaid sync</h3>
+          <p className="text-white/60 text-sm mb-4">
+            Conecta tu banco para sincronizar transacciones automáticamente
+          </p>
+
+          <div className="p-4 bg-white/5 rounded-lg border border-white/10 mb-4">
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Building2 className="w-8 h-8 text-primary-400" />
                 <div>
                   <p className="text-white font-medium">Chase Bank</p>
-                  <p className="text-xs text-white/50">Última sincronización: Hace 5 min</p>
+                  <p className="text-xs text-white/50">Última sync: Hace 5 min</p>
                 </div>
               </div>
-              <span className="px-3 py-1 rounded-full bg-green-500/20 text-green-400 text-xs font-medium">
+              <span className="px-3 py-1 rounded-full bg-green-500/20 text-green-400 text-xs">
                 Conectado
               </span>
             </div>
@@ -241,84 +305,87 @@ const BankSettings: React.FC = () => {
             <Building2 className="w-5 h-5 mr-2" />
             Conectar nuevo banco
           </Button>
+        </Card>
 
-          <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-            <p className="text-sm text-blue-400">
-              💡 <strong>Tip:</strong> Conecta tu banco para que tus transacciones se sincronicen automáticamente. 
-              Es seguro y puedes desconectarlo cuando quieras.
-            </p>
-          </div>
-        </div>
-      </Card>
+        <Card className="p-4 bg-blue-500/10 border-blue-500/20">
+          <p className="text-sm text-blue-400">
+            💡 <strong>Tip:</strong> Es seguro. Puedes desconectarlo cuando quieras.
+          </p>
+        </Card>
+      </div>
     </div>
   );
 };
 
-const SecuritySettings: React.FC = () => {
+const ThemeSettings: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   return (
-    <div className="space-y-4">
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold text-white mb-4">
-          Cambiar contraseña
-        </h3>
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-white/70 mb-2">
-              Contraseña actual
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-4">
+      <div className="max-w-2xl mx-auto">
+        <button
+          onClick={onBack}
+          className="mb-4 text-primary-400 hover:text-primary-300"
+        >
+          ← Volver
+        </button>
+        <h1 className="text-2xl font-bold text-white mb-6">🎨 Tema</h1>
+        <Card className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-white font-medium">Modo oscuro</h3>
+              <p className="text-sm text-white/50">Activado por defecto</p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" className="sr-only peer" defaultChecked />
+              <div className="w-11 h-6 bg-white/10 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-500"></div>
             </label>
-            <input
-              type="password"
-              className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-primary-400"
-            />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-white/70 mb-2">
-              Nueva contraseña
-            </label>
-            <input
-              type="password"
-              className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-primary-400"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-white/70 mb-2">
-              Confirmar contraseña
-            </label>
-            <input
-              type="password"
-              className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-primary-400"
-            />
-          </div>
-          <Button className="w-full">
-            Actualizar contraseña
-          </Button>
-        </div>
-      </Card>
+        </Card>
+      </div>
+    </div>
+  );
+};
 
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold text-white mb-4">
-          Autenticación de dos factores
-        </h3>
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-white font-medium">2FA</p>
-            <p className="text-xs text-white/50">Protección adicional</p>
-          </div>
-          <label className="relative inline-flex items-center cursor-pointer">
-            <input type="checkbox" className="sr-only peer" />
-            <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-500"></div>
-          </label>
-        </div>
-      </Card>
+const LanguageSettings: React.FC<{ onBack: () => void }> = ({ onBack }) => {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-4">
+      <div className="max-w-2xl mx-auto">
+        <button
+          onClick={onBack}
+          className="mb-4 text-primary-400 hover:text-primary-300"
+        >
+          ← Volver
+        </button>
+        <h1 className="text-2xl font-bold text-white mb-6">🌍 Idioma</h1>
+        <Card className="p-6">
+          <select className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white">
+            <option value="es" className="bg-gray-900">Español</option>
+            <option value="en" className="bg-gray-900">English</option>
+          </select>
+        </Card>
+      </div>
+    </div>
+  );
+};
 
-      <Card className="p-6 border-red-500/20">
-        <h3 className="text-lg font-semibold text-red-400 mb-4">
-          Zona de peligro
-        </h3>
-        <Button className="w-full bg-red-500 hover:bg-red-600">
-          Cerrar sesión
-        </Button>
-      </Card>
+const CurrencySettings: React.FC<{ onBack: () => void }> = ({ onBack }) => {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-4">
+      <div className="max-w-2xl mx-auto">
+        <button
+          onClick={onBack}
+          className="mb-4 text-primary-400 hover:text-primary-300"
+        >
+          ← Volver
+        </button>
+        <h1 className="text-2xl font-bold text-white mb-6">💵 Moneda</h1>
+        <Card className="p-6">
+          <select className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white">
+            <option value="USD" className="bg-gray-900">USD - Dólar</option>
+            <option value="EUR" className="bg-gray-900">EUR - Euro</option>
+            <option value="MXN" className="bg-gray-900">MXN - Peso Mexicano</option>
+          </select>
+        </Card>
+      </div>
     </div>
   );
 };
