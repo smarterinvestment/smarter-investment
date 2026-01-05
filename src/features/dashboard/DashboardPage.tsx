@@ -16,12 +16,8 @@ import {
 } from 'lucide-react';
 import { Card, Button } from '../../components/ui';
 import {
-  LineChart,
-  Line,
   AreaChart,
   Area,
-  BarChart,
-  Bar,
   PieChart,
   Pie,
   Cell,
@@ -30,9 +26,8 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend,
 } from 'recharts';
-import { collection, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db, auth } from '../../lib/firebase';
 
 interface Transaction {
@@ -67,32 +62,31 @@ export const DashboardPage: React.FC = () => {
     const userId = auth.currentUser?.uid;
     if (!userId) return;
 
-    // Query para transacciones (SOLO reales, NO recurrentes)
+    // Query SIN orderBy (para evitar índice compuesto)
     const txQuery = query(
       collection(db, 'transactions'),
-      where('userId', '==', userId),
-      orderBy('date', 'desc'),
-      limit(100)
+      where('userId', '==', userId)
     );
 
     const unsubTx = onSnapshot(txQuery, (snapshot) => {
       const txns: Transaction[] = [];
       snapshot.forEach((doc) => {
         const data = doc.data();
-        // EXCLUIR transacciones recurrentes
         if (!data.recurring) {
           txns.push({ id: doc.id, ...data } as Transaction);
         }
       });
-      setTransactions(txns);
+      
+      // Ordenar en el frontend
+      txns.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      
+      setTransactions(txns.slice(0, 100));
       setLoading(false);
     });
 
-    // Query para metas
     const goalsQuery = query(
       collection(db, 'goals'),
-      where('userId', '==', userId),
-      limit(3)
+      where('userId', '==', userId)
     );
 
     const unsubGoals = onSnapshot(goalsQuery, (snapshot) => {
@@ -100,7 +94,7 @@ export const DashboardPage: React.FC = () => {
       snapshot.forEach((doc) => {
         goalsData.push({ id: doc.id, ...doc.data() } as Goal);
       });
-      setGoals(goalsData);
+      setGoals(goalsData.slice(0, 3));
     });
 
     return () => {
@@ -218,7 +212,6 @@ export const DashboardPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-2">
@@ -232,7 +225,6 @@ export const DashboardPage: React.FC = () => {
           </Button>
         </div>
 
-        {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <Card className="p-6 bg-gradient-to-br from-primary-500/20 to-primary-600/10 border-primary-500/30">
             <div className="flex items-center justify-between mb-4">
@@ -286,7 +278,6 @@ export const DashboardPage: React.FC = () => {
           </Card>
         </div>
 
-        {/* Time Range */}
         <Card className="p-2 mb-6">
           <div className="flex items-center gap-2">
             <Calendar className="w-5 h-5 text-white/50" />
@@ -310,7 +301,6 @@ export const DashboardPage: React.FC = () => {
         </Card>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          {/* Chart */}
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
@@ -361,7 +351,6 @@ export const DashboardPage: React.FC = () => {
             </ResponsiveContainer>
           </Card>
 
-          {/* Categories */}
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
@@ -413,7 +402,6 @@ export const DashboardPage: React.FC = () => {
           </Card>
         </div>
 
-        {/* Recent & Goals */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
