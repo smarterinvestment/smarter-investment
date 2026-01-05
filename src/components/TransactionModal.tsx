@@ -1,6 +1,6 @@
 // src/components/TransactionModal.tsx
-import React, { useState } from 'react';
-import { X, DollarSign, Calendar, FileText, Tag } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, DollarSign, Calendar, FileText, Tag, AlertCircle } from 'lucide-react';
 import { Button } from './ui';
 import { collection, addDoc, updateDoc, doc } from 'firebase/firestore';
 import { db, auth } from '../lib/firebase';
@@ -8,7 +8,7 @@ import { db, auth } from '../lib/firebase';
 interface TransactionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  transaction?: any; // Para editar transacciones existentes
+  transaction?: any;
   mode?: 'create' | 'edit';
 }
 
@@ -22,6 +22,8 @@ const CATEGORIES = [
   'Servicios',
   'Compras',
   'Viajes',
+  'Salario',
+  'Inversiones',
   'Otros',
 ];
 
@@ -31,22 +33,47 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
   transaction,
   mode = 'create',
 }) => {
-  const [type, setType] = useState<'income' | 'expense'>(
-    transaction?.type || (transaction?.synced_from_plaid && transaction.amount > 0 ? 'expense' : 'income') || 'expense'
-  );
-  const [amount, setAmount] = useState(
-    transaction ? Math.abs(transaction.amount).toString() : ''
-  );
-  const [description, setDescription] = useState(
-    transaction?.description || transaction?.merchant_name || transaction?.name || ''
-  );
-  const [category, setCategory] = useState(
-    Array.isArray(transaction?.category) ? transaction.category[0] : transaction?.category || 'Otros'
-  );
-  const [date, setDate] = useState(
-    transaction?.date || new Date().toISOString().split('T')[0]
-  );
+  const [type, setType] = useState<'income' | 'expense'>('expense');
+  const [amount, setAmount] = useState('');
+  const [description, setDescription] = useState('');
+  const [category, setCategory] = useState('Otros');
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (transaction) {
+      // Determinar tipo basado en Plaid o manual
+      if (transaction.synced_from_plaid) {
+        setType(transaction.amount > 0 ? 'expense' : 'income');
+      } else {
+        setType(transaction.type || 'expense');
+      }
+      
+      setAmount(Math.abs(transaction.amount).toString());
+      setDescription(
+        transaction.description || 
+        transaction.merchant_name || 
+        transaction.name || 
+        ''
+      );
+      
+      // Manejar categoría de Plaid (array) o manual (string)
+      if (Array.isArray(transaction.category)) {
+        setCategory(transaction.category[0] || 'Otros');
+      } else {
+        setCategory(transaction.category || 'Otros');
+      }
+      
+      setDate(transaction.date || new Date().toISOString().split('T')[0]);
+    } else {
+      // Reset para nueva transacción
+      setType('expense');
+      setAmount('');
+      setDescription('');
+      setCategory('Otros');
+      setDate(new Date().toISOString().split('T')[0]);
+    }
+  }, [transaction]);
 
   if (!isOpen) return null;
 
@@ -66,25 +93,45 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
         date,
         type,
         synced_from_plaid: transaction?.synced_from_plaid || false,
+        plaid_transaction_id: transaction?.plaid_transaction_id || null,
+        account_id: transaction?.account_id || null,
+        merchant_name: transaction?.merchant_name || null,
+        pending: transaction?.pending || false,
         created_at: transaction?.created_at || new Date().toISOString(),
         updated_at: new Date().toISOString(),
+        manually_categorized: true, // Marcador para saber que fue categorizado manualmente
       };
 
       if (mode === 'edit' && transaction?.id) {
         // Actualizar transacción existente
         await updateDoc(doc(db, 'transactions', transaction.id), transactionData);
+        
+        // Notificación de éxito
+        if ('Notification' in window && Notification.permission === 'granted') {
+          new Notification('✅ Transacción actualizada', {
+            body: `${description} - $${amount}`,
+            icon: '/icon-192x192.png',
+            badge: '/icon-192x192.png',
+          });
+        }
       } else {
         // Crear nueva transacción
         await addDoc(collection(db, 'transactions'), transactionData);
+        
+        // Notificación de nueva transacción
+        if ('Notification' in window && Notification.permission === 'granted') {
+          new Notification(
+            `💰 ${type === 'income' ? 'Nuevo ingreso' : 'Nuevo gasto'}`,
+            {
+              body: `${description} - $${amount}`,
+              icon: '/icon-192x192.png',
+              badge: '/icon-192x192.png',
+            }
+          );
+        }
       }
 
       onClose();
-      // Resetear form
-      setAmount('');
-      setDescription('');
-      setCategory('Otros');
-      setType('expense');
-      setDate(new Date().toISOString().split('T')[0]);
     } catch (error) {
       console.error('Error saving transaction:', error);
       alert('Error al guardar la transacción');
@@ -96,7 +143,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
       <div
-        className="relative w-full max-w-md rounded-2xl border border-white/20 p-6"
+        className="relative w-full max-w-md rounded-2xl border border-white/20 p-6 max-h-[90vh] overflow-y-auto"
         style={{
           background: 'linear-gradient(135deg, rgba(5, 191, 219, 0.1), rgba(8, 131, 149, 0.05))',
           backdropFilter: 'blur(20px)',
@@ -106,9 +153,17 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
       >
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-white">
-            {mode === 'edit' ? 'Editar Transacción' : 'Nueva Transacción'}
-          </h2>
+          <div>
+            <h2 className="text-2xl font-bold text-white">
+              {mode === 'edit' ? 'Editar Transacción' : 'Nueva Transacción'}
+            </h2>
+            {transaction?.synced_from_plaid && (
+              <p className="text-xs text-white/50 mt-1 flex items-center gap-1">
+                <AlertCircle className="w-3 h-3" />
+                Sincronizada desde el banco
+              </p>
+            )}
+          </div>
           <button
             onClick={onClose}
             className="p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
@@ -133,7 +188,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                     : 'bg-white/5 text-white/70 hover:bg-white/10'
                 }`}
               >
-                Ingreso
+                💰 Ingreso
               </button>
               <button
                 type="button"
@@ -144,7 +199,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                     : 'bg-white/5 text-white/70 hover:bg-white/10'
                 }`}
               >
-                Gasto
+                💸 Gasto
               </button>
             </div>
           </div>
@@ -178,7 +233,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
               onChange={(e) => setDescription(e.target.value)}
               required
               className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-primary-400"
-              placeholder="¿En qué gastaste?"
+              placeholder="¿Qué compraste?"
             />
           </div>
 
@@ -191,10 +246,10 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-primary-400"
+              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-primary-400 cursor-pointer"
             >
               {CATEGORIES.map((cat) => (
-                <option key={cat} value={cat} className="bg-gray-900">
+                <option key={cat} value={cat} className="bg-gray-900 text-white">
                   {cat}
                 </option>
               ))}
@@ -227,7 +282,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
               Cancelar
             </Button>
             <Button type="submit" className="flex-1" disabled={loading}>
-              {loading ? 'Guardando...' : mode === 'edit' ? 'Actualizar' : 'Guardar'}
+              {loading ? '⏳ Guardando...' : mode === 'edit' ? '✅ Actualizar' : '💾 Guardar'}
             </Button>
           </div>
         </form>

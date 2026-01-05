@@ -21,9 +21,10 @@ interface Tab {
 }
 
 const tabs: Tab[] = [
+  const tabs = [
   { id: 'general', label: 'General', icon: Settings },
-  { id: 'security', label: 'Seguridad', icon: Shield },
-  { id: 'notifications', label: 'Notificaciones', icon: Bell },
+  { id: 'notifications', label: 'Notificaciones', icon: Bell }, // ← NUEVO
+  { id: 'security', label: 'Seguridad', icon: Lock },
   { id: 'bank', label: 'Banco', icon: Building2 },
   { id: 'transactions', label: 'Transacciones', icon: Receipt },
 ];
@@ -83,6 +84,7 @@ export const SettingsPage: React.FC = () => {
               {activeTab === 'notifications' && <NotificationSettings />}
               {activeTab === 'bank' && <BankConnection />}
               {activeTab === 'transactions' && <PlaidTransactions />}
+              {activeTab === 'notifications' && <NotificationSettings />}
             </Card>
           </div>
         </div>
