@@ -32,9 +32,11 @@ interface Budget {
 interface Transaction {
   id: string;
   amount: number;
-  category: string;
-  type: 'income' | 'expense';
+  category: string | string[];
+  type?: 'income' | 'expense';
   date: string;
+  synced_from_plaid?: boolean;
+  recurring?: boolean;
 }
 
 export const BudgetsPage: React.FC = () => {
@@ -44,12 +46,30 @@ export const BudgetsPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
 
+  // Función helper para normalizar categorías
+  const normalizeCategory = (category: string | string[]): string => {
+    if (Array.isArray(category)) {
+      return category[0]?.toLowerCase().trim() || '';
+    }
+    return category?.toLowerCase().trim() || '';
+  };
+
+  // Función helper para determinar el tipo de transacción
+  const getTransactionType = (tx: Transaction): 'income' | 'expense' => {
+    if (tx.synced_from_plaid) {
+      return tx.amount > 0 ? 'expense' : 'income';
+    }
+    return tx.type || 'expense';
+  };
+
   useEffect(() => {
     const userId = auth.currentUser?.uid;
     if (!userId) {
       setLoading(false);
       return;
     }
+
+    console.log('🔵 Iniciando listeners de presupuestos y transacciones...');
 
     // Escuchar presupuestos
     const budgetsQuery = query(
@@ -62,6 +82,7 @@ export const BudgetsPage: React.FC = () => {
       snapshot.forEach((doc) => {
         budgetsData.push({ id: doc.id, ...doc.data() } as Budget);
       });
+      console.log('💰 Presupuestos cargados:', budgetsData);
       setBudgets(budgetsData);
       setLoading(false);
     });
@@ -72,22 +93,27 @@ export const BudgetsPage: React.FC = () => {
     
     const txQuery = query(
       collection(db, 'transactions'),
-      where('userId', '==', userId),
-      where('date', '>=', firstDayOfMonth)
+      where('userId', '==', userId)
     );
 
     const unsubTx = onSnapshot(txQuery, (snapshot) => {
       const txData: Transaction[] = [];
       snapshot.forEach((doc) => {
         const data = doc.data();
-        if (!data.recurring) {
-          txData.push({ id: doc.id, ...data } as Transaction);
+        const txDate = data.date || '';
+        
+        // Solo transacciones del mes actual y que no sean recurrentes
+        if (!data.recurring && txDate >= firstDayOfMonth) {
+          txData.push({ 
+            id: doc.id, 
+            ...data 
+          } as Transaction);
         }
       });
-      setTransactions(txData);
       
-      // Actualizar gastos en presupuestos
-      updateBudgetSpending(budgetsData, txData);
+      console.log('📊 Transacciones del mes cargadas:', txData.length);
+      console.log('📋 Muestra de transacciones:', txData.slice(0, 3));
+      setTransactions(txData);
     });
 
     return () => {
@@ -96,33 +122,60 @@ export const BudgetsPage: React.FC = () => {
     };
   }, []);
 
-  const updateBudgetSpending = (budgetsData: Budget[], txData: Transaction[]) => {
-    budgetsData.forEach(async (budget) => {
-      const spent = txData
+  // Calcular gastos cuando cambien las transacciones o presupuestos
+  useEffect(() => {
+    if (budgets.length === 0 || transactions.length === 0) return;
+
+    console.log('🔄 Calculando gastos por categoría...');
+
+    budgets.forEach(async (budget) => {
+      // Calcular gasto para esta categoría
+      const categorySpent = transactions
         .filter(tx => {
-          const txCategory = Array.isArray(tx.category) ? tx.category[0] : tx.category;
-          return txCategory === budget.category && tx.type === 'expense';
+          const txType = getTransactionType(tx);
+          if (txType !== 'expense') return false;
+
+          const txCategory = normalizeCategory(tx.category);
+          const budgetCategory = budget.category.toLowerCase().trim();
+
+          const matches = txCategory === budgetCategory || 
+                         txCategory.includes(budgetCategory) ||
+                         budgetCategory.includes(txCategory);
+
+          if (matches) {
+            console.log(`✅ Match: ${tx.category} -> ${budget.category}`);
+          }
+
+          return matches;
         })
         .reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
 
-      if (spent !== budget.spent) {
+      console.log(`💵 ${budget.category}: $${categorySpent.toFixed(2)} de $${budget.limit.toFixed(2)}`);
+
+      // Solo actualizar si el valor cambió
+      if (Math.abs(categorySpent - budget.spent) > 0.01) {
         try {
-          await updateDoc(doc(db, 'budgets', budget.id), { spent });
+          await updateDoc(doc(db, 'budgets', budget.id), { 
+            spent: categorySpent,
+            updatedAt: new Date().toISOString()
+          });
+          
+          console.log(`✅ Presupuesto actualizado: ${budget.category} -> $${categorySpent.toFixed(2)}`);
           
           // Verificar alerta
-          const percentage = (spent / budget.limit) * 100;
+          const percentage = (categorySpent / budget.limit) * 100;
           if (percentage >= budget.alertThreshold && 'Notification' in window && Notification.permission === 'granted') {
             new Notification(`⚠️ Alerta de presupuesto: ${budget.category}`, {
-              body: `Has gastado ${percentage.toFixed(0)}% de tu presupuesto ($${spent.toFixed(2)} de $${budget.limit.toFixed(2)})`,
+              body: `Has gastado ${percentage.toFixed(0)}% de tu presupuesto ($${categorySpent.toFixed(2)} de $${budget.limit.toFixed(2)})`,
               icon: '/icon-192x192.png',
             });
           }
         } catch (error) {
-          console.error('Error updating budget:', error);
+          console.error('❌ Error actualizando presupuesto:', error);
         }
       }
     });
-  };
+  }, [transactions, budgets]);
 
   const handleEdit = (budget: Budget) => {
     setEditingBudget(budget);
@@ -133,8 +186,9 @@ export const BudgetsPage: React.FC = () => {
     if (confirm('¿Eliminar este presupuesto?')) {
       try {
         await deleteDoc(doc(db, 'budgets', budgetId));
+        console.log('✅ Presupuesto eliminado');
       } catch (error) {
-        console.error('Error deleting budget:', error);
+        console.error('❌ Error al eliminar:', error);
         alert('Error al eliminar el presupuesto');
       }
     }
@@ -148,7 +202,7 @@ export const BudgetsPage: React.FC = () => {
   };
 
   const totalBudget = budgets.reduce((sum, b) => sum + b.limit, 0);
-  const totalSpent = budgets.reduce((sum, b) => sum + b.spent, 0);
+  const totalSpent = budgets.reduce((sum, b) => sum + (b.spent || 0), 0);
   const totalRemaining = totalBudget - totalSpent;
 
   if (loading) {
@@ -230,6 +284,18 @@ export const BudgetsPage: React.FC = () => {
           </Card>
         </div>
 
+        {/* Debug Info - TEMPORAL */}
+        <Card className="p-4 mb-6 bg-blue-500/10 border-blue-500/20">
+          <p className="text-sm text-blue-400 mb-2">
+            🔍 <strong>Debug:</strong> {transactions.length} transacciones del mes | {budgets.length} presupuestos
+          </p>
+          {transactions.slice(0, 3).map(tx => (
+            <p key={tx.id} className="text-xs text-white/50">
+              - {Array.isArray(tx.category) ? tx.category[0] : tx.category}: ${tx.amount}
+            </p>
+          ))}
+        </Card>
+
         {/* Budgets List */}
         {budgets.length === 0 ? (
           <Card className="p-12 text-center">
@@ -249,8 +315,9 @@ export const BudgetsPage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {budgets.map((budget) => {
               const category = CATEGORIES.find(c => c.name === budget.category);
-              const percentage = (budget.spent / budget.limit) * 100;
-              const status = getBudgetStatus(budget.spent, budget.limit);
+              const spent = budget.spent || 0;
+              const percentage = (spent / budget.limit) * 100;
+              const status = getBudgetStatus(spent, budget.limit);
 
               return (
                 <motion.div
@@ -302,7 +369,7 @@ export const BudgetsPage: React.FC = () => {
                       <div className="flex justify-between text-sm">
                         <span className="text-white/70">Gastado</span>
                         <span className="font-semibold text-white">
-                          ${budget.spent.toFixed(2)} / ${budget.limit.toFixed(2)}
+                          ${spent.toFixed(2)} / ${budget.limit.toFixed(2)}
                         </span>
                       </div>
 
@@ -319,10 +386,10 @@ export const BudgetsPage: React.FC = () => {
                         <div className="flex justify-between mt-1 text-xs">
                           <span className="text-white/50">{percentage.toFixed(0)}%</span>
                           <span className={`font-medium ${
-                            budget.limit - budget.spent >= 0 ? 'text-green-400' : 'text-red-400'
+                            budget.limit - spent >= 0 ? 'text-green-400' : 'text-red-400'
                           }`}>
-                            ${Math.abs(budget.limit - budget.spent).toFixed(2)} {
-                              budget.limit - budget.spent >= 0 ? 'restante' : 'excedido'
+                            ${Math.abs(budget.limit - spent).toFixed(2)} {
+                              budget.limit - spent >= 0 ? 'restante' : 'excedido'
                             }
                           </span>
                         </div>
@@ -394,13 +461,15 @@ const BudgetModal: React.FC<BudgetModalProps> = ({ budget, onClose }) => {
 
       if (budget) {
         await updateDoc(doc(db, 'budgets', budget.id), budgetData);
+        console.log('✅ Presupuesto actualizado');
       } else {
         await addDoc(collection(db, 'budgets'), budgetData);
+        console.log('✅ Presupuesto creado');
       }
 
       onClose();
     } catch (error) {
-      console.error('Error saving budget:', error);
+      console.error('❌ Error al guardar:', error);
       alert('Error al guardar el presupuesto');
     } finally {
       setLoading(false);
@@ -410,7 +479,7 @@ const BudgetModal: React.FC<BudgetModalProps> = ({ budget, onClose }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
       <div
-        className="relative w-full max-w-md rounded-2xl border border-white/20 p-6"
+        className="relative w-full max-w-md rounded-2xl border border-white/20 p-6 max-h-[90vh] overflow-y-auto"
         style={{
           background: 'linear-gradient(135deg, rgba(5, 191, 219, 0.1), rgba(8, 131, 149, 0.05))',
           backdropFilter: 'blur(20px)',
