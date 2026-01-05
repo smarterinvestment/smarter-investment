@@ -1,788 +1,557 @@
-// ============================================
-// 🏠 DASHBOARD PAGE - PREMIUM FINTECH DESIGN
-// Net Worth Chart | Neon Cards | Comparatives
-// ============================================
-import React, { useMemo, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+// src/features/dashboard/DashboardPage.tsx
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   TrendingUp,
   TrendingDown,
   Wallet,
+  Plus,
   ArrowUpRight,
   ArrowDownRight,
-  Plus,
-  AlertTriangle,
-  Target,
   Calendar,
-  PiggyBank,
+  DollarSign,
+  PieChart as PieChartIcon,
   BarChart3,
-  Sparkles,
+  Target,
+  CreditCard,
 } from 'lucide-react';
-import { LineChart, Line, AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
-import { useStore, getThemeColors } from '../../stores/useStore';
-import { useTransactions } from '../../hooks/useFirebaseData';
-import { Card, StatCard, Button, ProgressBar, Badge, EmptyState, Modal, Input } from '../../components/ui';
-import { ChartSelector } from '../../components/ui/ChartSelector';
-import { cn } from '../../utils/cn';
+import { Card, Button } from '../../components/ui';
 import {
-  formatCurrency,
-  calculateFinancialSummary,
-  getBudgetAlerts,
-} from '../../utils/financial';
-import { showSuccess, showError } from '../../lib/errorHandler';
-import { DEFAULT_EXPENSE_CATEGORIES, DEFAULT_INCOME_CATEGORIES } from '../../types';
-import { useTranslations } from '../../utils/translations';
-import type { Transaction } from '../../types';
+  LineChart,
+  Line,
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+} from 'recharts';
+import { collection, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore';
+import { db, auth } from '../../lib/firebase';
 
-// ========================================
-// NET WORTH CHART COMPONENT
-// ========================================
-type TimePeriod = '1W' | '1M' | '3M' | 'YTD' | 'ALL';
+interface Transaction {
+  id: string;
+  amount: number;
+  date: string;
+  description?: string;
+  name?: string;
+  merchant_name?: string;
+  category?: string | string[];
+  type?: 'income' | 'expense';
+  synced_from_plaid?: boolean;
+  pending?: boolean;
+  recurring?: boolean; // Excluir transacciones recurrentes
+}
 
-const NetWorthCard: React.FC<{
-  totalBalance: number;
-  changePercent: number;
-  currency: string;
-  expenses: Transaction[];
-  incomes: Transaction[];
-  theme: string;
-}> = ({ totalBalance, changePercent, currency, expenses, incomes, theme }) => {
-  const [period, setPeriod] = useState<TimePeriod>('1M');
-  const themeColors = getThemeColors(theme);
+interface Goal {
+  id: string;
+  name: string;
+  targetAmount: number;
+  currentAmount: number;
+  deadline: string;
+}
 
-  // Generate historical data based on period
-  const chartData = useMemo(() => {
-    const now = new Date();
-    let days = 30;
-    
-    switch (period) {
-      case '1W': days = 7; break;
-      case '1M': days = 30; break;
-      case '3M': days = 90; break;
-      case 'YTD': days = Math.floor((now.getTime() - new Date(now.getFullYear(), 0, 1).getTime()) / (1000 * 60 * 60 * 24)); break;
-      case 'ALL': days = 365; break;
+export const DashboardPage: React.FC = () => {
+  const navigate = useNavigate();
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [goals, setGoals] = useState<Goal[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [timeRange, setTimeRange] = useState<'1W' | '1M' | '3M' | 'YTD' | 'ALL'>('1M');
+
+  useEffect(() => {
+    const userId = auth.currentUser?.uid;
+    if (!userId) return;
+
+    // Query para transacciones (SOLO reales, NO recurrentes)
+    const txQuery = query(
+      collection(db, 'transactions'),
+      where('userId', '==', userId),
+      orderBy('date', 'desc'),
+      limit(100)
+    );
+
+    const unsubTx = onSnapshot(txQuery, (snapshot) => {
+      const txns: Transaction[] = [];
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        // EXCLUIR transacciones recurrentes (son plantillas, no transacciones reales)
+        if (!data.recurring) {
+          txns.push({ id: doc.id, ...data } as Transaction);
+        }
+      });
+      setTransactions(txns);
+      setLoading(false);
+    });
+
+    // Query para metas
+    const goalsQuery = query(
+      collection(db, 'goals'),
+      where('userId', '==', userId),
+      limit(3)
+    );
+
+    const unsubGoals = onSnapshot(goalsQuery, (snapshot) => {
+      const goalsData: Goal[] = [];
+      snapshot.forEach((doc) => {
+        goalsData.push({ id: doc.id, ...doc.data() } as Goal);
+      });
+      setGoals(goalsData);
+    });
+
+    return () => {
+      unsubTx();
+      unsubGoals();
+    };
+  }, []);
+
+  // Determinar si es ingreso o gasto
+  const getTransactionType = (tx: Transaction): 'income' | 'expense' => {
+    if (tx.synced_from_plaid) {
+      // En Plaid: amount positivo = gasto, negativo = ingreso
+      return tx.amount > 0 ? 'expense' : 'income';
     }
+    return tx.type || 'expense';
+  };
 
-    const data: { date: string; balance: number; label: string }[] = [];
-    let runningBalance = totalBalance;
+  // Obtener nombre de la transacción
+  const getTransactionName = (tx: Transaction): string => {
+    if (tx.synced_from_plaid) {
+      return tx.merchant_name || tx.name || 'Transacción';
+    }
+    return tx.description || 'Transacción';
+  };
 
-    // Create data points going backwards
-    for (let i = days; i >= 0; i--) {
-      const date = new Date();
+  // Obtener categoría como string
+  const getTransactionCategory = (tx: Transaction): string => {
+    if (tx.synced_from_plaid && Array.isArray(tx.category)) {
+      return tx.category[0] || 'Sin categoría';
+    }
+    return tx.category as string || 'Sin categoría';
+  };
+
+  // Filtrar transacciones por rango de tiempo
+  const getFilteredTransactions = () => {
+    const now = new Date();
+    const ranges = {
+      '1W': 7,
+      '1M': 30,
+      '3M': 90,
+      'YTD': Math.floor((now.getTime() - new Date(now.getFullYear(), 0, 1).getTime()) / (1000 * 60 * 60 * 24)),
+      'ALL': Infinity,
+    };
+
+    const daysBack = ranges[timeRange];
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - daysBack);
+
+    return transactions.filter(tx => new Date(tx.date) >= cutoffDate);
+  };
+
+  const filteredTransactions = getFilteredTransactions();
+
+  // Calcular totales (SOLO transacciones reales, NO recurrentes)
+  const totalIncome = filteredTransactions
+    .filter(tx => getTransactionType(tx) === 'income')
+    .reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
+
+  const totalExpense = filteredTransactions
+    .filter(tx => getTransactionType(tx) === 'expense')
+    .reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
+
+  const netWorth = totalIncome - totalExpense;
+
+  // Datos para gráfico de línea (últimos 30 días)
+  const getLast30DaysData = () => {
+    const data: { date: string; income: number; expense: number }[] = [];
+    const now = new Date();
+
+    for (let i = 29; i >= 0; i--) {
+      const date = new Date(now);
       date.setDate(date.getDate() - i);
       const dateStr = date.toISOString().split('T')[0];
 
-      // Find transactions for this day
-      const dayExpenses = expenses
-        .filter(e => e.date === dateStr)
-        .reduce((sum, e) => sum + e.amount, 0);
-      const dayIncomes = incomes
-        .filter(inc => inc.date === dateStr)
-        .reduce((sum, inc) => sum + inc.amount, 0);
-
-      // Adjust running balance (work backwards)
-      if (i !== 0) {
-        runningBalance = runningBalance - dayIncomes + dayExpenses;
-      }
-
-      // Format label based on period
-      let label = '';
-      if (period === '1W') {
-        label = date.toLocaleDateString('es', { weekday: 'short' });
-      } else if (period === '1M' || period === '3M') {
-        label = `${date.getDate()}/${date.getMonth() + 1}`;
-      } else {
-        label = date.toLocaleDateString('es', { month: 'short' });
-      }
+      const dayTxns = filteredTransactions.filter(tx => tx.date === dateStr);
+      const income = dayTxns
+        .filter(tx => getTransactionType(tx) === 'income')
+        .reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
+      const expense = dayTxns
+        .filter(tx => getTransactionType(tx) === 'expense')
+        .reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
 
       data.push({
-        date: dateStr,
-        balance: Math.max(0, runningBalance + (Math.random() * 500 - 250)), // Add some variance for visual appeal
-        label,
+        date: date.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }),
+        income,
+        expense,
       });
-    }
-
-    // Ensure last point is the actual balance
-    if (data.length > 0) {
-      data[data.length - 1].balance = totalBalance;
     }
 
     return data;
-  }, [period, expenses, incomes, totalBalance]);
-
-  const getGradientColor = () => {
-    switch (theme) {
-      case 'pink': return { start: '#ec4899', end: '#db2777' };
-      case 'purple': return { start: '#a855f7', end: '#9333ea' };
-      case 'light': return { start: '#0891b2', end: '#0e7490' };
-      default: return { start: '#05BFDB', end: '#088395' };
-    }
   };
 
-  const colors = getGradientColor();
+  // Datos para gráfico de categorías
+  const getCategoryData = () => {
+    const categoryTotals: { [key: string]: number } = {};
 
-  return (
-    <div className="net-worth-card relative overflow-hidden">
-      {/* Floating glow effect */}
-      <div 
-        className="absolute -top-20 -right-20 w-40 h-40 rounded-full blur-3xl opacity-30"
-        style={{ background: colors.start }}
-      />
-      
-      {/* Header */}
-      <div className="flex items-center justify-between mb-2 relative z-10">
-        <span className="text-white/60 text-sm font-medium tracking-wide">PATRIMONIO NETO</span>
-        <button className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors">
-          <Sparkles className="w-4 h-4 text-white/70" />
-        </button>
-      </div>
-
-      {/* Balance */}
-      <div className="flex items-baseline gap-3 mb-6 relative z-10">
-        <h2 className="text-4xl font-bold text-white tracking-tight">
-          {formatCurrency(totalBalance, currency)}
-        </h2>
-        <span className={cn(
-          'text-lg font-semibold',
-          changePercent >= 0 ? 'text-success-400' : 'text-danger-400'
-        )}>
-          {changePercent >= 0 ? '+' : ''}{changePercent.toFixed(2)}%
-        </span>
-      </div>
-
-      {/* Chart */}
-      <div className="h-32 mb-4 relative z-10">
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={chartData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
-            <defs>
-              <linearGradient id="balanceGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={colors.start} stopOpacity={0.4} />
-                <stop offset="100%" stopColor={colors.end} stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <Area
-              type="monotone"
-              dataKey="balance"
-              stroke={colors.start}
-              strokeWidth={2}
-              fill="url(#balanceGradient)"
-              dot={false}
-              style={{ filter: `drop-shadow(0 0 8px ${colors.start}80)` }}
-            />
-            <Tooltip
-              contentStyle={{
-                background: 'rgba(0, 24, 69, 0.95)',
-                border: `1px solid ${colors.start}50`,
-                borderRadius: '12px',
-                boxShadow: `0 0 20px ${colors.start}30`,
-              }}
-              labelStyle={{ color: 'white' }}
-              formatter={(value: number) => [formatCurrency(value, currency), 'Balance']}
-            />
-          </AreaChart>
-        </ResponsiveContainer>
-      </div>
-
-      {/* Period Selector */}
-      <div className="flex justify-between relative z-10">
-        {(['1W', '1M', '3M', 'YTD', 'ALL'] as TimePeriod[]).map((p) => (
-          <button
-            key={p}
-            onClick={() => setPeriod(p)}
-            className={cn(
-              'period-btn',
-              period === p && 'active'
-            )}
-          >
-            {p}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-// ========================================
-// QUICK ADD FORM
-// ========================================
-const QuickAddForm: React.FC<{
-  isOpen: boolean;
-  onClose: () => void;
-  onSubmit: (data: Partial<Transaction>) => void;
-  isSubmitting: boolean;
-}> = ({ isOpen, onClose, onSubmit, isSubmitting }) => {
-  const [type, setType] = React.useState<'expense' | 'income'>('expense');
-  const [description, setDescription] = React.useState('');
-  const [amount, setAmount] = React.useState('');
-  const [category, setCategory] = React.useState('');
-  const [date, setDate] = React.useState(new Date().toISOString().split('T')[0]);
-
-  const categories = type === 'expense' ? DEFAULT_EXPENSE_CATEGORIES : DEFAULT_INCOME_CATEGORIES;
-
-  React.useEffect(() => {
-    if (isOpen) {
-      setType('expense');
-      setDescription('');
-      setAmount('');
-      setCategory('');
-      setDate(new Date().toISOString().split('T')[0]);
-    }
-  }, [isOpen]);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!description.trim() || !amount || !category) {
-      showError('Por favor completa todos los campos');
-      return;
-    }
-    onSubmit({ type, description: description.trim(), amount: parseFloat(amount), category, date, notes: '' });
-  };
-
-  return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Nuevo Movimiento" size="md">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="flex gap-2 p-1 bg-white/5 rounded-xl">
-          <button type="button" onClick={() => { setType('expense'); setCategory(''); }}
-            className={cn('flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-medium transition-all',
-              type === 'expense' ? 'bg-danger-500/20 text-danger-400' : 'text-white/50 hover:text-white')}>
-            <ArrowDownRight className="w-4 h-4" /> Gasto
-          </button>
-          <button type="button" onClick={() => { setType('income'); setCategory(''); }}
-            className={cn('flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-medium transition-all',
-              type === 'income' ? 'bg-success-500/20 text-success-400' : 'text-white/50 hover:text-white')}>
-            <ArrowUpRight className="w-4 h-4" /> Ingreso
-          </button>
-        </div>
-        <Input label="Descripción" placeholder="Ej: Almuerzo, Netflix..." value={description} onChange={(e) => setDescription(e.target.value)} required />
-        <Input label="Monto" type="number" step="0.01" min="0" placeholder="0.00" value={amount} onChange={(e) => setAmount(e.target.value)} leftIcon={<span>$</span>} required />
-        <div>
-          <label className="block mb-2 text-sm font-semibold text-white/90">Categoría</label>
-          <div className="grid grid-cols-4 gap-2 max-h-40 overflow-y-auto">
-            {categories.map((cat) => (
-              <button key={cat.id} type="button" onClick={() => setCategory(cat.name)}
-                className={cn('flex flex-col items-center gap-1 p-2 rounded-xl transition-all',
-                  category === cat.name ? 'bg-primary-500/20 border-2 border-primary-500' : 'bg-white/5 border-2 border-transparent hover:bg-white/10')}>
-                <span className="text-lg">{cat.icon}</span>
-                <span className="text-[10px] text-white/70 truncate w-full text-center">{cat.name}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-        <Input label="Fecha" type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
-        <div className="flex gap-3 pt-4">
-          <Button type="button" variant="secondary" onClick={onClose} fullWidth disabled={isSubmitting}>Cancelar</Button>
-          <Button type="submit" fullWidth disabled={isSubmitting}>{isSubmitting ? 'Guardando...' : 'Añadir'}</Button>
-        </div>
-      </form>
-    </Modal>
-  );
-};
-
-// ========================================
-// INCOME VS EXPENSES CHART
-// ========================================
-const IncomeVsExpensesChart: React.FC<{
-  expenses: Transaction[];
-  incomes: Transaction[];
-  currency: string;
-  theme: string;
-}> = ({ expenses, incomes, currency, theme }) => {
-  const themeColors = getThemeColors(theme);
-
-  const chartData = useMemo(() => {
-    const months = [];
-    const now = new Date();
-    
-    for (let i = 5; i >= 0; i--) {
-      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const monthStr = date.toISOString().slice(0, 7);
-      const monthLabel = date.toLocaleDateString('es', { month: 'short' });
-      
-      const monthExpenses = expenses
-        .filter(e => e.date.startsWith(monthStr))
-        .reduce((sum, e) => sum + e.amount, 0);
-      
-      const monthIncomes = incomes
-        .filter(inc => inc.date.startsWith(monthStr))
-        .reduce((sum, inc) => sum + inc.amount, 0);
-
-      months.push({
-        month: monthLabel,
-        ingresos: monthIncomes,
-        gastos: monthExpenses,
+    filteredTransactions
+      .filter(tx => getTransactionType(tx) === 'expense')
+      .forEach(tx => {
+        const category = getTransactionCategory(tx);
+        categoryTotals[category] = (categoryTotals[category] || 0) + Math.abs(tx.amount);
       });
-    }
-    
-    return months;
-  }, [expenses, incomes]);
 
-  return (
-    <div className="card-neon">
-      <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-        <BarChart3 className="w-5 h-5" style={{ color: themeColors.primary }} />
-        Ingresos vs Gastos
-      </h3>
-      <div className="h-48">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={chartData} barGap={8}>
-            <XAxis 
-              dataKey="month" 
-              axisLine={false}
-              tickLine={false}
-              tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 12 }}
-            />
-            <YAxis 
-              axisLine={false}
-              tickLine={false}
-              tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 12 }}
-              tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
-            />
-            <Tooltip
-              contentStyle={{
-                background: 'rgba(0, 24, 69, 0.95)',
-                border: '1px solid rgba(5, 191, 219, 0.3)',
-                borderRadius: '12px',
-              }}
-              formatter={(value: number) => formatCurrency(value, currency)}
-            />
-            <Bar dataKey="ingresos" fill="#22C55E" radius={[4, 4, 0, 0]} name="Ingresos" />
-            <Bar dataKey="gastos" fill="#EF4444" radius={[4, 4, 0, 0]} name="Gastos" />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-    </div>
-  );
-};
+    return Object.entries(categoryTotals)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([name, value]) => ({ name, value }));
+  };
 
-// ========================================
-// EXPENSE DISTRIBUTION CHART
-// ========================================
-const ExpenseDistributionChart: React.FC<{
-  expenses: Transaction[];
-  currency: string;
-  theme: string;
-}> = ({ expenses, currency, theme }) => {
-  const themeColors = getThemeColors(theme);
+  const lineChartData = getLast30DaysData();
+  const categoryData = getCategoryData();
 
-  const chartData = useMemo(() => {
-    const categoryTotals: Record<string, number> = {};
-    
-    expenses.forEach(e => {
-      categoryTotals[e.category] = (categoryTotals[e.category] || 0) + e.amount;
-    });
+  const COLORS = ['#05bfdb', '#08c792', '#ffc107', '#ff5722', '#9c27b0'];
 
-    const sorted = Object.entries(categoryTotals)
-      .map(([name, value]) => ({ name, value }))
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 5);
-
-    return sorted;
-  }, [expenses]);
-
-  if (chartData.length === 0) {
+  if (loading) {
     return (
-      <div className="card-neon">
-        <h3 className="text-lg font-bold text-white mb-4">Distribución de Gastos</h3>
-        <EmptyState icon="📊" title="Sin datos" description="Agrega gastos para ver estadísticas" />
+      <div className="flex items-center justify-center h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-400" />
       </div>
     );
   }
 
   return (
-    <ChartSelector
-      data={chartData}
-      title="💸 Top 5 Categorías de Gastos"
-      dataKey="value"
-      nameKey="name"
-      colors={['#05BFDB', '#22C55E', '#F59E0B', '#EF4444', '#a855f7']}
-      themeColors={themeColors}
-    />
-  );
-};
-
-// ========================================
-// MAIN DASHBOARD PAGE
-// ========================================
-export const DashboardPage: React.FC = () => {
-  const {
-    expenses,
-    incomes,
-    budgets,
-    goals,
-    recurringTransactions,
-    currency,
-    theme,
-    language,
-    setActivePage,
-  } = useStore();
-
-  const { add } = useTransactions();
-  const themeColors = getThemeColors(theme);
-  const t = useTranslations(language);
-
-  const [showQuickAdd, setShowQuickAdd] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Safe arrays
-  const safeExpenses = Array.isArray(expenses) ? expenses : [];
-  const safeIncomes = Array.isArray(incomes) ? incomes : [];
-  const safeRecurring = Array.isArray(recurringTransactions) ? recurringTransactions : [];
-  const safeGoals = Array.isArray(goals) ? goals : [];
-  const safeBudgets = budgets || {};
-
-  // Calculate recurring totals for current month
-  const recurringTotals = useMemo(() => {
-    const activeRecurring = safeRecurring.filter(r => r.isActive);
-    let monthlyIncome = 0;
-    let monthlyExpense = 0;
-
-    activeRecurring.forEach(r => {
-      const amount = Number(r.amount) || 0;
-      let monthlyAmount = amount;
-
-      // Convert to monthly equivalent
-      switch (r.frequency) {
-        case 'daily': monthlyAmount = amount * 30; break;
-        case 'weekly': monthlyAmount = amount * 4; break;
-        case 'biweekly': monthlyAmount = amount * 2; break;
-        case 'monthly': monthlyAmount = amount; break;
-        case 'yearly': monthlyAmount = amount / 12; break;
-      }
-
-      if (r.type === 'income') {
-        monthlyIncome += monthlyAmount;
-      } else {
-        monthlyExpense += monthlyAmount;
-      }
-    });
-
-    return { monthlyIncome, monthlyExpense };
-  }, [safeRecurring]);
-
-  const handleQuickAdd = async (data: Partial<Transaction>) => {
-    setIsSubmitting(true);
-    try {
-      await add({
-        type: data.type!,
-        description: data.description!,
-        amount: data.amount!,
-        category: data.category!,
-        date: data.date!,
-        notes: '',
-      });
-      showSuccess('Transacción agregada');
-      setShowQuickAdd(false);
-    } catch (error) {
-      showError('Error al agregar transacción');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  // Include recurring in summary
-  const summary = useMemo(() => {
-    const baseSummary = calculateFinancialSummary(safeExpenses, safeIncomes);
-    return {
-      ...baseSummary,
-      totalIncome: baseSummary.totalIncome + recurringTotals.monthlyIncome,
-      totalExpenses: baseSummary.totalExpenses + recurringTotals.monthlyExpense,
-      balance: baseSummary.balance + recurringTotals.monthlyIncome - recurringTotals.monthlyExpense,
-      recurringIncome: recurringTotals.monthlyIncome,
-      recurringExpense: recurringTotals.monthlyExpense,
-    };
-  }, [safeExpenses, safeIncomes, recurringTotals]);
-
-  const budgetAlerts = useMemo(
-    () => getBudgetAlerts(safeBudgets, safeExpenses),
-    [safeBudgets, safeExpenses]
-  );
-
-  const recentTransactions = useMemo(() => {
-    const all = [
-      ...safeExpenses.map(e => ({ ...e, type: 'expense' as const })),
-      ...safeIncomes.map(i => ({ ...i, type: 'income' as const })),
-    ]
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-      .slice(0, 5);
-    return all;
-  }, [safeExpenses, safeIncomes]);
-
-  const activeGoals = safeGoals.filter(g => !g.isCompleted).slice(0, 3);
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { staggerChildren: 0.1 } },
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0 },
-  };
-
-  return (
-    <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="space-y-6 relative z-10"
-    >
-      {/* Welcome Header */}
-      <motion.div variants={itemVariants} className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-white">
-            ¡Hola! 👋
-          </h1>
-          <p className="text-white/60 mt-1">
-            Tu resumen financiero
-          </p>
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-4 md:p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-2">
+              ¡Hola! 👋
+            </h1>
+            <p className="text-white/60 mt-1">Tu resumen financiero</p>
+          </div>
+          <Button onClick={() => navigate('/new-transaction')}>
+            <Plus className="w-5 h-5 mr-2" />
+            Nuevo
+          </Button>
         </div>
-        <Button 
-          onClick={() => setShowQuickAdd(true)}
-          className="btn-primary"
-          leftIcon={<Plus className="w-4 h-4" />}
-        >
-          Nuevo
-        </Button>
-      </motion.div>
 
-      {/* Net Worth Card - Premium */}
-      <motion.div variants={itemVariants}>
-        <NetWorthCard
-          totalBalance={summary.balance}
-          changePercent={summary.trendPercentage}
-          currency={currency}
-          expenses={safeExpenses}
-          incomes={safeIncomes}
-          theme={theme}
-        />
-      </motion.div>
-
-      {/* Quick Stats */}
-      <motion.div variants={itemVariants} className="grid grid-cols-2 gap-4">
-        <div className="card-neon p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-success-500/20 flex items-center justify-center">
-              <ArrowUpRight className="w-5 h-5 text-success-400" />
-            </div>
-            <div>
-              <p className="text-xs text-white/50">Ingresos</p>
-              <p className="text-lg font-bold text-success-400">
-                {formatCurrency(summary.totalIncome, currency)}
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          {/* Net Worth */}
+          <Card className="p-6 bg-gradient-to-br from-primary-500/20 to-primary-600/10 border-primary-500/30">
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm font-medium text-white/70 uppercase tracking-wide">
+                Patrimonio Neto
               </p>
+              <Wallet className="w-5 h-5 text-primary-400" />
+            </div>
+            <div className="space-y-2">
+              <p className="text-3xl font-bold text-white">
+                ${netWorth.toFixed(2)}
+              </p>
+              <div className="flex items-center gap-1 text-sm">
+                {netWorth >= 0 ? (
+                  <>
+                    <TrendingUp className="w-4 h-4 text-green-400" />
+                    <span className="text-green-400">+0.00%</span>
+                  </>
+                ) : (
+                  <>
+                    <TrendingDown className="w-4 h-4 text-red-400" />
+                    <span className="text-red-400">-0.00%</span>
+                  </>
+                )}
+              </div>
+            </div>
+          </Card>
+
+          {/* Income */}
+          <Card className="p-6 bg-gradient-to-br from-green-500/20 to-green-600/10 border-green-500/30">
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm font-medium text-white/70 uppercase tracking-wide">
+                Ingresos
+              </p>
+              <ArrowUpRight className="w-5 h-5 text-green-400" />
+            </div>
+            <p className="text-3xl font-bold text-green-400">
+              ${totalIncome.toFixed(2)}
+            </p>
+          </Card>
+
+          {/* Expenses */}
+          <Card className="p-6 bg-gradient-to-br from-red-500/20 to-red-600/10 border-red-500/30">
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm font-medium text-white/70 uppercase tracking-wide">
+                Gastos
+              </p>
+              <ArrowDownRight className="w-5 h-5 text-red-400" />
+            </div>
+            <p className="text-3xl font-bold text-red-400">
+              ${totalExpense.toFixed(2)}
+            </p>
+          </Card>
+        </div>
+
+        {/* Time Range Selector */}
+        <Card className="p-2 mb-6">
+          <div className="flex items-center gap-2">
+            <Calendar className="w-5 h-5 text-white/50" />
+            <span className="text-sm text-white/70 mr-2">Período</span>
+            <div className="flex gap-1">
+              {(['1W', '1M', '3M', 'YTD', 'ALL'] as const).map((range) => (
+                <button
+                  key={range}
+                  onClick={() => setTimeRange(range)}
+                  className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
+                    timeRange === range
+                      ? 'bg-primary-500 text-white'
+                      : 'bg-white/5 text-white/70 hover:bg-white/10'
+                  }`}
+                >
+                  {range}
+                </button>
+              ))}
             </div>
           </div>
-        </div>
-        <div className="card-neon p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-danger-500/20 flex items-center justify-center">
-              <ArrowDownRight className="w-5 h-5 text-danger-400" />
-            </div>
-            <div>
-              <p className="text-xs text-white/50">Gastos</p>
-              <p className="text-lg font-bold text-danger-400">
-                {formatCurrency(summary.totalExpenses, currency)}
-              </p>
-            </div>
-          </div>
-        </div>
-      </motion.div>
+        </Card>
 
-      {/* Charts Row */}
-      <motion.div variants={itemVariants} className="grid lg:grid-cols-2 gap-6">
-        <IncomeVsExpensesChart
-          expenses={expenses}
-          incomes={incomes}
-          currency={currency}
-          theme={theme}
-        />
-        <ExpenseDistributionChart
-          expenses={expenses}
-          currency={currency}
-          theme={theme}
-        />
-      </motion.div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          {/* Income vs Expenses Chart */}
+          <Card className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <BarChart3 className="w-5 h-5 text-primary-400" />
+                Ingresos vs Gastos
+              </h3>
+            </div>
+            <ResponsiveContainer width="100%" height={300}>
+              <AreaChart data={lineChartData}>
+                <defs>
+                  <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#08c792" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#08c792" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#ff5722" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#ff5722" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
+                <XAxis dataKey="date" stroke="#ffffff50" style={{ fontSize: 12 }} />
+                <YAxis stroke="#ffffff50" style={{ fontSize: 12 }} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#1a1a2e',
+                    border: '1px solid #ffffff20',
+                    borderRadius: '8px',
+                    color: '#fff',
+                  }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="income"
+                  stroke="#08c792"
+                  fillOpacity={1}
+                  fill="url(#colorIncome)"
+                  name="Ingresos"
+                />
+                <Area
+                  type="monotone"
+                  dataKey="expense"
+                  stroke="#ff5722"
+                  fillOpacity={1}
+                  fill="url(#colorExpense)"
+                  name="Gastos"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </Card>
 
-      {/* Budget Alerts */}
-      {budgetAlerts.length > 0 && (
-        <motion.div variants={itemVariants}>
-          <div className="card-neon border-l-4 border-warning-500">
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="w-5 h-5 text-warning-400 flex-shrink-0 mt-0.5" />
-              <div className="flex-1">
-                <h3 className="font-semibold text-white">Alertas de Presupuesto</h3>
-                <div className="mt-2 space-y-2">
-                  {budgetAlerts.map((alert, index) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <span className="text-sm text-white/70">{alert.category}</span>
-                      <Badge variant={alert.status === 'exceeded' ? 'danger' : alert.status === 'critical' ? 'warning' : 'primary'}>
-                        {alert.percentage.toFixed(0)}%
-                      </Badge>
-                    </div>
-                  ))}
+          {/* Category Distribution */}
+          <Card className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <PieChartIcon className="w-5 h-5 text-primary-400" />
+                Distribución de Gastos
+              </h3>
+              <button
+                onClick={() => navigate('/analytics')}
+                className="text-sm text-primary-400 hover:text-primary-300"
+              >
+                Ver todos
+              </button>
+            </div>
+            {categoryData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={categoryData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={100}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {categoryData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#1a1a2e',
+                      border: '1px solid #ffffff20',
+                      borderRadius: '8px',
+                      color: '#fff',
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-[300px]">
+                <div className="text-center">
+                  <BarChart3 className="w-12 h-12 text-white/20 mx-auto mb-2" />
+                  <p className="text-white/50 text-sm">
+                    Sin datos para este período
+                  </p>
+                  <p className="text-white/30 text-xs mt-1">
+                    Agrega gastos para ver estadísticas
+                  </p>
                 </div>
               </div>
-            </div>
-          </div>
-        </motion.div>
-      )}
+            )}
+          </Card>
+        </div>
 
-      {/* Recent Transactions & Goals */}
-      <div className="grid lg:grid-cols-2 gap-6">
-        {/* Recent Transactions */}
-        <motion.div variants={itemVariants}>
-          <div className="card-neon">
+        {/* Recent Transactions & Goals */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Recent Transactions */}
+          <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-white">Últimos Movimientos</h2>
-              <Button variant="ghost" size="sm" onClick={() => setActivePage('transactions')}>
+              <h3 className="text-lg font-bold text-white">Últimos Movimientos</h3>
+              <button
+                onClick={() => navigate('/transactions')}
+                className="text-sm text-primary-400 hover:text-primary-300"
+              >
                 Ver todos
-              </Button>
+              </button>
             </div>
 
-            {recentTransactions.length === 0 ? (
-              <EmptyState
-                icon="💸"
-                title="Sin movimientos"
-                description="Registra tu primer ingreso o gasto"
-                action={<Button size="sm" onClick={() => setShowQuickAdd(true)}>Añadir</Button>}
-              />
+            {filteredTransactions.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12">
+                <CreditCard className="w-12 h-12 text-white/20 mb-3" />
+                <p className="text-white/50 text-sm mb-1">Sin movimientos</p>
+                <p className="text-white/30 text-xs mb-4">
+                  Registra tu primer movimiento
+                </p>
+                <Button size="sm" onClick={() => navigate('/new-transaction')}>
+                  Añadir
+                </Button>
+              </div>
             ) : (
               <div className="space-y-3">
-                {recentTransactions.map((transaction, index) => (
-                  <motion.div
-                    key={transaction.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                    className="flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors"
-                  >
-                    <div className={cn(
-                      'w-10 h-10 rounded-xl flex items-center justify-center text-lg',
-                      transaction.type === 'income' ? 'bg-success-500/20' : 'bg-danger-500/20'
-                    )}>
-                      {transaction.type === 'income' ? '💰' : '💸'}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-white truncate">{transaction.description}</p>
-                      <p className="text-xs text-white/50">{transaction.category}</p>
-                    </div>
-                    <p className={cn(
-                      'font-semibold',
-                      transaction.type === 'income' ? 'text-success-400' : 'text-danger-400'
-                    )}>
-                      {transaction.type === 'income' ? '+' : '-'}
-                      {formatCurrency(transaction.amount, currency)}
-                    </p>
-                  </motion.div>
-                ))}
-              </div>
-            )}
-          </div>
-        </motion.div>
+                {filteredTransactions.slice(0, 5).map((tx) => {
+                  const txType = getTransactionType(tx);
+                  const txName = getTransactionName(tx);
+                  const txCategory = getTransactionCategory(tx);
 
-        {/* Active Goals */}
-        <motion.div variants={itemVariants}>
-          <div className="card-neon">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                <Target className="w-5 h-5" style={{ color: themeColors.primary }} />
-                Metas Activas
-              </h2>
-              <Button variant="ghost" size="sm" onClick={() => setActivePage('goals')}>
-                Ver todas
-              </Button>
-            </div>
-
-            {activeGoals.length === 0 ? (
-              <EmptyState
-                icon="🎯"
-                title="Sin metas"
-                description="Crea tu primera meta de ahorro"
-                action={<Button size="sm" onClick={() => setActivePage('goals')}>Crear Meta</Button>}
-              />
-            ) : (
-              <div className="space-y-4">
-                {activeGoals.map((goal) => {
-                  const targetAmount = Number(goal.targetAmount) || 0;
-                  const currentAmount = Number(goal.currentAmount) || 0;
-                  const progress = targetAmount > 0 ? (currentAmount / targetAmount) * 100 : 0;
-                  const safeProgress = isNaN(progress) ? 0 : Math.min(Math.max(progress, 0), 100);
-                  
                   return (
-                    <div key={goal.id} className="p-3 rounded-xl bg-white/5">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="font-medium text-white">{goal.icon} {goal.name}</span>
-                        <span className="text-sm" style={{ color: themeColors.primary }}>
-                          {safeProgress.toFixed(0)}%
-                        </span>
+                    <div key={tx.id} className="flex items-center gap-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
+                      <div className="w-10 h-10 rounded-lg bg-primary-500/20 flex items-center justify-center flex-shrink-0">
+                        <DollarSign className="w-5 h-5 text-primary-400" />
                       </div>
-                      <ProgressBar value={safeProgress} max={100} size="sm" />
-                      <div className="flex justify-between mt-2 text-xs text-white/50">
-                        <span>{formatCurrency(currentAmount, currency)}</span>
-                        <span>{formatCurrency(targetAmount, currency)}</span>
+
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-white truncate">{txName}</p>
+                        <p className="text-xs text-white/50">{txCategory}</p>
+                      </div>
+
+                      <div className="text-right">
+                        <p className={`font-bold ${txType === 'income' ? 'text-green-400' : 'text-red-400'}`}>
+                          {txType === 'income' ? '+' : '-'}${Math.abs(tx.amount).toFixed(2)}
+                        </p>
+                        <p className="text-xs text-white/50">
+                          {new Date(tx.date).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })}
+                        </p>
                       </div>
                     </div>
                   );
                 })}
               </div>
             )}
-          </div>
-        </motion.div>
-      </div>
+          </Card>
 
-      {/* Savings Rate Indicator */}
-      <motion.div variants={itemVariants}>
-        <div className="card-neon-intense p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-white/60 text-sm">Tasa de Ahorro</p>
-              <p className="text-3xl font-bold text-white mt-1">
-                {summary.savingsRate.toFixed(1)}%
-              </p>
-              <p className="text-xs text-white/50 mt-1">
-                {summary.savingsRate >= 20 ? '¡Excelente! Estás ahorrando bien' : 
-                 summary.savingsRate >= 10 ? 'Buen trabajo, sigue así' : 
-                 'Intenta aumentar tu ahorro'}
-              </p>
+          {/* Active Goals */}
+          <Card className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <Target className="w-5 h-5 text-primary-400" />
+                Metas Activas
+              </h3>
+              <button
+                onClick={() => navigate('/goals')}
+                className="text-sm text-primary-400 hover:text-primary-300"
+              >
+                Ver todas
+              </button>
             </div>
-            <div className={cn(
-              'w-16 h-16 rounded-2xl flex items-center justify-center',
-              summary.savingsRate >= 20 ? 'bg-success-500/20' : 
-              summary.savingsRate >= 10 ? 'bg-warning-500/20' : 'bg-danger-500/20'
-            )}>
-              {summary.savingsRate >= 20 ? (
-                <TrendingUp className="w-8 h-8 text-success-400" />
-              ) : summary.savingsRate >= 10 ? (
-                <TrendingUp className="w-8 h-8 text-warning-400" />
-              ) : (
-                <TrendingDown className="w-8 h-8 text-danger-400" />
-              )}
-            </div>
-          </div>
+
+            {goals.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12">
+                <Target className="w-12 h-12 text-white/20 mb-3" />
+                <p className="text-white/50 text-sm mb-1">Sin metas</p>
+                <p className="text-white/30 text-xs mb-4">
+                  Crea tu primera meta de ahorro
+                </p>
+                <Button size="sm" onClick={() => navigate('/goals')}>
+                  Crear meta
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {goals.map((goal) => {
+                  const progress = (goal.currentAmount / goal.targetAmount) * 100;
+                  return (
+                    <div key={goal.id} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-semibold text-white">{goal.name}</h4>
+                        <span className="text-sm text-white/70">
+                          ${goal.currentAmount.toFixed(2)} / ${goal.targetAmount.toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="w-full bg-white/10 rounded-full h-2">
+                        <div
+                          className="bg-gradient-to-r from-primary-400 to-primary-600 h-2 rounded-full transition-all"
+                          style={{ width: `${Math.min(progress, 100)}%` }}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-white/50">
+                        <span>{progress.toFixed(0)}% completado</span>
+                        <span>
+                          {new Date(goal.deadline).toLocaleDateString('es-ES', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric',
+                          })}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </Card>
         </div>
-      </motion.div>
-
-      {/* Quick Add Modal */}
-      <QuickAddForm
-        isOpen={showQuickAdd}
-        onClose={() => setShowQuickAdd(false)}
-        onSubmit={handleQuickAdd}
-        isSubmitting={isSubmitting}
-      />
-
-      {/* FAB */}
-      <motion.button
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.95 }}
-        onClick={() => setShowQuickAdd(true)}
-        className="fixed bottom-24 right-4 w-14 h-14 rounded-full flex items-center justify-center z-40"
-        style={{
-          background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`,
-          boxShadow: `0 0 30px ${themeColors.primary}60, 0 10px 30px rgba(0,0,0,0.3)`,
-        }}
-      >
-        <Plus className="w-6 h-6 text-white" />
-      </motion.button>
-    </motion.div>
+      </div>
+    </div>
   );
 };
 
