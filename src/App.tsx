@@ -17,6 +17,7 @@ import { SettingsPage } from './features/settings/SettingsPage';
 import { AssistantPage } from './features/assistant/AssistantPage';
 import { RecurringPage } from './features/recurring/RecurringPage';
 import { MorePage } from './features/more/MorePage';
+import { AdvancedAnalyticsPage } from './features/analytics/AdvancedAnalyticsPage';
 import { OnboardingTutorial } from './components/tutorial/OnboardingTutorial';
 import { Toaster } from 'react-hot-toast';
 
@@ -27,6 +28,7 @@ const PAGE_COMPONENTS: Record<string, React.FC> = {
   budgets: BudgetsPage,
   goals: GoalsPage,
   reports: ReportsPage,
+  'advanced-analytics': AdvancedAnalyticsPage,
   settings: SettingsPage,
   assistant: AssistantPage,
   recurring: RecurringPage,

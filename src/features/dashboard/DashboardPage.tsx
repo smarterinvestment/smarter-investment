@@ -13,6 +13,7 @@ import {
   BarChart3,
   Target,
   CreditCard,
+  Zap,
 } from 'lucide-react';
 import { Card, Button } from '../../components/ui';
 import {
@@ -30,6 +31,7 @@ import {
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db, auth } from '../../lib/firebase';
 import { BudgetComparisonChart } from '../../components/BudgetComparisonChart';
+import { useStore } from '../../stores/useStore';
 
 interface Transaction {
   id: string;
@@ -54,6 +56,7 @@ interface Goal {
 }
 
 export const DashboardPage: React.FC = () => {
+  const { setActivePage } = useStore();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [loading, setLoading] = useState(true);
@@ -236,10 +239,22 @@ export const DashboardPage: React.FC = () => {
             </h1>
             <p className="text-white/60 mt-1">Tu resumen financiero</p>
           </div>
-          <Button onClick={() => window.location.href = '/#/new-transaction'}>
-            <Plus className="w-5 h-5 mr-2" />
-            Nuevo
-          </Button>
+          
+          <div className="flex gap-2">
+            {/* BOTÓN ANÁLISIS AVANZADO */}
+            <button
+              onClick={() => setActivePage('advanced-analytics')}
+              className="px-3 md:px-4 py-2 rounded-xl font-medium transition-all bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white flex items-center gap-2 shadow-lg"
+            >
+              <Zap className="w-5 h-5" />
+              <span className="hidden sm:inline">Análisis</span>
+            </button>
+            
+            <Button onClick={() => window.location.href = '/#/new-transaction'}>
+              <Plus className="w-5 h-5 mr-2" />
+              Nuevo
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -350,7 +365,7 @@ export const DashboardPage: React.FC = () => {
           </div>
         </Card>
 
-        {/* NUEVA SECCIÓN: Gráfica de Presupuestos vs Gastos Reales */}
+        {/* GRÁFICA DE PRESUPUESTOS */}
         <div className="mb-6">
           <BudgetComparisonChart />
         </div>
@@ -413,7 +428,7 @@ export const DashboardPage: React.FC = () => {
                 Distribución de Gastos
               </h3>
               <button
-                onClick={() => window.location.href = '/#/analytics'}
+                onClick={() => setActivePage('reports')}
                 className="text-sm text-primary-400 hover:text-primary-300"
               >
                 Ver todos
@@ -462,7 +477,7 @@ export const DashboardPage: React.FC = () => {
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold text-white">Últimos Movimientos</h3>
               <button
-                onClick={() => window.location.href = '/#/transactions'}
+                onClick={() => setActivePage('transactions')}
                 className="text-sm text-primary-400 hover:text-primary-300"
               >
                 Ver todos
@@ -518,7 +533,7 @@ export const DashboardPage: React.FC = () => {
                 Metas Activas
               </h3>
               <button
-                onClick={() => window.location.href = '/#/goals'}
+                onClick={() => setActivePage('goals')}
                 className="text-sm text-primary-400 hover:text-primary-300"
               >
                 Ver todas
@@ -530,7 +545,7 @@ export const DashboardPage: React.FC = () => {
                 <Target className="w-12 h-12 text-white/20 mb-3" />
                 <p className="text-white/50 text-sm mb-1">Sin metas</p>
                 <p className="text-white/30 text-xs mb-4">Crea tu primera meta</p>
-                <Button size="sm" onClick={() => window.location.href = '/#/goals'}>
+                <Button size="sm" onClick={() => setActivePage('goals')}>
                   Crear meta
                 </Button>
               </div>
