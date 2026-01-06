@@ -2,8 +2,32 @@
 // 🔔 FIREBASE MESSAGING SERVICE WORKER
 // Handles push notifications in background
 // ============================================
-
 /* eslint-disable no-undef */
+
+// CRÍTICO: Forzar actualización inmediata
+self.addEventListener('install', (event) => {
+  console.log('🔧 Service Worker: Installing...');
+  self.skipWaiting(); // Activar inmediatamente
+});
+
+self.addEventListener('activate', (event) => {
+  console.log('✅ Service Worker: Activated');
+  event.waitUntil(
+    Promise.all([
+      self.clients.claim(), // Tomar control inmediato
+      // Limpiar cachés viejos
+      caches.keys().then(cacheNames => {
+        return Promise.all(
+          cacheNames.map(cacheName => {
+            console.log('🗑️ Deleting old cache:', cacheName);
+            return caches.delete(cacheName);
+          })
+        );
+      })
+    ])
+  );
+});
+
 importScripts('https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js');
 
@@ -25,7 +49,7 @@ const messaging = firebase.messaging();
 // Handle background messages
 messaging.onBackgroundMessage((payload) => {
   console.log('📬 Background message received:', payload);
-
+  
   const notificationTitle = payload.notification?.title || 'Smarter Investment';
   const notificationOptions = {
     body: payload.notification?.body || 'Tienes una nueva notificación',
@@ -47,7 +71,6 @@ messaging.onBackgroundMessage((payload) => {
 // Handle notification click
 self.addEventListener('notificationclick', (event) => {
   console.log('🖱️ Notification clicked:', event);
-  
   event.notification.close();
 
   if (event.action === 'dismiss') return;
@@ -94,4 +117,4 @@ self.addEventListener('push', (event) => {
   }
 });
 
-console.log('🔔 Firebase Messaging Service Worker loaded');
+console.log('🔔 Firebase Messaging Service Worker loaded - v2.0');
