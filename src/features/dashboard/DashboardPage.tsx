@@ -59,7 +59,7 @@ export const DashboardPage: React.FC = () => {
   const { setActivePage } = useStore();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [timeRange, setTimeRange] = useState<'1W' | '1M' | '3M' | 'YTD' | 'ALL'>('1M');
 
   useEffect(() => {
