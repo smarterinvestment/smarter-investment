@@ -45,7 +45,6 @@ import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db, auth } from '../../lib/firebase';
 import { BudgetComparisonChart } from '../../components/BudgetComparisonChart';
 import { useStore } from '../../stores/useStore';
-import { motion } from 'framer-motion';
 
 interface Transaction {
   id: string;
@@ -569,19 +568,12 @@ export const DashboardPage: React.FC = () => {
           {insights.map((insight, idx) => {
             const Icon = insight.icon;
             return (
-              <motion.div
-                key={idx}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.1 }}
-              >
-                <Card className="p-4">
-                  <Icon className={`w-6 h-6 ${insight.color} mb-2`} />
-                  <p className="text-xs text-white/50 mb-1">{insight.title}</p>
-                  <p className="text-xl font-bold text-white mb-1">{insight.value}</p>
-                  <p className="text-xs text-white/40">{insight.subtitle}</p>
-                </Card>
-              </motion.div>
+              <Card key={idx} className="p-4">
+                <Icon className={`w-6 h-6 ${insight.color} mb-2`} />
+                <p className="text-xs text-white/50 mb-1">{insight.title}</p>
+                <p className="text-xl font-bold text-white mb-1">{insight.value}</p>
+                <p className="text-xs text-white/40">{insight.subtitle}</p>
+              </Card>
             );
           })}
         </div>
@@ -849,11 +841,9 @@ export const DashboardPage: React.FC = () => {
                       <span className="text-sm font-semibold text-white">${merchant.amount.toFixed(2)}</span>
                     </div>
                     <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${(merchant.amount / topMerchants[0].amount) * 100}%` }}
-                        transition={{ duration: 0.5, delay: idx * 0.05 }}
-                        className="h-full rounded-full bg-gradient-to-r from-primary-400 to-primary-600"
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-primary-400 to-primary-600 transition-all duration-500"
+                        style={{ width: `${(merchant.amount / topMerchants[0].amount) * 100}%` }}
                       />
                     </div>
                     <p className="text-xs text-white/50 mt-1">{merchant.count} transacciones</p>
@@ -961,7 +951,7 @@ export const DashboardPage: React.FC = () => {
                       </div>
                       <div className="w-full bg-white/10 rounded-full h-2">
                         <div
-                          className="bg-gradient-to-r from-primary-400 to-primary-600 h-2 rounded-full"
+                          className="bg-gradient-to-r from-primary-400 to-primary-600 h-2 rounded-full transition-all duration-500"
                           style={{ width: `${Math.min(progress, 100)}%` }}
                         />
                       </div>
