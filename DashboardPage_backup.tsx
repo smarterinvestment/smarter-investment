@@ -59,7 +59,7 @@ export const DashboardPage: React.FC = () => {
   const { setActivePage } = useStore();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState<'1W' | '1M' | '3M' | 'YTD' | 'ALL'>('1M');
 
   useEffect(() => {
@@ -589,4 +589,4 @@ export const DashboardPage: React.FC = () => {
   );
 };
 
-export default DashboardPage;console.log('Force rebuild:', new Date());
+export default DashboardPage;
